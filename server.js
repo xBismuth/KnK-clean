@@ -7,6 +7,7 @@ const { OAuth2Client } = require('google-auth-library');
 const nodemailer = require('nodemailer');
 const http = require('http');
 const socketIo = require('socket.io');
+const bcrypt = require('bcrypt');
 require('dotenv').config();
 
 const app = express();
@@ -338,65 +339,80 @@ const verifyToken = (req, res, next) => {
   }
 };
 
+// Middleware to check if user is admin
+const verifyAdmin = (req, res, next) => {
+  if (req.user.role !== 'admin') {
+    return res.status(403).json({ success: false, message: 'Access denied. Admin only.' });
+  }
+  next();
+};
+
 // ==================== AUTHENTICATION ROUTES ====================
 
 /**
  * 📝 POST /auth/signup - Step 1: Send verification code
  */
 app.post('/auth/signup', async (req, res) => {
-  try {
-    const { name, email, phone, password } = req.body;
-
-    if (!name || !email || !password) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Please provide name, email, and password' 
-      });
-    }
-
-    const [existing] = await db.query('SELECT id FROM users WHERE email = ?', [email]);
-    if (existing.length > 0) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Email already registered' 
-      });
-    }
-
-    const verificationCode = generateVerificationCode();
-    const expiresAt = Date.now() + 10 * 60 * 1000;
-    verificationCodes.set(email, {
-      code: verificationCode,
-      expiresAt,
-      userData: { name, email, phone, password }
-    });
-
     try {
-      await sendVerificationEmail(email, verificationCode, name);
-      console.log(`✅ Verification code sent to ${email}`);
+        const { email, password } = req.body;
 
-      res.json({ 
-        success: true, 
-        message: 'Verification code sent to your email',
-        email: email,
-        devCode: process.env.NODE_ENV === 'development' ? verificationCode : undefined
-      });
-    } catch (emailError) {
-      console.error('📧 Email sending failed:', emailError.message);
-      verificationCodes.delete(email);
-      
-      res.status(500).json({ 
-        success: false, 
-        message: 'Failed to send verification email. Please check your email configuration.' 
-      });
+        // Check if user already exists
+        const [existingUser] = await db.query('SELECT * FROM users WHERE email = ?', [email]);
+        if (existingUser) {
+            return res.status(400).json({ message: 'Email is already registered' });
+        }
+
+        // Hash the password
+        const saltRounds = 10;
+        const hashedPassword = await bcrypt.hash(password, saltRounds);
+
+        // Save user in DB with hashed password
+        await db.query(
+            'INSERT INTO users (email, password, role) VALUES (?, ?, ?)',
+            [email, hashedPassword, 'user'] // default role 'user'
+        );
+
+        // Send success message
+        res.status(201).json({ message: 'Account created successfully!' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Internal server error' });
     }
+});
 
-  } catch (error) {
-    console.error('❌ Signup error:', error.message);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Server error during signup' 
-    });
-  }
+/**
+ * 📝 POST /auth/login
+ */
+
+app.post('/auth/login', async (req, res) => {
+    try {
+        const { email, password } = req.body;
+
+        // Find the user by email
+        const [users] = await db.query('SELECT * FROM users WHERE email = ?', [email]);
+        const user = users[0];
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Compare password with hashed password in DB
+        const isPasswordValid = await bcrypt.compare(password, user.password_hash);
+        if (!isPasswordValid) {
+            return res.status(401).json({ message: 'Incorrect password' });
+        }
+
+        // Optional: create JWT token
+        const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, { expiresIn: '1h' });
+
+        res.status(200).json({
+            message: 'Login successful',
+            user: { id: user.id, email: user.email, role: user.role },
+            token
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
 });
 
 /**
@@ -561,7 +577,34 @@ app.post('/auth/send-login-code', async (req, res) => {
 
     const user = users[0];
 
-    // Generate verification code
+    // 🔥 SKIP EMAIL VERIFICATION FOR ADMIN
+    if (user.role === 'admin') {
+      await db.query('UPDATE users SET last_login = NOW() WHERE id = ?', [user.id]);
+
+      const token = jwt.sign(
+        { userId: user.id, email, name: user.name, role: user.role },
+        JWT_SECRET,
+        { expiresIn: '7d' }
+      );
+
+      console.log(`✅ Admin logged in directly: ${email}`);
+
+      return res.json({
+        success: true,
+        skipVerification: true,
+        message: 'Admin login successful',
+        token,
+        user: {
+          id: user.id,
+          email,
+          name: user.name,
+          role: user.role,
+          authType: 'email'
+        }
+      });
+    }
+
+    // Generate verification code for regular users
     const verificationCode = generateVerificationCode();
     const expiresAt = Date.now() + 10 * 60 * 1000;
 
@@ -580,7 +623,8 @@ app.post('/auth/send-login-code', async (req, res) => {
       console.log(`✅ Login verification code sent to ${email}`);
 
       res.json({ 
-        success: true, 
+        success: true,
+        skipVerification: false,
         message: 'Verification code sent to your email',
         email: email,
         devCode: process.env.NODE_ENV === 'development' ? verificationCode : undefined
@@ -869,6 +913,8 @@ app.post('/api/create-order', verifyToken, async (req, res) => {
   }
 });
 
+// ==================== ORDER ROUTES ====================
+
 app.get('/api/get-orders', verifyToken, async (req, res) => {
   try {
     const [rows] = await db.query(
@@ -922,6 +968,32 @@ app.post('/api/update-order-status', verifyToken, async (req, res) => {
     res.status(500).json({ success: false, message: 'Failed to update order', error: error.message });
   }
 });
+
+// Admin route to get ALL orders
+app.get('/api/admin/get-all-orders', verifyToken, verifyAdmin, async (req, res) => {
+  const [rows] = await db.query(
+    'SELECT * FROM orders ORDER BY created_at DESC LIMIT 500'
+  );
+  res.json({ success: true, orders: rows });
+});
+
+// Admin route to update order status
+app.patch('/api/admin/update-order-status', verifyToken, verifyAdmin, async (req, res) => {
+  const { order_id, status } = req.body;
+
+  if (!order_id || !status) {
+    return res.status(400).json({ success: false, message: 'Missing order_id or status' });
+  }
+
+  await db.query(
+    'UPDATE orders SET payment_status = ? WHERE order_id = ?',
+    [status, order_id]
+  );
+
+  io.emit('order-status-updated', { order_id, status, updated_at: new Date().toISOString() });
+  res.json({ success: true, message: 'Order status updated' });
+});
+
 
 // ==================== PAYMONGO PAYMENT ROUTES ====================
 
