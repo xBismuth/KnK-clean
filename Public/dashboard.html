@@ -170,6 +170,8 @@
     padding: 30px;
     max-width: 500px;
     width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
     box-shadow: 0 20px 25px rgba(0,0,0,0.15);
     animation: slide-in 0.3s ease-out;
   }
@@ -271,7 +273,6 @@
     }
   }
 
-  /* small toast */
   #toast {
     position: fixed;
     right: 20px;
@@ -293,27 +294,28 @@
   <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
     <div class="flex justify-between items-center h-16">
       <div class="flex items-center space-x-3">
-        <div class="w-10 h-10 bg-gradient-to-br from-accent to-accent-dark rounded-full flex items-center justify-center shadow-lg">
-          <span class="text-white text-xl font-bold">K</span>
-        </div>
+        <img 
+          src="assets/images/logo1.png" 
+          alt="Kusina ni Katya Logo" 
+          class="w-14 h-14 object-contain rounded-full shadow-lg"
+        />
         <div>
           <h1 class="text-xl font-bold text-gray-800">Kusina ni Katya</h1>
           <div class="text-xs text-gray-500">Admin Dashboard</div>
         </div>
       </div>
       <div class="flex items-center space-x-4">
-        <!-- Connection Status -->
         <div id="connection-status" class="connection-indicator disconnected">
           <span class="w-2 h-2 rounded-full bg-current pulse"></span>
           <span id="connection-text">Connecting...</span>
         </div>
         
-        <button onclick="loadOrders()" class="text-gray-600 hover:text-accent font-medium transition-colors flex items-center gap-2">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-          </svg>
-          Refresh
-        </button>
+        <button onclick="location.reload()" class="text-gray-600 hover:text-accent font-medium transition-colors flex items-center gap-2">
+  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+  </svg>
+  Refresh
+</button>
         <div class="flex items-center gap-3 pl-4 border-l border-gray-300">
           <div class="text-right">
             <div class="text-sm font-medium text-gray-800" id="user-name">Loading...</div>
@@ -443,7 +445,6 @@
     </div>
   </div>
 
-  <!-- No Results Message -->
   <div id="no-results" class="hidden bg-white rounded-lg shadow-md p-8 text-center">
     <div class="empty-state">
       <div class="empty-state-icon">🔍</div>
@@ -454,7 +455,6 @@
 
 </main>
 
-<!-- Status Update Modal -->
 <div id="status-modal" class="modal-overlay hidden" onclick="closeStatusModal(event)">
   <div class="modal-content" onclick="event.stopPropagation()">
     <h3 class="text-lg font-bold text-gray-800 mb-4">Update Order Status</h3>
@@ -487,13 +487,10 @@
   </div>
 </div>
 
-<!-- Order Details Modal -->
 <div id="details-modal" class="modal-overlay hidden" onclick="closeDetailsModal(event)">
   <div class="modal-content" onclick="event.stopPropagation()">
     <h3 class="text-lg font-bold text-gray-800 mb-4">Order Details</h3>
-    <div id="order-details-content" class="space-y-4">
-      <!-- Details will be populated here -->
-    </div>
+    <div id="order-details-content" class="space-y-4"></div>
     <button onclick="closeDetailsModal()" class="w-full mt-6 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium transition-colors">
       Close
     </button>
@@ -503,6 +500,7 @@
 <div id="toast"></div>
 
 <script>
+
   let token = null;
   let allOrders = [];
   let displayedOrders = [];
@@ -512,25 +510,55 @@
   document.addEventListener('DOMContentLoaded', async () => {
     token = localStorage.getItem('adminToken');
     if (!token) {
-      window.location.href = 'dashboard.html';
+      console.log('❌ No token found');
+      window.location.href = 'login.html';
       return;
     }
-    await loadUserInfo();
+    console.log('✅ Token found');
+    
+    const userLoaded = await loadUserInfo();
+    if (!userLoaded) {
+      console.log('❌ Auth failed');
+      return;
+    }
+    
     await loadOrders();
     await loadStats();
     initializeSocket();
   });
 
-  // --- SOCKET.IO ---
   function initializeSocket() {
     try {
-      socket = io("http://localhost:3000", { transports:["websocket","polling"], reconnection:true, reconnectionAttempts:5, reconnectionDelay:2000 });
-      socket.on('connect', () => updateConnectionStatus(true));
-      socket.on('disconnect', () => updateConnectionStatus(false));
-      socket.on('new-order', (data) => { showNotification('New Order Received!','success'); loadOrders(); loadStats(); });
-      socket.on('order-status-updated', (data) => { loadOrders(); loadStats(); });
+      socket = io("http://localhost:3000", { 
+        transports: ["websocket", "polling"], 
+        reconnection: true,
+        auth: { token: token }
+      });
+      
+      socket.on('connect', () => {
+        console.log('✅ Socket connected');
+        updateConnectionStatus(true);
+      });
+      
+      socket.on('disconnect', () => {
+        console.log('⚠️ Socket disconnected');
+        updateConnectionStatus(false);
+      });
+      
+      socket.on('new-order', (data) => { 
+        console.log('🔔 New order:', data);
+        showNotification('New Order!', 'success'); 
+        loadOrders(); 
+        loadStats(); 
+      });
+      
+      socket.on('order-status-updated', () => { 
+        loadOrders(); 
+        loadStats(); 
+      });
+      
     } catch(err) { 
-      console.warn("Socket.io init failed:", err);
+      console.error("❌ Socket error:", err);
       updateConnectionStatus(false); 
     }
   }
@@ -538,207 +566,413 @@
   function updateConnectionStatus(connected) {
     const indicator = document.getElementById('connection-status');
     const text = document.getElementById('connection-text');
-    if(connected){
+    if (connected) {
       indicator.classList.remove('disconnected'); 
       indicator.classList.add('connected'); 
-      text.textContent='Connected';
+      text.textContent = 'Connected';
     } else { 
       indicator.classList.remove('connected'); 
       indicator.classList.add('disconnected'); 
-      text.textContent='Disconnected'; 
+      text.textContent = 'Disconnected'; 
     }
   }
 
-  // --- USER INFO ---
   async function loadUserInfo() {
     try {
-      const res = await fetch('/auth/me', { headers:{'Authorization':`Bearer ${token}`} });
-      if(!res.ok){ 
-        localStorage.removeItem('adminToken'); 
-        window.location.href='login.html'; 
-        return; 
+      console.log('📡 Loading user...');
+      const res = await fetch('/auth/me', { 
+        headers: { 'Authorization': `Bearer ${token}` } 
+      });
+      
+      if (!res.ok) {
+        console.error('❌ Auth failed:', res.status);
+        if (res.status === 401 || res.status === 403) {
+          localStorage.removeItem('adminToken'); 
+          setTimeout(() => window.location.href = 'login.html', 500);
+          return false;
+        }
+        return false;
       }
+      
       const data = await res.json();
-      document.getElementById('user-name').textContent = data.user?.name ?? 'Admin';
-      document.getElementById('user-email').textContent = data.user?.email ?? '-';
-    } catch(e){ console.error("Failed to load user info:", e); }
+      console.log('✅ User loaded');
+      
+      if (!data.success || !data.user) {
+        localStorage.removeItem('adminToken');
+        setTimeout(() => window.location.href = 'login.html', 500);
+        return false;
+      }
+      
+      document.getElementById('user-name').textContent = data.user.name || 'Admin';
+      document.getElementById('user-email').textContent = data.user.email || '-';
+      return true;
+      
+    } catch(e) { 
+      console.error("❌ User load error:", e);
+      return false;
+    }
   }
 
-  // --- LOAD ORDERS ---
   async function loadOrders() {
     try {
-      const res = await fetch('/api/orders', { headers:{'Authorization':`Bearer ${token}`} });
+      console.log('📦 Loading orders...');
+      const res = await fetch('/api/admin/get-all-orders', { 
+        headers: { 'Authorization': `Bearer ${token}` } 
+      });
+      
+      if (!res.ok) {
+        console.error('❌ Orders failed:', res.status);
+        showNotification('Failed to load orders', 'error');
+        return;
+      }
+      
       const data = await res.json();
-      if(!data.success) return;
+      console.log('✅ Orders loaded:', data.orders?.length || 0);
+      
+      if (!data.success) {
+        showNotification('Failed to load orders', 'error');
+        return;
+      }
+      
       allOrders = data.orders || [];
       displayedOrders = allOrders;
       renderOrders();
-    } catch(e){ console.error("Failed to load orders:", e); }
+      
+    } catch(e) { 
+      console.error("❌ Orders error:", e);
+      showNotification('Error loading orders', 'error');
+    }
   }
 
   function renderOrders() {
     const container = document.getElementById('orders-container');
     const tableBody = document.getElementById('orders-table-body');
     const noResults = document.getElementById('no-results');
+    
+    if (!container || !tableBody) return;
+    
     container.innerHTML = '';
     tableBody.innerHTML = '';
 
     let filtered = displayedOrders.filter(order => {
-      if(currentFilter==='all') return true;
-      return order.status===currentFilter;
+      if (currentFilter === 'all') return true;
+      return order.payment_status === currentFilter;
     });
 
-    if(filtered.length===0){
-      tableBody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><div class="empty-state-icon">📦</div><p>No orders found</p></div></td></tr>`;
-      noResults.classList.remove('hidden');
+    if (filtered.length === 0) {
+      tableBody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><div class="empty-state-icon">📦</div><p>No orders</p></div></td></tr>`;
+      if (noResults) noResults.classList.remove('hidden');
       return;
     } else { 
-      noResults.classList.add('hidden'); 
+      if (noResults) noResults.classList.add('hidden'); 
     }
 
     document.getElementById('showing-count').textContent = filtered.length;
     document.getElementById('total-count').textContent = allOrders.length;
 
-    filtered.forEach(order=>{
-      // Mobile cards
+    filtered.forEach(order => {
       const card = document.createElement('div');
-      card.className='order-card mobile-only fade-in';
+      card.className = 'order-card mobile-only fade-in';
+      
+      const items = order.items ? (typeof order.items === 'string' ? JSON.parse(order.items) : order.items) : [];
+      
       card.innerHTML = `
         <div class="flex justify-between mb-2">
-          <div class="font-mono font-bold">${order.id}</div>
-          <div class="status-badge status-${order.status}">${order.status.toUpperCase()}</div>
+          <div class="font-mono font-bold text-sm">${order.order_id}</div>
+          <div class="status-badge status-${order.payment_status}">${order.payment_status.toUpperCase()}</div>
         </div>
-        <div class="text-sm">${order.customerName || '-'} - ${order.customerEmail || '-'}</div>
-        <div class="mt-2 flex justify-between">
-          <button class="action-btn action-btn-primary" onclick="openDetailsModal('${order.id}')">Details</button>
-          <button class="action-btn action-btn-secondary" onclick="openStatusModal('${order.id}','${order.status}')">Update</button>
+        <div class="text-sm text-gray-700 mb-1">${order.customer_name || '-'}</div>
+        <div class="text-xs text-gray-500 mb-2">${order.customer_email || '-'}</div>
+        <div class="text-sm font-semibold text-accent mb-3">₱${parseFloat(order.total || 0).toFixed(2)}</div>
+        <div class="flex gap-2">
+          <button class="action-btn action-btn-primary flex-1" onclick="openDetailsModal('${order.order_id}')">Details</button>
+          <button class="action-btn action-btn-secondary flex-1" onclick="openStatusModal('${order.order_id}','${order.payment_status}')">Update</button>
         </div>
       `;
       container.appendChild(card);
 
-      // Desktop table
       const tr = document.createElement('tr');
-      tr.className='order-row';
-      tr.innerHTML=`
-        <td class="px-6 py-4">${order.id}</td>
-        <td class="px-6 py-4">${order.customerName || '-'}</td>
-        <td class="px-6 py-4">${order.customerEmail || '-'}</td>
-        <td class="px-6 py-4">${(order.items || []).length}</td>
-        <td class="px-6 py-4">₱${order.total?.toFixed(2) ?? '0.00'}</td>
-        <td class="px-6 py-4">${order.paymentMethod || '-'}</td>
-        <td class="px-6 py-4"><span class="status-badge status-${order.status}">${order.status}</span></td>
-        <td class="px-6 py-4">${order.date ? new Date(order.date).toLocaleString() : '-'}</td>
-        <td class="px-6 py-4 flex gap-2">
-          <button class="action-btn action-btn-primary" onclick="openDetailsModal('${order.id}')">Details</button>
-          <button class="action-btn action-btn-secondary" onclick="openStatusModal('${order.id}','${order.status}')">Update</button>
+      tr.className = 'order-row';
+      tr.innerHTML = `
+        <td class="px-6 py-4 font-mono text-sm">${order.order_id}</td>
+        <td class="px-6 py-4">${order.customer_name || '-'}</td>
+        <td class="px-6 py-4 text-sm">${order.customer_email || '-'}</td>
+        <td class="px-6 py-4 text-center">${items.length}</td>
+        <td class="px-6 py-4 font-semibold">₱${parseFloat(order.total || 0).toFixed(2)}</td>
+        <td class="px-6 py-4 capitalize">${order.payment_method || '-'}</td>
+        <td class="px-6 py-4"><span class="status-badge status-${order.payment_status}">${order.payment_status}</span></td>
+        <td class="px-6 py-4 text-sm">${order.created_at ? new Date(order.created_at).toLocaleString() : '-'}</td>
+        <td class="px-6 py-4">
+          <div class="flex gap-2">
+            <button class="action-btn action-btn-primary" onclick="openDetailsModal('${order.order_id}')">Details</button>
+            <button class="action-btn action-btn-secondary" onclick="openStatusModal('${order.order_id}','${order.payment_status}')">Update</button>
+          </div>
         </td>
       `;
       tableBody.appendChild(tr);
     });
   }
 
-  // --- LOAD STATS ---
   async function loadStats() {
     const totalOrders = allOrders.length;
-    const pending = allOrders.filter(o=>o.status==='pending').length;
-    const paid = allOrders.filter(o=>o.status==='paid').length;
-    const completed = paid;
-    const revenue = allOrders.filter(o=>o.status==='paid').reduce((sum,o)=>sum+ (o.total||0),0);
+    const pending = allOrders.filter(o => o.payment_status === 'pending').length;
+    const paid = allOrders.filter(o => o.payment_status === 'paid').length;
+    const revenue = allOrders.filter(o => o.payment_status === 'paid').reduce((sum, o) => sum + parseFloat(o.total || 0), 0);
 
     document.getElementById('total-orders').textContent = totalOrders;
     document.getElementById('pending-orders').textContent = pending;
-    document.getElementById('completed-orders').textContent = completed;
+    document.getElementById('completed-orders').textContent = paid;
     document.getElementById('total-revenue').textContent = `₱${revenue.toFixed(2)}`;
   }
 
-  // --- SEARCH ORDERS ---
   function searchOrders() {
     const val = document.getElementById('search-input').value.toLowerCase();
-    displayedOrders = allOrders.filter(o=>o.id.toLowerCase().includes(val) || (o.customerName||'').toLowerCase().includes(val));
+    displayedOrders = allOrders.filter(o => 
+      o.order_id.toLowerCase().includes(val) || 
+      (o.customer_name || '').toLowerCase().includes(val) ||
+      (o.customer_email || '').toLowerCase().includes(val)
+    );
     renderOrders();
   }
 
-  // --- FILTER ORDERS ---
   function filterOrders(status, btn) {
     currentFilter = status;
-    document.querySelectorAll('.filter-tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
     btn.classList.add('active');
     renderOrders();
   }
 
-  // --- MODALS ---
-  function openStatusModal(id,status){
+  function openStatusModal(id, status) {
     document.getElementById('status-modal').classList.remove('hidden');
     document.getElementById('modal-order-id').value = id;
     document.getElementById('modal-order-id-display').textContent = id;
-    document.querySelectorAll('input[name="status"]').forEach(r=>r.checked=r.value===status);
+    document.querySelectorAll('input[name="status"]').forEach(r => r.checked = r.value === status);
   }
-  function closeStatusModal(e){ if(!e||e.target===e.currentTarget) document.getElementById('status-modal').classList.add('hidden'); }
+  
+  function closeStatusModal(e) { 
+    if (!e || e.target === e.currentTarget) {
+      document.getElementById('status-modal').classList.add('hidden'); 
+    }
+  }
 
-  function openDetailsModal(id){
-    const order = allOrders.find(o=>o.id===id);
-    if(!order) return;
+  function openDetailsModal(id) {
+    const order = allOrders.find(o => o.order_id === id);
+    if (!order) return;
+    
     const container = document.getElementById('order-details-content');
-    container.innerHTML='';
-    (order.items || []).forEach(item=>{
+    container.innerHTML = `
+      <div class="order-detail-row">
+        <div class="detail-label">Order ID:</div>
+        <div class="detail-value font-mono">${order.order_id}</div>
+      </div>
+      <div class="order-detail-row">
+        <div class="detail-label">Customer:</div>
+        <div class="detail-value">${order.customer_name || '-'}</div>
+      </div>
+      <div class="order-detail-row">
+        <div class="detail-label">Email:</div>
+        <div class="detail-value">${order.customer_email || '-'}</div>
+      </div>
+      <div class="order-detail-row">
+        <div class="detail-label">Phone:</div>
+        <div class="detail-value">${order.customer_phone || '-'}</div>
+      </div>
+      <div class="order-detail-row">
+        <div class="detail-label">Delivery:</div>
+        <div class="detail-value capitalize">${order.delivery_option || '-'}</div>
+      </div>
+      <div class="order-detail-row">
+        <div class="detail-label">Payment Method:</div>
+        <div class="detail-value capitalize">${order.payment_method || '-'}</div>
+      </div>
+      <div class="order-detail-row">
+        <div class="detail-label">Status:</div>
+        <div class="detail-value"><span class="status-badge status-${order.payment_status}">${order.payment_status}</span></div>
+      </div>
+      <div class="order-detail-row">
+        <div class="detail-label">Date:</div>
+        <div class="detail-value">${order.created_at ? new Date(order.created_at).toLocaleString() : '-'}</div>
+      </div>
+      <hr class="my-4">
+      <h4 class="font-bold text-gray-800 mb-3">Order Items:</h4>
+    `;
+    
+    const items = order.items ? (typeof order.items === 'string' ? JSON.parse(order.items) : order.items) : [];
+    
+    items.forEach(item => {
       const row = document.createElement('div');
-      row.className='order-detail-row';
-      row.innerHTML=`<div class="detail-label">${item.name} x${item.qty}</div><div class="detail-value">₱${item.price?.toFixed(2) ?? '0.00'}</div>`;
+      row.className = 'order-detail-row';
+      row.innerHTML = `
+        <div class="detail-label">${item.name} x${item.quantity}</div>
+        <div class="detail-value">₱${(parseFloat(item.price || 0) * parseInt(item.quantity || 1)).toFixed(2)}</div>
+      `;
       container.appendChild(row);
     });
+    
+    container.innerHTML += `
+      <hr class="my-4">
+      <div class="order-detail-row">
+        <div class="detail-label">Subtotal:</div>
+        <div class="detail-value">₱${parseFloat(order.subtotal || 0).toFixed(2)}</div>
+      </div>
+      <div class="order-detail-row">
+        <div class="detail-label">Delivery Fee:</div>
+        <div class="detail-value">₱${parseFloat(order.delivery_fee || 0).toFixed(2)}</div>
+      </div>
+      <div class="order-detail-row">
+        <div class="detail-label">Tax:</div>
+        <div class="detail-value">₱${parseFloat(order.tax || 0).toFixed(2)}</div>
+      </div>
+      <div class="order-detail-row border-t-2 border-accent pt-3 mt-3">
+        <div class="detail-label text-lg font-bold">Total:</div>
+        <div class="detail-value text-lg font-bold text-accent">₱${parseFloat(order.total || 0).toFixed(2)}</div>
+      </div>
+    `;
+    
     document.getElementById('details-modal').classList.remove('hidden');
   }
-  function closeDetailsModal(e){ if(!e||e.target===e.currentTarget) document.getElementById('details-modal').classList.add('hidden'); }
+  
+  function closeDetailsModal(e) { 
+    if (!e || e.target === e.currentTarget) {
+      document.getElementById('details-modal').classList.add('hidden'); 
+    }
+  }
 
-  async function updateOrderStatus(){
+  async function updateOrderStatus() {
     const id = document.getElementById('modal-order-id').value;
     const selected = document.querySelector('input[name="status"]:checked');
-    if(!selected) return showNotification('Please select a status','error');
+    
+    if (!selected) {
+      showNotification('Please select a status', 'error');
+      return;
+    }
+    
     const status = selected.value;
-    try{
-      const res = await fetch(`/api/orders/${id}/status`, {
-        method:'PATCH',
-        headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
-        body: JSON.stringify({status})
+    
+    try {
+      const res = await fetch(`/api/admin/update-order-status`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ order_id: id, status })
       });
+      
       const data = await res.json();
-      if(data.success){ 
-        showNotification('Order updated','success'); 
-        loadOrders(); loadStats(); 
+      
+      if (data.success) { 
+        showNotification('Status updated', 'success'); 
+        await loadOrders(); 
+        await loadStats(); 
         closeStatusModal(); 
+      } else {
+        showNotification(data.message || 'Update failed', 'error');
       }
-      else showNotification('Failed to update order','error');
-    }catch(e){ showNotification('Error updating order','error'); console.error(e); }
+    } catch(e) { 
+      showNotification('Error updating', 'error'); 
+      console.error(e); 
+    }
   }
 
-  // --- LOGOUT ---
-  function logout(){
-    localStorage.removeItem('adminToken');
-    window.location.href='login.html';
+  function logout() {
+    if (confirm('Logout?')) {
+      localStorage.removeItem('adminToken');
+      if (socket) socket.disconnect();
+      window.location.href = 'login.html';
+    }
   }
 
-  // --- EXPORT CSV ---
-  function exportOrders(){
-    if(allOrders.length===0) return showNotification('No orders to export','error');
-    let csv = 'Order ID,Customer,Email,Items,Total,Payment Method,Status,Date\n';
-    allOrders.forEach(o=>{
-      const items = (o.items||[]).map(i=>`${i.name} x${i.qty}`).join('; ');
-      csv+=`${o.id},${o.customerName || ''},${o.customerEmail || ''},"${items}",${o.total ?? 0},${o.paymentMethod || ''},${o.status},${o.date ? new Date(o.date).toLocaleString() : ''}\n`;
+  function exportOrders() {
+    if (allOrders.length === 0) {
+      showNotification('No orders', 'error');
+      return;
+    }
+    
+    let csv = 'Order ID,Customer,Email,Phone,Items,Subtotal,Delivery,Tax,Total,Method,Status,Option,Date\n';
+    
+    allOrders.forEach(o => {
+      const items = o.items ? (typeof o.items === 'string' ? JSON.parse(o.items) : o.items) : [];
+      const itemsStr = items.map(i => `${i.name} x${i.quantity}`).join('; ');
+      
+      csv += `"${o.order_id}","${o.customer_name || ''}","${o.customer_email || ''}","${o.customer_phone || ''}","${itemsStr}",${o.subtotal || 0},${o.delivery_fee || 0},${o.tax || 0},${o.total || 0},"${o.payment_method || ''}","${o.payment_status}","${o.delivery_option || ''}","${o.created_at ? new Date(o.created_at).toLocaleString() : ''}"\n`;
     });
-    const blob = new Blob([csv], {type:'text/csv'});
+    
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
-    const a=document.createElement('a'); a.href=url; a.download='orders.csv'; a.click(); URL.revokeObjectURL(url);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `orders_${Date.now()}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+    
+    showNotification('Exported', 'success');
   }
 
-  // --- TOAST NOTIFICATIONS ---
-  function showNotification(msg,type='info'){
-    const toast = document.getElementById('toast');
-    toast.textContent = msg;
-    toast.style.background = type==='success'?'#16a34a':type==='error'?'#dc2626':'#111';
-    toast.style.display='block';
-    clearTimeout(toast.hideTimeout);
-    toast.hideTimeout = setTimeout(()=>{ toast.style.display='none'; },3000);
+  function refreshPage() {
+    location.reload();
   }
+
+  function showNotification(msg, type = 'info') {
+    const toast = document.getElementById('toast');
+    if (!toast) return;
+    
+    toast.textContent = msg;
+    
+    if (type === 'success') {
+      toast.style.background = '#16a34a';
+    } else if (type === 'error') {
+      toast.style.background = '#dc2626';
+    } else {
+      toast.style.background = '#111';
+    }
+    
+    toast.style.display = 'block';
+    
+    clearTimeout(toast.hideTimeout);
+    toast.hideTimeout = setTimeout(() => { 
+      toast.style.display = 'none'; 
+    }, 3000);
+  }
+
+  setInterval(() => {
+    if (token && !document.hidden) {
+      loadOrders();
+      loadStats();
+    }
+  }, 30000);
+
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden && token) {
+      loadOrders();
+      loadStats();
+    }
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'r') {
+      e.preventDefault();
+      loadOrders();
+      loadStats();
+    }
+    
+    if (e.key === 'Escape') {
+      closeStatusModal();
+      closeDetailsModal();
+    }
+  });
+
+  window.addEventListener('online', () => {
+    showNotification('Online', 'success');
+    if (socket && !socket.connected) socket.connect();
+    loadOrders();
+    loadStats();
+  });
+
+  window.addEventListener('offline', () => {
+    showNotification('Offline', 'error');
+    updateConnectionStatus(false);
+  });
 </script>
 
 </body>

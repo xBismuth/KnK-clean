@@ -306,7 +306,6 @@ function proceedToVerification() {
     return;
   }
 
-  // Email validation
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(email)) {
     alert('Please enter a valid email address');
@@ -317,16 +316,13 @@ function proceedToVerification() {
   userPassword = password;
 
   console.log('🔄 Attempting to send login verification code...');
-  console.log('📧 Email:', email);
 
-  // Send verification code
   fetch('http://localhost:3000/auth/send-login-code', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email, password })
   })
   .then(res => {
-    console.log('📡 Response status:', res.status);
     if (!res.ok) {
       throw new Error(`Server responded with status: ${res.status}`);
     }
@@ -336,9 +332,26 @@ function proceedToVerification() {
     console.log('📦 Response data:', data);
     
     if (data.success) {
+      // 🔥 CHECK IF ADMIN - SKIP VERIFICATION
+      if (data.skipVerification) {
+        console.log('✅ Admin login - skipping verification');
+        
+        // Save token and user data
+        sessionStorage.setItem('authToken', data.token);
+        localStorage.setItem('kusinaUser', JSON.stringify(data.user));
+        localStorage.setItem('adminToken', data.token); // Save admin token
+        
+        showSuccessModal('Welcome Admin!', `Welcome back, ${data.user.name}!`);
+        
+        setTimeout(() => {
+          window.location.href = 'dashboard.html';
+        }, 1500);
+        return;
+      }
+
+      // Regular user - show verification form
       console.log('✅ Verification code sent successfully');
       
-      // Show verification form
       document.getElementById('credentials-form').classList.add('hidden');
       document.getElementById('verification-form').classList.remove('hidden');
       document.getElementById('form-title').textContent = 'Verify Your Email';
@@ -350,9 +363,8 @@ function proceedToVerification() {
       document.getElementById('verification-code').focus();
       startCodeTimer();
 
-      // Show dev code in console for testing
       if (data.devCode) {
-        console.log('🔒 Development Login Code:', data.devCode);
+        console.log('🔑 Development Login Code:', data.devCode);
         alert('Development Mode: Verification code is ' + data.devCode);
       }
     } else {
@@ -362,8 +374,7 @@ function proceedToVerification() {
   })
   .catch(error => {
     console.error('❌ Login error:', error);
-    console.error('Error details:', error.message);
-    alert('Connection error: ' + error.message + '\n\nMake sure your server is running on http://localhost:3000');
+    alert('Connection error: ' + error.message);
   });
 }
 
@@ -514,8 +525,7 @@ function handleCredentialResponse(response) {
         createdAt: data.user.createdAt || new Date().toISOString()
       };
       localStorage.setItem('kusinaUser', JSON.stringify(userData));
-      
-      showSuccessModal('Welcome!', `Welcome, ${data.user.name}!`);
+  
 
       setTimeout(() => {
         handleRedirectByRole(data.user.role);

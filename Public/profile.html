@@ -52,6 +52,18 @@
 </script>
 
 <style>
+  @font-face {
+  font-family: 'Quiapo';
+  src: url('assets/fonts/Quiapo_Free.ttf') format('opentype');
+}
+
+body {
+  font-family: 'Poppins', sans-serif;
+}
+
+.font-quiapo {
+  font-family: 'Quiapo', 'Poppins', sans-serif;
+}
 body {
   font-family: 'Poppins', sans-serif;
 }
@@ -92,13 +104,17 @@ body {
 <header class="sticky top-0 z-50 glass-effect bg-white/80 shadow-md transition-all duration-300">
   <nav class="max-w-full mx-auto px-6 lg:px-12">
     <div class="flex justify-between items-center h-20">
-      <!-- Logo -->
+      <!-- Logo - Far Left -->
       <div class="flex items-center space-x-3 animate-fade-in flex-shrink-0">
-        <div class="w-14 h-14 bg-gradient-to-br from-accent to-accent-dark rounded-full flex items-center justify-center shadow-lg">
-          <span class="text-white text-2xl font-bold">K</span>
-        </div>
+        <a href="index.html" class="flex items-center space-x-3">
+          <img 
+            src="assets/images/logo1.png" 
+            alt="Kusina ni Katya Logo" 
+            class="w-14 h-14 object-contain rounded-full shadow-lg"
+          />
+        </a>
         <div class="hidden sm:block">
-          <h1 class="text-2xl font-bold text-accent tracking-widest">Kusina ni Katya</h1>
+          <h1 class="font-quiapo text-2xl font-bold text-accent tracking-widest">Kusina ni Katya</h1>
           <p class="text-xs text-gray-600">Authentic Filipino Cuisine</p>
         </div>
       </div>
