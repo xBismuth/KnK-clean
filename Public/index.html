@@ -1,0 +1,1042 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Kusina ni Katya - Authentic Filipino Cuisine</title>
+
+<!-- Tailwind CSS CDN -->
+<script src="https://cdn.tailwindcss.com"></script>
+
+<!-- Google Font -->
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          accent: '#cda45e',
+          'accent-light': '#e5b66a',
+          'accent-dark': '#b8924e',
+          dark: '#1a1a1a',
+          'dark-light': '#2d2d2d',
+          'light-bg': '#fef9f3',
+          'cream': '#f5e9da',
+        },
+        fontFamily: {
+          poppins: ['Poppins', 'sans-serif'],
+        },
+        animation: {
+          'fade-in': 'fadeIn 0.6s ease-out',
+          'slide-up': 'slideUp 0.5s ease-out',
+          'scale-in': 'scaleIn 0.4s ease-out',
+          'float': 'float 3s ease-in-out infinite',
+        },
+        keyframes: {
+          fadeIn: {
+            '0%': { opacity: '0' },
+            '100%': { opacity: '1' },
+          },
+          slideUp: {
+            '0%': { transform: 'translateY(30px)', opacity: '0' },
+            '100%': { transform: 'translateY(0)', opacity: '1' },
+          },
+          scaleIn: {
+            '0%': { transform: 'scale(0.9)', opacity: '0' },
+            '100%': { transform: 'scale(1)', opacity: '1' },
+          },
+          float: {
+            '0%, 100%': { transform: 'translateY(0px)' },
+            '50%': { transform: 'translateY(-10px)' },
+          },
+        },
+      },
+    },
+  }
+</script>
+
+<style>
+@font-face {
+  font-family: 'Quiapo';
+  src: url('assets/fonts/Quiapo_Free.ttf') format('opentype');
+}
+
+body {
+  font-family: 'Poppins', sans-serif;
+}
+
+.font-quiapo {
+  font-family: 'Quiapo', 'Poppins', sans-serif;
+}
+
+.hero-gradient {
+  background: linear-gradient(135deg, rgba(0, 0, 0, 0.7) 0%, rgba(26, 26, 26, 0.5) 100%);
+}
+
+.glass-effect {
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.smooth-scroll {
+  scroll-behavior: smooth;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cda45e;
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #b8924e;
+}
+
+/* Meal card hover effect */
+.meal-card {
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.meal-card:hover {
+  transform: translateY(-12px) scale(1.02);
+}
+
+/* Custom background pattern */
+.pattern-bg {
+  background-color: #fef3f3;
+  background-image: 
+    radial-gradient(circle at 25% 25%, rgba(205, 164, 94, 0.03) 0%, transparent 50%),
+    radial-gradient(circle at 75% 75%, rgba(205, 164, 94, 0.03) 0%, transparent 50%);
+}
+
+/* Cart Modal Styles */
+#cart-modal.show {
+  display: flex !important;
+}
+
+.cart-item {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem;
+  border-radius: 1rem;
+  background: #f9f9f9;
+  margin-bottom: 1rem;
+  transition: all 0.3s ease;
+}
+
+.cart-item:hover {
+  background: #f0f0f0;
+  transform: translateX(5px);
+}
+
+.cart-item-image {
+  width: 80px;
+  height: 80px;
+  border-radius: 0.75rem;
+  object-fit: cover;
+}
+
+.cart-item-details {
+  flex: 1;
+}
+
+.cart-item-name {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-bottom: 0.25rem;
+}
+
+.cart-item-price {
+  font-size: 1rem;
+  color: #cda45e;
+  font-weight: 600;
+}
+
+.cart-item-quantity {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.quantity-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #cda45e;
+  color: white;
+  border: none;
+  cursor: pointer;
+  font-size: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.quantity-btn:hover {
+  background: #b8924e;
+  transform: scale(1.1);
+}
+
+.quantity-display {
+  font-weight: 600;
+  min-width: 30px;
+  text-align: center;
+}
+
+.remove-btn {
+  background: #ef4444;
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  border: none;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.remove-btn:hover {
+  background: #dc2626;
+  transform: scale(1.05);
+}
+</style>
+</head>
+
+<body class="bg-light-bg pattern-bg text-dark smooth-scroll overflow-x-hidden">
+
+<!-- HEADER / NAVIGATION -->
+<header class="sticky top-0 z-50 glass-effect bg-white/80 shadow-md transition-all duration-300">
+  <nav class="max-w-full mx-auto px-6 lg:px-12">
+    <div class="flex justify-between items-center h-20">
+      <!-- Logo - Far Left -->
+      <div class="flex items-center space-x-3 animate-fade-in flex-shrink-0">
+        <div class="w-14 h-14 bg-gradient-to-br from-accent to-accent-dark rounded-full flex items-center justify-center shadow-lg">
+          <span class="text-white text-2xl font-bold">K</span>
+        </div>
+        <div class="hidden sm:block">
+          <h1 class="font-quiapo text-2xl font-bold text-accent tracking-widest">Kusina ni Katya</h1>
+          <p class="text-xs text-gray-600">Authentic Filipino Cuisine</p>
+        </div>
+      </div>
+
+<!-- Desktop Navigation - Far Right -->
+<div class="hidden lg:flex items-center space-x-3">
+  <a href="index.html" class="text-dark-light hover:text-accent font-medium transition-colors duration-300 text-[15px]">
+    Home
+  </a>
+  <a href="menu.html" class="text-dark-light hover:text-accent font-medium transition-colors duration-300 text-[15px]">
+    Menu
+  </a>
+  <a href="orders.html" class="text-dark-light hover:text-accent font-medium transition-colors duration-300 text-[15px]">
+    Orders
+  </a>
+  <a href="locations.html" class="text-dark-light hover:text-accent font-medium transition-colors duration-300 text-[15px]">
+    Locations
+  </a>
+  <a href="#contact" class="text-dark-light hover:text-accent font-medium transition-colors duration-300 text-[15px]">
+    Contact
+  </a>
+  
+  <!-- Cart Button -->
+  <a href="#" onclick="goToCart(); return false;" class="px-4 py-2 bg-gradient-to-r from-accent to-accent-dark text-white font-semibold rounded-full hover:shadow-lg hover:scale-105 transition-all duration-300 text-[13px]">
+    🛒 View Cart (<span id="cart-count">0</span>)
+  </a>
+
+  <!-- Auth Buttons - Hidden when logged in -->
+  <div id="auth-buttons" class="flex items-center gap-2">
+    <a href="login.html"
+       class="px-5 py-2.5 bg-white border-2 border-accent text-accent font-semibold rounded-full hover:bg-accent hover:text-white hover:shadow-lg hover:scale-105 transition-all duration-300 text-[13px]">
+      Log In
+    </a>
+    <a href="signup.html"
+       class="px-5 py-2.5 bg-gradient-to-r from-accent to-accent-dark text-white font-semibold rounded-full hover:shadow-lg hover:scale-105 transition-all duration-300 text-[13px]">
+      Sign Up
+    </a>
+  </div>
+
+  <!-- User Profile - Shown when logged in -->
+  <div id="user-profile" class="hidden items-center gap-2">
+    <a href="profile.html" class="flex items-center space-x-2 px-3 py-2 bg-accent/10 rounded-full hover:bg-accent/20 transition-all duration-300 cursor-pointer">
+      <div class="w-8 h-8 bg-accent rounded-full flex items-center justify-center">
+        <span id="user-initial" class="text-white font-bold text-xs">U</span>
+      </div>
+      <span id="user-name" class="text-dark font-semibold text-[13px]">User</span>
+    </a>
+    <button onclick="logout()" class="px-5 py-2.5 bg-red-500 text-white font-semibold rounded-full hover:bg-red-600 hover:shadow-lg hover:scale-105 transition-all duration-300 text-[13px]">
+      Logout
+    </button>
+  </div>
+</div>
+
+      <!-- Mobile Menu Button -->
+      <button onclick="toggleMobileMenu()" class="lg:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors duration-300" id="mobile-menu-btn">
+        <svg class="w-6 h-6 text-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Mobile Menu -->
+    <div id="mobile-menu" class="hidden lg:hidden pb-6 animate-slide-up">
+      <div class="flex flex-col space-y-3">
+        <a href="index.html" class="text-dark-light hover:text-accent font-medium py-2 transition-colors duration-300"> Home</a>
+        <a href="menu.html" class="text-dark-light hover:text-accent font-medium py-2 transition-colors duration-300"> Menu</a>
+        <a href="orders.html" class="text-dark-light hover:text-accent font-medium py-2 transition-colors duration-300"> Orders</a>
+        <a href="locations.html" class="text-dark-light hover:text-accent font-medium py-2 transition-colors duration-300"> Locations</a>
+        <button onclick="goToCart()" class="text-left text-dark-light hover:text-accent font-medium py-2 transition-colors duration-300">
+          🛒 View Cart (<span id="mobile-cart-count">0</span>)
+        </button>
+        <a href="#contact" class="text-dark-light hover:text-accent font-medium py-2 transition-colors duration-300"> Contact</a>
+        
+        <!-- Auth Buttons for Mobile - Hidden when logged in -->
+        <div id="mobile-auth-buttons" class="flex flex-col space-y-3 pt-3 border-t border-gray-200">
+          <a href="login.html" class="px-6 py-2.5 bg-gradient-to-r from-accent to-accent-dark text-white font-semibold rounded-full hover:shadow-lg hover:scale-105 transition-all duration-300 text-center">
+            Log In
+          </a>
+          <a href="signup.html" class="px-6 py-2.5 border-2 border-accent text-accent font-semibold rounded-full hover:bg-accent hover:text-white hover:shadow-lg hover:scale-105 transition-all duration-300 text-center">
+            Sign Up
+          </a>
+        </div>
+
+        <!-- User Profile for Mobile - Shown when logged in -->
+<div id="mobile-user-profile" class="hidden flex-col space-y-3 pt-3 border-t border-gray-200">
+  <a href="profile.html" class="flex items-center space-x-3 px-4 py-2 bg-accent/10 rounded-full hover:bg-accent/20 transition-all duration-300">
+    <div class="w-10 h-10 bg-accent rounded-full flex items-center justify-center">
+      <span id="mobile-user-initial" class="text-white font-bold">U</span>
+    </div>
+    <span id="mobile-user-name" class="text-dark font-semibold">User</span>
+  </a>
+  <button onclick="logout()" class="px-6 py-2.5 bg-red-500 text-white font-semibold rounded-full hover:bg-red-600 hover:shadow-lg hover:scale-105 transition-all duration-300 text-center">
+    Logout
+  </button>
+</div>
+      </div>
+    </div>
+  </nav>
+</header>
+
+<!-- HERO SECTION -->
+<section class="relative h-[70vh] min-h-[500px] flex items-center justify-center overflow-hidden">
+  <!-- Background Image with Overlay -->
+  <div class="absolute inset-0 bg-cover bg-center bg-no-repeat" style="background-image: url('https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=1600&q=80');">
+    <div class="absolute inset-0 hero-gradient"></div>
+  </div>
+  
+  <!-- Hero Content -->
+  <div class="relative z-10 text-center px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto animate-fade-in">
+    <h1 class="font-quiapo text-5xl sm:text-6xl md:text-7xl font-bold text-white mb-6 drop-shadow-2xl animate-slide-up outlined-text">
+      Welcome to Kusina ni Katya!
+    </h1>
+    <p class="text-xl sm:text-2xl text-white/90 mb-8 font-light animate-slide-up" style="animation-delay: 0.1s;">
+      Experience the authentic taste of Filipino home cooking
+    </p>
+    
+    <!-- CTA Button -->
+    <button onclick="orderNow()" class="group relative inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-accent to-accent-dark text-white font-bold text-lg rounded-full hover:shadow-2xl transform hover:scale-105 transition-all duration-300 animate-scale-in" style="animation-delay: 0.2s;">
+      <span>Order Now</span>
+      <svg class="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
+      </svg>
+    </button>
+    
+    <!-- Status Badge -->
+    <div class="mt-8 inline-flex items-center gap-2 animate-float">
+      <div id="time-status" class="glass-effect px-6 py-3 rounded-full text-white font-semibold shadow-xl border border-white/20">
+        <span class="inline-block w-2 h-2 rounded-full bg-green-400 animate-pulse mr-2"></span>
+        Loading...
+      </div>
+    </div>
+  </div>
+
+  <!-- Decorative Elements -->
+  <div class="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-light-bg to-transparent"></div>
+</section>
+
+<!-- FEATURED MEALS SECTION -->
+<section id="featured" class="py-20 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-7xl mx-auto">
+    <!-- Section Header -->
+    <div class="text-center mb-16 animate-fade-in">
+      <h2 class="text-4xl md:text-5xl font-bold text-dark mb-4">
+        <span class="text-accent">Featured Meals</span>
+      </h2>
+      <div class="w-24 h-1 bg-gradient-to-r from-accent-dark via-accent to-accent-light mx-auto rounded-full"></div>
+      <p class="mt-4 text-gray-600 text-lg max-w-2xl mx-auto">Discover our most loved dishes, prepared with authentic Filipino recipes</p>
+    </div>
+
+    <!-- Meals Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      <!-- Meal Card 1 -->
+      <div class="meal-card group bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl cursor-pointer">
+        <div class="relative overflow-hidden h-64">
+          <img src="assets/images/adobo.jpg" alt="Pork Adobo" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+          <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+          <div class="absolute top-4 right-4 bg-accent text-white px-3 py-1 rounded-full text-sm font-semibold">Popular</div>
+        </div>
+        <div class="p-6">
+          <h3 class="text-2xl font-bold text-dark mb-2 group-hover:text-accent transition-colors duration-300">Pork Adobo</h3>
+          <p class="text-gray-600 mb-4">Classic Filipino soy-vinegar braised pork with a perfect balance of savory and tangy flavors</p>
+          <div class="flex items-center justify-between">
+            <span class="text-accent font-bold text-xl">₱150</span>
+            <button onclick="addToCart(this, 'Pork Adobo', 150, 'assets/images/adobo.jpg')" class="px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent-dark transition-colors duration-300 text-sm font-semibold">Add to Cart</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Meal Card 2 -->
+      <div class="meal-card group bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl cursor-pointer">
+        <div class="relative overflow-hidden h-64">
+          <img src="assets/images/tapsilog.jpg" alt="Tapsilog" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+          <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+          <div class="absolute top-4 right-4 bg-green-500 text-white px-3 py-1 rounded-full text-sm font-semibold">Breakfast</div>
+        </div>
+        <div class="p-6">
+          <h3 class="text-2xl font-bold text-dark mb-2 group-hover:text-accent transition-colors duration-300">Tapsilog</h3>
+          <p class="text-gray-600 mb-4">Beef tapa, garlic rice, and sunny-side egg - the ultimate Filipino breakfast combo</p>
+          <div class="flex items-center justify-between">
+            <span class="text-accent font-bold text-xl">₱120</span>
+            <button onclick="addToCart(this, 'Tapsilog', 150, 'assets/images/tapsilog.jpg')" class="px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent-dark transition-colors duration-300 text-sm font-semibold">Add to Cart</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Meal Card 3 -->
+      <div class="meal-card group bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl cursor-pointer">
+        <div class="relative overflow-hidden h-64">
+          <img src="assets/images/bicolexpress.jpg" alt="Bicol Express" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+          <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+          <div class="absolute top-4 right-4 bg-red-500 text-white px-3 py-1 rounded-full text-sm font-semibold">Spicy</div>
+        </div>
+        <div class="p-6">
+          <h3 class="text-2xl font-bold text-dark mb-2 group-hover:text-accent transition-colors duration-300">Bicol Express</h3>
+          <p class="text-gray-600 mb-4">Savory-sour tamarind soup with tender pork and fresh vegetables</p>
+          <div class="flex items-center justify-between">
+            <span class="text-accent font-bold text-xl">₱180</span>
+           <button onclick="addToCart(this, 'Bicol Express', 150, 'assets/images/bicolexpress.jpg')" class="px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent-dark transition-colors duration-300 text-sm font-semibold">Add to Cart</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DAILY SPECIALS SECTION -->
+<section id="specials" class="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-cream to-white">
+  <div class="max-w-7xl mx-auto">
+    <!-- Section Header -->
+    <div class="text-center mb-16 animate-fade-in">
+      <h2 class="text-4xl md:text-5xl font-bold text-dark mb-4">
+       <span class="text-accent">Today's Specials</span>
+      </h2>
+      <div class="w-24 h-1 bg-gradient-to-r from-accent-dark via-accent to-accent-light mx-auto rounded-full"></div>
+      <p class="mt-4 text-gray-600 text-lg max-w-2xl mx-auto">Limited time offers on your favorite Filipino dishes</p>
+    </div>
+
+    <!-- Specials Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      <!-- Special Card 1 -->
+      <div class="meal-card group bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl cursor-pointer">
+        <div class="relative overflow-hidden h-64">
+          <img src="assets/images/menudo.jpg" alt="Menudo" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+          <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+          <div class="absolute top-4 left-4 bg-red-600 text-white px-3 py-1 rounded-full text-sm font-semibold animate-pulse">20% OFF</div>
+        </div>
+        <div class="p-6">
+          <h3 class="text-2xl font-bold text-dark mb-2 group-hover:text-accent transition-colors duration-300">Menudo</h3>
+          <p class="text-gray-600 mb-4">Rich tomato stew with tender pork and liver, perfectly seasoned</p>
+          <div class="flex items-center justify-between">
+            <div>
+              <span class="text-gray-400 line-through text-sm">₱160</span>
+              <span class="text-accent font-bold text-xl ml-2">₱128</span>
+            </div>
+            <button onclick="addToCart(this, 'Menudo', 150, 'assets/images/menudo.jpg')" class="px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent-dark transition-colors duration-300 text-sm font-semibold">Add to Cart</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Special Card 2 -->
+      <div class="meal-card group bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl cursor-pointer">
+        <div class="relative overflow-hidden h-64">
+          <img src="assets/images/bangussardines.jpg" alt="Sardinas na Bangus" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+          <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+          <div class="absolute top-4 left-4 bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-semibold">New</div>
+        </div>
+        <div class="p-6">
+          <h3 class="text-2xl font-bold text-dark mb-2 group-hover:text-accent transition-colors duration-300">Sardinas na Bangus</h3>
+          <p class="text-gray-600 mb-4">Slow-cooked bangus sardines in tomato sauce and oil, bursting with flavor</p>
+          <div class="flex items-center justify-between">
+            <span class="text-accent font-bold text-xl">₱140</span>
+            <button onclick="addToCart(this, 'Sardinas na Bangus', 150, 'assets/images/bangussardines.jpg')" class="px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent-dark transition-colors duration-300 text-sm font-semibold">Add to Cart</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Special Card 3 -->
+      <div class="meal-card group bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl cursor-pointer">
+        <div class="relative overflow-hidden h-64">
+          <img src="assets/images/pinakbet.jpg" alt="Pinakbet" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+          <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+          <div class="absolute top-4 left-4 bg-green-600 text-white px-3 py-1 rounded-full text-sm font-semibold">Healthy</div>
+        </div>
+        <div class="p-6">
+          <h3 class="text-2xl font-bold text-dark mb-2 group-hover:text-accent transition-colors duration-300">Pinakbet</h3>
+          <p class="text-gray-600 mb-4">Healthy vegetable stew with bagoong - nutritious and delicious</p>
+          <div class="flex items-center justify-between">
+            <span class="text-accent font-bold text-xl">₱110</span>
+            <button onclick="addToCart(this, 'Pinakbet', 150, 'assets/images/pinakbet.jpg')" class="px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent-dark transition-colors duration-300 text-sm font-semibold">Add to Cart</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CONTACT / INFO SECTION -->
+<section id="contact" class="py-20 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-7xl mx-auto">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
+      <!-- Opening Hours -->
+      <div class="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-shadow duration-300">
+        <div class="w-16 h-16 bg-gradient-to-br from-accent to-accent-dark rounded-full flex items-center justify-center mx-auto mb-4">
+          <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+        </div>
+        <h3 class="text-xl font-bold text-dark mb-3">Opening Hours</h3>
+        <p class="text-gray-600">Monday - Saturday<br />7:00 AM - 3:00 PM</p>
+        <p class="text-sm text-gray-500 mt-2">Closed on Sundays</p>
+      </div>
+
+      <!-- Location -->
+      <div class="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-shadow duration-300">
+        <div class="w-16 h-16 bg-gradient-to-br from-accent to-accent-dark rounded-full flex items-center justify-center mx-auto mb-4">
+          <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+          </svg>
+        </div>
+        <h3 class="text-xl font-bold text-dark mb-3">Location</h3>
+        <p class="text-gray-600">Aurora Blvd, Quezon City<br />Manila, Philippines</p>
+        <button class="mt-3 text-accent hover:text-accent-dark font-semibold text-sm">Get Directions →</button>
+      </div>
+
+      <!-- Contact -->
+      <div class="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-shadow duration-300">
+        <div class="w-16 h-16 bg-gradient-to-br from-accent to-accent-dark rounded-full flex items-center justify-center mx-auto mb-4">
+          <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+          </svg>
+        </div>
+        <h3 class="text-xl font-bold text-dark mb-3">Contact Us</h3>
+        <p class="text-gray-600">Phone: +63 912 345 6789<br />Email: hello@kusianikatya.ph</p>
+        <button class="mt-3 text-accent hover:text-accent-dark font-semibold text-sm">Send Message →</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="bg-dark text-white py-12 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-7xl mx-auto">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+      <!-- Brand -->
+      <div class="col-span-1 md:col-span-2">
+        <h3 class="font-quiapo text-3xl font-bold text-accent mb-3">Kusina ni Katya</h3>
+        <p class="text-gray-400 mb-4">Bringing authentic Filipino home cooking to your table since 2020.</p>
+        <div class="flex space-x-4">
+          <a href="#" class="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center hover:bg-accent transition-colors duration-300">
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+          </a>
+          <a href="#" class="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center hover:bg-accent transition-colors duration-300">
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+          </a>
+          <a href="#" class="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center hover:bg-accent transition-colors duration-300">
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/></svg>
+          </a>
+        </div>
+      </div>
+
+      <!-- Quick Links -->
+      <div>
+        <h4 class="font-bold text-lg mb-4">Quick Links</h4>
+        <ul class="space-y-2 text-gray-400">
+          <li><a href="#featured" class="hover:text-accent transition-colors duration-300">Menu</a></li>
+          <li><a href="#specials" class="hover:text-accent transition-colors duration-300">Specials</a></li>
+          <li><a href="#contact" class="hover:text-accent transition-colors duration-300">Contact</a></li>
+          <li><a href="#" class="hover:text-accent transition-colors duration-300">About Us</a></li>
+        </ul>
+      </div>
+
+      <!-- Legal -->
+      <div>
+        <h4 class="font-bold text-lg mb-4">Legal</h4>
+        <ul class="space-y-2 text-gray-400">
+          <li><a href="#" class="hover:text-accent transition-colors duration-300">Privacy Policy</a></li>
+          <li><a href="#" class="hover:text-accent transition-colors duration-300">Terms of Service</a></li>
+          <li><a href="#" class="hover:text-accent transition-colors duration-300">Cookie Policy</a></li>
+          <li><a href="#" class="hover:text-accent transition-colors duration-300">Refund Policy</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="border-t border-white/10 pt-8 text-center text-gray-400">
+      <p>&copy; 2025 Kusina ni Katya. All Rights Reserved.</p>
+    </div>
+  </div>
+</footer>
+
+<!-- CLOSED POPUP MODAL -->
+<div id="closed-popup" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 backdrop-blur-sm">
+  <div class="bg-white rounded-3xl p-8 max-w-md mx-4 shadow-2xl animate-scale-in text-center">
+    <div class="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+      <span class="text-5xl">😢</span>
+    </div>
+    <h3 class="text-2xl font-bold text-dark mb-2">Sorry, We're Closed!</h3>
+    <p class="text-gray-600 mb-6">The store is currently closed. Please visit us during our opening hours:</p>
+    <div class="bg-gray-50 rounded-lg p-4 mb-6">
+      <p class="font-semibold text-dark">Monday - Saturday</p>
+      <p class="text-accent font-bold">11:00 AM - 3:00 PM</p>
+    </div>
+    <button onclick="closePopup()" class="w-full px-6 py-3 bg-gradient-to-r from-accent to-accent-dark text-white font-semibold rounded-full hover:shadow-lg transition-all duration-300">
+      Got it, Thanks!
+    </button>
+  </div>
+</div>
+
+<!-- FLOATING CART MODAL -->
+<div id="cart-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 backdrop-blur-sm">
+  <div class="bg-white rounded-3xl p-8 max-w-2xl w-full mx-4 shadow-2xl animate-scale-in max-h-[80vh] flex flex-col">
+    <!-- Header -->
+    <div class="flex justify-between items-center mb-6 pb-4 border-b-2 border-accent/30">
+      <h3 class="text-3xl font-bold text-dark">
+        <span class="text-accent">Your Cart</span> 🛒
+      </h3>
+      <button onclick="closeCartModal()" class="text-gray-500 hover:text-accent transition-colors duration-300">
+        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Cart Items -->
+    <div id="cart-items-container" class="flex-1 overflow-y-auto mb-6">
+      <!-- Items will be inserted here -->
+    </div>
+
+    <!-- Cart Summary -->
+    <div class="border-t-2 border-accent/30 pt-4">
+      <div class="flex justify-between items-center mb-4">
+        <span class="text-xl font-semibold text-dark">Subtotal:</span>
+        <span id="cart-subtotal" class="text-2xl font-bold text-accent">₱0</span>
+      </div>
+      <div class="flex justify-between items-center mb-6">
+        <span class="text-lg font-semibold text-dark">Total Items:</span>
+        <span id="cart-total-items" class="text-xl font-bold text-dark">0</span>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex gap-4">
+        <button onclick="closeCartModal()" class="flex-1 px-6 py-3 border-2 border-accent text-accent font-semibold rounded-full hover:bg-accent/10 transition-all duration-300">
+          Continue Shopping
+        </button>
+        <button onclick="proceedToCheckout()" class="flex-1 px-6 py-3 bg-gradient-to-r from-accent to-accent-dark text-white font-semibold rounded-full hover:shadow-lg hover:scale-105 transition-all duration-300">
+          Proceed to Checkout →
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Check login status and update UI
+function checkLoginStatus() {
+  const user = JSON.parse(localStorage.getItem('kusinaUser') || '{}');
+  const isLoggedIn = user && user.email;
+  
+  // Desktop elements
+  const authButtons = document.getElementById('auth-buttons');
+  const userProfile = document.getElementById('user-profile');
+  const userName = document.getElementById('user-name');
+  const userInitial = document.getElementById('user-initial');
+  
+  // Mobile elements
+  const mobileAuthButtons = document.getElementById('mobile-auth-buttons');
+  const mobileUserProfile = document.getElementById('mobile-user-profile');
+  const mobileUserName = document.getElementById('mobile-user-name');
+  const mobileUserInitial = document.getElementById('mobile-user-initial');
+  
+  if (isLoggedIn) {
+    // Desktop - Hide auth buttons, show user profile
+    if (authButtons) authButtons.classList.add('hidden');
+    if (userProfile) {
+      userProfile.classList.remove('hidden');
+      userProfile.classList.add('flex');
+    }
+    if (userName) userName.textContent = user.name || user.email;
+    if (userInitial) userInitial.textContent = (user.name || user.email).charAt(0).toUpperCase();
+    
+    // Mobile - Hide auth buttons, show user profile
+    if (mobileAuthButtons) mobileAuthButtons.classList.add('hidden');
+    if (mobileUserProfile) {
+      mobileUserProfile.classList.remove('hidden');
+      mobileUserProfile.classList.add('flex');
+    }
+    if (mobileUserName) mobileUserName.textContent = user.name || user.email;
+    if (mobileUserInitial) mobileUserInitial.textContent = (user.name || user.email).charAt(0).toUpperCase();
+  } else {
+    // Desktop - Show auth buttons, hide user profile
+    if (authButtons) authButtons.classList.remove('hidden');
+    if (userProfile) {
+      userProfile.classList.add('hidden');
+      userProfile.classList.remove('flex');
+    }
+    
+    // Mobile - Show auth buttons, hide user profile
+    if (mobileAuthButtons) mobileAuthButtons.classList.remove('hidden');
+    if (mobileUserProfile) {
+      mobileUserProfile.classList.add('hidden');
+      mobileUserProfile.classList.remove('flex');
+    }
+  }
+}
+
+// Logout function
+function logout() {
+  if (confirm('Are you sure you want to logout?')) {
+    // 🔹 Clear user and session data
+    localStorage.removeItem('kusinaUser');
+    localStorage.removeItem('kusinaCart');
+    sessionStorage.removeItem('authToken');
+
+    // 🔹 Update UI immediately (no need to refresh first)
+    const authButtons = document.getElementById('auth-buttons');
+    const userProfile = document.getElementById('user-profile');
+    const mobileAuthButtons = document.getElementById('mobile-auth-buttons');
+    const mobileUserProfile = document.getElementById('mobile-user-profile');
+
+    if (authButtons) authButtons.classList.remove('hidden');
+    if (userProfile) {
+      userProfile.classList.add('hidden');
+      userProfile.classList.remove('flex');
+    }
+
+    if (mobileAuthButtons) mobileAuthButtons.classList.remove('hidden');
+    if (mobileUserProfile) {
+      mobileUserProfile.classList.add('hidden');
+      mobileUserProfile.classList.remove('flex');
+    }
+
+    // 🔹 Give user feedback
+    alert('✅ You have been logged out successfully!');
+
+    // 🔹 Redirect to homepage after short delay
+    setTimeout(() => {
+      window.location.href = 'index.html';
+    }, 500);
+  }
+}
+
+
+// Initialize login status check
+checkLoginStatus();
+
+// Update time status
+function updateTimeStatus() {
+  const now = new Date();
+  const hours = now.getHours();
+  const minutes = now.getMinutes();
+  const day = now.getDay();
+  const ampm = hours >= 12 ? "PM" : "AM";
+  const formatted = (hours % 12 || 12) + ":" + minutes.toString().padStart(2, "0") + " " + ampm;
+  const isOpen = day >= 1 && day <= 6 && hours >= 11 && hours < 15;
+
+  const status = document.getElementById("time-status");
+  if (isOpen) {
+    status.innerHTML = '<span class="inline-block w-2 h-2 rounded-full bg-green-400 animate-pulse mr-2"></span><span class="text-sm">🕒 ' + formatted + ' — </span><strong>We\'re Open!</strong>';
+    status.className = "glass-effect px-6 py-3 rounded-full text-white font-semibold shadow-xl border border-green-400/30";
+  } else {
+    status.innerHTML = '<span class="inline-block w-2 h-2 rounded-full bg-red-400 animate-pulse mr-2"></span><span class="text-sm">🕒 ' + formatted + ' — </span><strong>Closed</strong>';
+    status.className = "glass-effect px-6 py-3 rounded-full text-white font-semibold shadow-xl border border-red-400/30";
+  }
+}
+
+setInterval(updateTimeStatus, 1000);
+updateTimeStatus();
+
+// Cart functionality with localStorage persistence
+let menuCart = [];
+
+// Load cart from localStorage on page load
+function loadCart() {
+  const savedCart = localStorage.getItem('kusinaCart');
+  if (savedCart) {
+    menuCart = JSON.parse(savedCart);
+    updateCartCount();
+  }
+}
+
+// Save cart to localStorage
+function saveCart() {
+  localStorage.setItem('kusinaCart', JSON.stringify(menuCart));
+}
+
+// Initialize cart on page load
+loadCart();
+
+// Update cart count display
+function updateCartCount() {
+  const count = menuCart.reduce((sum, item) => sum + (item.quantity || 0), 0);
+  const cartCountEl = document.getElementById('cart-count');
+  const mobileCartCountEl = document.getElementById('mobile-cart-count');
+  if (cartCountEl) cartCountEl.textContent = count;
+  if (mobileCartCountEl) mobileCartCountEl.textContent = count;
+}
+
+// Add to cart function
+function addToCart(button, mealName, mealPrice, mealImage) {
+
+  const existingItem = menuCart.find(item => item.name === mealName);
+  
+  if (existingItem) {
+    existingItem.quantity++;
+  } else {
+    menuCart.push({
+      id: Date.now(),
+      name: mealName,
+      price: mealPrice,
+      quantity: 1,
+      image: mealImage
+    });
+  }
+  
+  // Save to localStorage
+  saveCart();
+  
+  // Show feedback
+  const originalText = button.textContent;
+  button.textContent = 'Added!';
+  button.classList.add('bg-green-600');
+  setTimeout(() => {
+    button.textContent = originalText;
+    button.classList.remove('bg-green-600');
+  }, 1000);
+  
+  updateCartCount();
+  console.log('Cart:', menuCart);
+}
+
+// Open cart modal
+function goToCart() {
+  if (menuCart.length === 0) {
+    alert('Your cart is empty!');
+    return;
+  } 
+  
+  displayCartModal();
+}
+
+// Display cart modal
+function displayCartModal() {
+  const modal = document.getElementById('cart-modal');
+  const container = document.getElementById('cart-items-container');
+  const subtotalEl = document.getElementById('cart-subtotal');
+  const totalItemsEl = document.getElementById('cart-total-items');
+  
+  // Clear previous items
+  container.innerHTML = '';
+  
+  // Calculate totals
+  let subtotal = 0;
+  let totalItems = 0;
+  
+  // Add each cart item
+  menuCart.forEach((item, index) => {
+    const itemTotal = item.price * item.quantity;
+    subtotal += itemTotal;
+    totalItems += item.quantity;
+    
+    const itemHTML = `
+      <div class="cart-item">
+        <img src="${item.image}" alt="${item.name}" class="cart-item-image" />
+        <div class="cart-item-details">
+          <div class="cart-item-name">${item.name}</div>
+          <div class="cart-item-price">₱${item.price} each</div>
+          <div class="cart-item-quantity">
+            <button class="quantity-btn" onclick="updateQuantity(${index}, -1)">−</button>
+            <span class="quantity-display">${item.quantity}</span>
+            <button class="quantity-btn" onclick="updateQuantity(${index}, 1)">+</button>
+            <span class="ml-4 font-semibold text-dark">₱${itemTotal}</span>
+          </div>
+        </div>
+        <button class="remove-btn" onclick="removeFromCart(${index})">Remove</button>
+      </div>
+    `;
+    
+    container.innerHTML += itemHTML;
+  });
+  
+  // Update totals
+  subtotalEl.textContent = `₱${subtotal}`;
+  totalItemsEl.textContent = totalItems;
+  
+  // Show modal
+  modal.classList.remove('hidden');
+  modal.classList.add('show');
+}
+
+// Update quantity
+function updateQuantity(index, change) {
+  if (menuCart[index]) {
+    menuCart[index].quantity += change;
+    
+    // Remove if quantity is 0 or less
+    if (menuCart[index].quantity <= 0) {
+      menuCart.splice(index, 1);
+    }
+    
+    updateCartCount();
+    saveCart();
+    
+    // Refresh modal if still has items
+    if (menuCart.length > 0) {
+      displayCartModal();
+    } else {
+      closeCartModal();
+      alert('Your cart is now empty!');
+    }
+  }
+}
+
+// Remove from cart
+function removeFromCart(index) {
+  if (confirm('Remove this item from cart?')) {
+    menuCart.splice(index, 1);
+    saveCart();
+    updateCartCount();
+    
+    if (menuCart.length > 0) {
+      displayCartModal();
+    } else {
+      closeCartModal();
+      alert('Your cart is now empty!');
+    }
+  }
+}
+
+// Close cart modal
+function closeCartModal() {
+  const modal = document.getElementById('cart-modal');
+  modal.classList.remove('show');
+  modal.classList.add('hidden');
+}
+
+// Proceed to checkout
+function proceedToCheckout() {
+  if (menuCart.length === 0) {
+    alert('Your cart is empty!');
+    return;
+  }
+  
+  const cartParam = encodeURIComponent(JSON.stringify(menuCart));
+  window.location.href = `cart.html?cart=${cartParam}`;
+}
+
+// Close modal when clicking outside
+document.addEventListener('click', function(event) {
+  const modal = document.getElementById('cart-modal');
+  if (event.target === modal) {
+    closeCartModal();
+  }
+});
+
+// Update cart count on page load
+updateCartCount();
+
+// Toggle mobile menu
+function toggleMobileMenu() {
+  const menu = document.getElementById("mobile-menu");
+  menu.classList.toggle("hidden");
+}
+
+// Order now function
+function orderNow() {
+  const now = new Date();
+  const hour = now.getHours();
+  const day = now.getDay();
+  const isOpen = day >= 1 && day <= 6 && hour >= 11 && hour < 15;
+
+  if (isOpen) {
+    window.location.href = "menu.html";
+  } else {
+    const popup = document.getElementById("closed-popup");
+    popup.classList.remove("hidden");
+    popup.classList.add("flex");
+    
+    // Auto close after 5 seconds
+    setTimeout(function() {
+      closePopup();
+    }, 5000);
+  }
+}
+
+// Close popup
+function closePopup() {
+  const popup = document.getElementById("closed-popup");
+  popup.classList.add("hidden");
+  popup.classList.remove("flex");
+}
+
+// Smooth scroll for anchor links
+document.querySelectorAll('a[href^="#"]').forEach(function(anchor) {
+  anchor.addEventListener('click', function (e) {
+    e.preventDefault();
+    const target = document.querySelector(this.getAttribute('href'));
+    if (target) {
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      // Close mobile menu if open
+      document.getElementById("mobile-menu").classList.add("hidden");
+    }
+  });
+});
+
+// Add scroll animation observer
+const observerOptions = {
+  threshold: 0.1,
+  rootMargin: '0px 0px -50px 0px'
+};
+
+const observer = new IntersectionObserver(function(entries) {
+  entries.forEach(function(entry) {
+    if (entry.isIntersecting) {
+      entry.target.style.opacity = '1';
+      entry.target.style.transform = 'translateY(0)';
+    }
+  });
+}, observerOptions);
+
+// Observe all meal cards
+document.addEventListener('DOMContentLoaded', function() {
+  const cards = document.querySelectorAll('.meal-card');
+  cards.forEach(function(card, index) {
+    card.style.opacity = '0';
+    card.style.transform = 'translateY(30px)';
+    card.style.transition = 'all 0.6s ease ' + (index * 0.1) + 's';
+    observer.observe(card);
+  });
+});
+</script>
+
+</body>
+</html>

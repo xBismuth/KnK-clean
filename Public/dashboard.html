@@ -1,0 +1,745 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Admin Dashboard - Kusina ni Katya</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          accent: '#cda45e',
+          'accent-light': '#e5b66a',
+          'accent-dark': '#b8924e',
+        }
+      }
+    }
+  }
+</script>
+
+<style>
+  body { font-family: 'Poppins', sans-serif; }
+  .status-badge { padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.875rem; font-weight: 600; }
+  .status-pending { background: #FEF3C7; color: #92400E; }
+  .status-paid { background: #D1FAE5; color: #065F46; }
+  .status-failed { background: #FEE2E2; color: #991B1B; }
+  
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  
+  .fade-in {
+    animation: fadeIn 0.5s ease-out;
+  }
+
+  @keyframes slide-in {
+    from {
+      opacity: 0;
+      transform: translateX(100%);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+  
+  .animate-slide-in {
+    animation: slide-in 0.3s ease-out;
+  }
+
+  .filter-tab {
+    background: white;
+    color: #4B5563;
+    border: 2px solid #E5E7EB;
+  }
+  
+  .filter-tab:hover {
+    border-color: #cda45e;
+    color: #cda45e;
+  }
+  
+  .filter-tab.active {
+    background: linear-gradient(135deg, #cda45e, #b8924e);
+    color: white;
+    border-color: #cda45e;
+  }
+
+  .connection-indicator {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+  }
+
+  .connection-indicator.connected {
+    background: #D1FAE5;
+    color: #065F46;
+  }
+
+  .connection-indicator.disconnected {
+    background: #FEE2E2;
+    color: #991B1B;
+  }
+
+  .pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: .5; }
+  }
+
+  .order-card {
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+  }
+
+  .order-card:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  }
+
+  .order-row {
+    border-bottom: 1px solid #E5E7EB;
+    transition: background-color 0.2s;
+  }
+
+  .order-row:hover {
+    background-color: #F9FAFB;
+  }
+
+  .order-row:last-child {
+    border-bottom: none;
+  }
+
+  .action-btn {
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .action-btn-primary {
+    background: #cda45e;
+    color: white;
+  }
+
+  .action-btn-primary:hover {
+    background: #b8924e;
+  }
+
+  .action-btn-secondary {
+    background: #E5E7EB;
+    color: #374151;
+  }
+
+  .action-btn-secondary:hover {
+    background: #D1D5DB;
+  }
+
+  .modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+  }
+
+  .modal-content {
+    background: white;
+    border-radius: 8px;
+    padding: 30px;
+    max-width: 500px;
+    width: 90%;
+    box-shadow: 0 20px 25px rgba(0,0,0,0.15);
+    animation: slide-in 0.3s ease-out;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: #9CA3AF;
+  }
+
+  .empty-state-icon {
+    font-size: 48px;
+    margin-bottom: 15px;
+  }
+
+  .stat-card {
+    background: white;
+    border-radius: 8px;
+    padding: 24px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+  }
+
+  .stat-card:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    transform: translateY(-2px);
+  }
+
+  .stat-value {
+    font-size: 28px;
+    font-weight: 700;
+    margin-top: 10px;
+  }
+
+  .stat-label {
+    font-size: 14px;
+    color: #6B7280;
+    margin-top: 8px;
+  }
+
+  .header-search {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  .search-input {
+    flex: 1;
+    padding: 10px 15px;
+    border: 1px solid #E5E7EB;
+    border-radius: 6px;
+    font-size: 14px;
+  }
+
+  .search-input:focus {
+    outline: none;
+    border-color: #cda45e;
+    box-shadow: 0 0 0 3px rgba(205, 164, 94, 0.1);
+  }
+
+  .badge-sm {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+
+  .order-detail-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid #E5E7EB;
+  }
+
+  .order-detail-row:last-child {
+    border-bottom: none;
+  }
+
+  .detail-label {
+    color: #6B7280;
+    font-weight: 500;
+  }
+
+  .detail-value {
+    color: #1F2937;
+    font-weight: 600;
+  }
+
+  @media (max-width: 1024px) {
+    .desktop-only {
+      display: none !important;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .mobile-only {
+      display: none !important;
+    }
+  }
+
+  /* small toast */
+  #toast {
+    position: fixed;
+    right: 20px;
+    bottom: 20px;
+    background: rgba(0,0,0,0.8);
+    color: white;
+    padding: 10px 14px;
+    border-radius: 8px;
+    z-index: 1100;
+    display: none;
+  }
+</style>
+</head>
+
+<body class="bg-gray-50">
+
+<!-- HEADER -->
+<header class="bg-white shadow-md sticky top-0 z-50">
+  <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex justify-between items-center h-16">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 bg-gradient-to-br from-accent to-accent-dark rounded-full flex items-center justify-center shadow-lg">
+          <span class="text-white text-xl font-bold">K</span>
+        </div>
+        <div>
+          <h1 class="text-xl font-bold text-gray-800">Kusina ni Katya</h1>
+          <div class="text-xs text-gray-500">Admin Dashboard</div>
+        </div>
+      </div>
+      <div class="flex items-center space-x-4">
+        <!-- Connection Status -->
+        <div id="connection-status" class="connection-indicator disconnected">
+          <span class="w-2 h-2 rounded-full bg-current pulse"></span>
+          <span id="connection-text">Connecting...</span>
+        </div>
+        
+        <button onclick="loadOrders()" class="text-gray-600 hover:text-accent font-medium transition-colors flex items-center gap-2">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+          </svg>
+          Refresh
+        </button>
+        <div class="flex items-center gap-3 pl-4 border-l border-gray-300">
+          <div class="text-right">
+            <div class="text-sm font-medium text-gray-800" id="user-name">Loading...</div>
+            <div class="text-xs text-gray-500" id="user-email">-</div>
+          </div>
+          <button onclick="logout()" class="text-gray-600 hover:text-red-600 font-medium transition-colors text-sm">
+            Logout
+          </button>
+        </div>
+      </div>
+    </div>
+  </nav>
+</header>
+
+<!-- MAIN CONTENT -->
+<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+  <!-- Stats Cards -->
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <div class="stat-card fade-in">
+      <div class="flex items-center justify-between mb-2">
+        <div class="text-sm text-gray-600">Total Orders</div>
+        <svg class="w-8 h-8 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
+        </svg>
+      </div>
+      <div class="stat-value text-gray-800" id="total-orders">0</div>
+      <div class="stat-label">All customer orders</div>
+    </div>
+    
+    <div class="stat-card fade-in" style="animation-delay: 0.1s">
+      <div class="flex items-center justify-between mb-2">
+        <div class="text-sm text-gray-600">Total Revenue</div>
+        <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+      </div>
+      <div class="stat-value text-green-600" id="total-revenue">₱0.00</div>
+      <div class="stat-label">From paid orders</div>
+    </div>
+    
+    <div class="stat-card fade-in" style="animation-delay: 0.2s">
+      <div class="flex items-center justify-between mb-2">
+        <div class="text-sm text-gray-600">Pending Orders</div>
+        <svg class="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+      </div>
+      <div class="stat-value text-yellow-600" id="pending-orders">0</div>
+      <div class="stat-label">Awaiting payment</div>
+    </div>
+    
+    <div class="stat-card fade-in" style="animation-delay: 0.3s">
+      <div class="flex items-center justify-between mb-2">
+        <div class="text-sm text-gray-600">Completed Orders</div>
+        <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+      </div>
+      <div class="stat-value text-blue-600" id="completed-orders">0</div>
+      <div class="stat-label">Successfully paid</div>
+    </div>
+  </div>
+
+  <!-- Filter Tabs -->
+  <div class="mb-6 flex gap-2 flex-wrap">
+    <button onclick="filterOrders('all', this)" class="filter-tab active px-4 py-2 rounded-lg font-medium transition-all">
+      All Orders
+    </button>
+    <button onclick="filterOrders('pending', this)" class="filter-tab px-4 py-2 rounded-lg font-medium transition-all">
+      Pending
+    </button>
+    <button onclick="filterOrders('paid', this)" class="filter-tab px-4 py-2 rounded-lg font-medium transition-all">
+      Paid
+    </button>
+    <button onclick="filterOrders('failed', this)" class="filter-tab px-4 py-2 rounded-lg font-medium transition-all">
+      Failed
+    </button>
+  </div>
+
+  <!-- Search Bar -->
+  <div class="header-search">
+    <input type="text" id="search-input" placeholder="Search by Order ID or Customer Name..." class="search-input" onkeyup="searchOrders()">
+    <button onclick="exportOrders()" class="action-btn action-btn-secondary">
+      Export CSV
+    </button>
+  </div>
+
+  <!-- Mobile Card View -->
+  <div id="orders-container" class="grid gap-4 sm:grid-cols-2 lg:hidden mb-8"></div>
+
+  <!-- Desktop Table View -->
+  <div class="bg-white rounded-lg shadow-md mb-8 desktop-only">
+    <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+      <h2 class="text-xl font-bold text-gray-800">All Orders</h2>
+      <div class="text-sm text-gray-500">
+        Showing <span id="showing-count">0</span> of <span id="total-count">0</span> orders
+      </div>
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="w-full">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order ID</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Items</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Method</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="orders-table-body" class="bg-white divide-y divide-gray-200">
+          <tr>
+            <td colspan="9" class="px-6 py-8 text-center text-gray-500">
+              <div class="empty-state">
+                <div class="empty-state-icon">📦</div>
+                <p>Loading orders...</p>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- No Results Message -->
+  <div id="no-results" class="hidden bg-white rounded-lg shadow-md p-8 text-center">
+    <div class="empty-state">
+      <div class="empty-state-icon">🔍</div>
+      <p class="text-lg font-medium text-gray-600">No orders found</p>
+      <p class="text-sm text-gray-500 mt-2">Try adjusting your filters or search terms</p>
+    </div>
+  </div>
+
+</main>
+
+<!-- Status Update Modal -->
+<div id="status-modal" class="modal-overlay hidden" onclick="closeStatusModal(event)">
+  <div class="modal-content" onclick="event.stopPropagation()">
+    <h3 class="text-lg font-bold text-gray-800 mb-4">Update Order Status</h3>
+    <p class="text-sm text-gray-600 mb-6">Order ID: <span id="modal-order-id-display" class="font-mono text-accent font-bold"></span></p>
+    <input type="hidden" id="modal-order-id">
+    
+    <div class="space-y-3 mb-6">
+      <label class="flex items-center cursor-pointer p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition">
+        <input type="radio" name="status" value="pending" class="mr-3 w-4 h-4" style="accent-color: #cda45e;">
+        <span class="text-yellow-600 font-medium">⏳ Pending</span>
+      </label>
+      <label class="flex items-center cursor-pointer p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition">
+        <input type="radio" name="status" value="paid" class="mr-3 w-4 h-4" style="accent-color: #cda45e;">
+        <span class="text-green-600 font-medium">✓ Paid</span>
+      </label>
+      <label class="flex items-center cursor-pointer p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition">
+        <input type="radio" name="status" value="failed" class="mr-3 w-4 h-4" style="accent-color: #cda45e;">
+        <span class="text-red-600 font-medium">✗ Failed</span>
+      </label>
+    </div>
+    
+    <div class="flex gap-3">
+      <button onclick="closeStatusModal()" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium transition-colors">
+        Cancel
+      </button>
+      <button onclick="updateOrderStatus()" class="flex-1 px-4 py-2 bg-accent hover:bg-accent-dark text-white rounded-lg font-medium transition-colors">
+        Update Status
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Order Details Modal -->
+<div id="details-modal" class="modal-overlay hidden" onclick="closeDetailsModal(event)">
+  <div class="modal-content" onclick="event.stopPropagation()">
+    <h3 class="text-lg font-bold text-gray-800 mb-4">Order Details</h3>
+    <div id="order-details-content" class="space-y-4">
+      <!-- Details will be populated here -->
+    </div>
+    <button onclick="closeDetailsModal()" class="w-full mt-6 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium transition-colors">
+      Close
+    </button>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+  let token = null;
+  let allOrders = [];
+  let displayedOrders = [];
+  let currentFilter = 'all';
+  let socket = null;
+
+  document.addEventListener('DOMContentLoaded', async () => {
+    token = localStorage.getItem('adminToken');
+    if (!token) {
+      window.location.href = 'dashboard.html';
+      return;
+    }
+    await loadUserInfo();
+    await loadOrders();
+    await loadStats();
+    initializeSocket();
+  });
+
+  // --- SOCKET.IO ---
+  function initializeSocket() {
+    try {
+      socket = io("http://localhost:3000", { transports:["websocket","polling"], reconnection:true, reconnectionAttempts:5, reconnectionDelay:2000 });
+      socket.on('connect', () => updateConnectionStatus(true));
+      socket.on('disconnect', () => updateConnectionStatus(false));
+      socket.on('new-order', (data) => { showNotification('New Order Received!','success'); loadOrders(); loadStats(); });
+      socket.on('order-status-updated', (data) => { loadOrders(); loadStats(); });
+    } catch(err) { 
+      console.warn("Socket.io init failed:", err);
+      updateConnectionStatus(false); 
+    }
+  }
+
+  function updateConnectionStatus(connected) {
+    const indicator = document.getElementById('connection-status');
+    const text = document.getElementById('connection-text');
+    if(connected){
+      indicator.classList.remove('disconnected'); 
+      indicator.classList.add('connected'); 
+      text.textContent='Connected';
+    } else { 
+      indicator.classList.remove('connected'); 
+      indicator.classList.add('disconnected'); 
+      text.textContent='Disconnected'; 
+    }
+  }
+
+  // --- USER INFO ---
+  async function loadUserInfo() {
+    try {
+      const res = await fetch('/auth/me', { headers:{'Authorization':`Bearer ${token}`} });
+      if(!res.ok){ 
+        localStorage.removeItem('adminToken'); 
+        window.location.href='login.html'; 
+        return; 
+      }
+      const data = await res.json();
+      document.getElementById('user-name').textContent = data.user?.name ?? 'Admin';
+      document.getElementById('user-email').textContent = data.user?.email ?? '-';
+    } catch(e){ console.error("Failed to load user info:", e); }
+  }
+
+  // --- LOAD ORDERS ---
+  async function loadOrders() {
+    try {
+      const res = await fetch('/api/orders', { headers:{'Authorization':`Bearer ${token}`} });
+      const data = await res.json();
+      if(!data.success) return;
+      allOrders = data.orders || [];
+      displayedOrders = allOrders;
+      renderOrders();
+    } catch(e){ console.error("Failed to load orders:", e); }
+  }
+
+  function renderOrders() {
+    const container = document.getElementById('orders-container');
+    const tableBody = document.getElementById('orders-table-body');
+    const noResults = document.getElementById('no-results');
+    container.innerHTML = '';
+    tableBody.innerHTML = '';
+
+    let filtered = displayedOrders.filter(order => {
+      if(currentFilter==='all') return true;
+      return order.status===currentFilter;
+    });
+
+    if(filtered.length===0){
+      tableBody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><div class="empty-state-icon">📦</div><p>No orders found</p></div></td></tr>`;
+      noResults.classList.remove('hidden');
+      return;
+    } else { 
+      noResults.classList.add('hidden'); 
+    }
+
+    document.getElementById('showing-count').textContent = filtered.length;
+    document.getElementById('total-count').textContent = allOrders.length;
+
+    filtered.forEach(order=>{
+      // Mobile cards
+      const card = document.createElement('div');
+      card.className='order-card mobile-only fade-in';
+      card.innerHTML = `
+        <div class="flex justify-between mb-2">
+          <div class="font-mono font-bold">${order.id}</div>
+          <div class="status-badge status-${order.status}">${order.status.toUpperCase()}</div>
+        </div>
+        <div class="text-sm">${order.customerName || '-'} - ${order.customerEmail || '-'}</div>
+        <div class="mt-2 flex justify-between">
+          <button class="action-btn action-btn-primary" onclick="openDetailsModal('${order.id}')">Details</button>
+          <button class="action-btn action-btn-secondary" onclick="openStatusModal('${order.id}','${order.status}')">Update</button>
+        </div>
+      `;
+      container.appendChild(card);
+
+      // Desktop table
+      const tr = document.createElement('tr');
+      tr.className='order-row';
+      tr.innerHTML=`
+        <td class="px-6 py-4">${order.id}</td>
+        <td class="px-6 py-4">${order.customerName || '-'}</td>
+        <td class="px-6 py-4">${order.customerEmail || '-'}</td>
+        <td class="px-6 py-4">${(order.items || []).length}</td>
+        <td class="px-6 py-4">₱${order.total?.toFixed(2) ?? '0.00'}</td>
+        <td class="px-6 py-4">${order.paymentMethod || '-'}</td>
+        <td class="px-6 py-4"><span class="status-badge status-${order.status}">${order.status}</span></td>
+        <td class="px-6 py-4">${order.date ? new Date(order.date).toLocaleString() : '-'}</td>
+        <td class="px-6 py-4 flex gap-2">
+          <button class="action-btn action-btn-primary" onclick="openDetailsModal('${order.id}')">Details</button>
+          <button class="action-btn action-btn-secondary" onclick="openStatusModal('${order.id}','${order.status}')">Update</button>
+        </td>
+      `;
+      tableBody.appendChild(tr);
+    });
+  }
+
+  // --- LOAD STATS ---
+  async function loadStats() {
+    const totalOrders = allOrders.length;
+    const pending = allOrders.filter(o=>o.status==='pending').length;
+    const paid = allOrders.filter(o=>o.status==='paid').length;
+    const completed = paid;
+    const revenue = allOrders.filter(o=>o.status==='paid').reduce((sum,o)=>sum+ (o.total||0),0);
+
+    document.getElementById('total-orders').textContent = totalOrders;
+    document.getElementById('pending-orders').textContent = pending;
+    document.getElementById('completed-orders').textContent = completed;
+    document.getElementById('total-revenue').textContent = `₱${revenue.toFixed(2)}`;
+  }
+
+  // --- SEARCH ORDERS ---
+  function searchOrders() {
+    const val = document.getElementById('search-input').value.toLowerCase();
+    displayedOrders = allOrders.filter(o=>o.id.toLowerCase().includes(val) || (o.customerName||'').toLowerCase().includes(val));
+    renderOrders();
+  }
+
+  // --- FILTER ORDERS ---
+  function filterOrders(status, btn) {
+    currentFilter = status;
+    document.querySelectorAll('.filter-tab').forEach(t=>t.classList.remove('active'));
+    btn.classList.add('active');
+    renderOrders();
+  }
+
+  // --- MODALS ---
+  function openStatusModal(id,status){
+    document.getElementById('status-modal').classList.remove('hidden');
+    document.getElementById('modal-order-id').value = id;
+    document.getElementById('modal-order-id-display').textContent = id;
+    document.querySelectorAll('input[name="status"]').forEach(r=>r.checked=r.value===status);
+  }
+  function closeStatusModal(e){ if(!e||e.target===e.currentTarget) document.getElementById('status-modal').classList.add('hidden'); }
+
+  function openDetailsModal(id){
+    const order = allOrders.find(o=>o.id===id);
+    if(!order) return;
+    const container = document.getElementById('order-details-content');
+    container.innerHTML='';
+    (order.items || []).forEach(item=>{
+      const row = document.createElement('div');
+      row.className='order-detail-row';
+      row.innerHTML=`<div class="detail-label">${item.name} x${item.qty}</div><div class="detail-value">₱${item.price?.toFixed(2) ?? '0.00'}</div>`;
+      container.appendChild(row);
+    });
+    document.getElementById('details-modal').classList.remove('hidden');
+  }
+  function closeDetailsModal(e){ if(!e||e.target===e.currentTarget) document.getElementById('details-modal').classList.add('hidden'); }
+
+  async function updateOrderStatus(){
+    const id = document.getElementById('modal-order-id').value;
+    const selected = document.querySelector('input[name="status"]:checked');
+    if(!selected) return showNotification('Please select a status','error');
+    const status = selected.value;
+    try{
+      const res = await fetch(`/api/orders/${id}/status`, {
+        method:'PATCH',
+        headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
+        body: JSON.stringify({status})
+      });
+      const data = await res.json();
+      if(data.success){ 
+        showNotification('Order updated','success'); 
+        loadOrders(); loadStats(); 
+        closeStatusModal(); 
+      }
+      else showNotification('Failed to update order','error');
+    }catch(e){ showNotification('Error updating order','error'); console.error(e); }
+  }
+
+  // --- LOGOUT ---
+  function logout(){
+    localStorage.removeItem('adminToken');
+    window.location.href='login.html';
+  }
+
+  // --- EXPORT CSV ---
+  function exportOrders(){
+    if(allOrders.length===0) return showNotification('No orders to export','error');
+    let csv = 'Order ID,Customer,Email,Items,Total,Payment Method,Status,Date\n';
+    allOrders.forEach(o=>{
+      const items = (o.items||[]).map(i=>`${i.name} x${i.qty}`).join('; ');
+      csv+=`${o.id},${o.customerName || ''},${o.customerEmail || ''},"${items}",${o.total ?? 0},${o.paymentMethod || ''},${o.status},${o.date ? new Date(o.date).toLocaleString() : ''}\n`;
+    });
+    const blob = new Blob([csv], {type:'text/csv'});
+    const url = URL.createObjectURL(blob);
+    const a=document.createElement('a'); a.href=url; a.download='orders.csv'; a.click(); URL.revokeObjectURL(url);
+  }
+
+  // --- TOAST NOTIFICATIONS ---
+  function showNotification(msg,type='info'){
+    const toast = document.getElementById('toast');
+    toast.textContent = msg;
+    toast.style.background = type==='success'?'#16a34a':type==='error'?'#dc2626':'#111';
+    toast.style.display='block';
+    clearTimeout(toast.hideTimeout);
+    toast.hideTimeout = setTimeout(()=>{ toast.style.display='none'; },3000);
+  }
+</script>
+
+</body>
+</html>
