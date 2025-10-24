@@ -313,14 +313,134 @@ const io = socketIo(server, {
   }
 });
 
-// Socket.IO connection handling
+// ==================== SOCKET.IO FOR REAL-TIME ORDER TRACKING ====================
+
+// Store active tracking sessions
+const activeTrackingSessions = new Map(); // orderId -> Set of socket IDs
+
 io.on('connection', (socket) => {
-  console.log('🔌 Admin connected:', socket.id);
+  console.log('📌 Client connected:', socket.id);
   
+  // Customer starts tracking an order
+  socket.on('track-order', (data) => {
+    const { orderId } = data;
+    console.log(`🔍 Client ${socket.id} started tracking order: ${orderId}`);
+    
+    // Join the room for this order
+    socket.join(`order-${orderId}`);
+    
+    // Track active sessions
+    if (!activeTrackingSessions.has(orderId)) {
+      activeTrackingSessions.set(orderId, new Set());
+    }
+    activeTrackingSessions.get(orderId).add(socket.id);
+    
+    // Send acknowledgment
+    socket.emit('tracking-started', { orderId, message: 'Real-time tracking enabled' });
+  });
+  
+  // Rider updates their location
+  socket.on('update-location', (data) => {
+    const { orderId, latitude, longitude } = data;
+    
+    // Broadcast location to all clients tracking this order
+    io.to(`order-${orderId}`).emit('location-update', {
+      orderId,
+      latitude,
+      longitude,
+      timestamp: new Date().toISOString()
+    });
+    
+    console.log(`📍 Location updated for order ${orderId}: [${latitude}, ${longitude}]`);
+  });
+  
+  // Customer stops tracking
+  socket.on('stop-tracking', (data) => {
+    const { orderId } = data;
+    console.log(`🛑 Client ${socket.id} stopped tracking order: ${orderId}`);
+    
+    // Leave the room
+    socket.leave(`order-${orderId}`);
+    
+    // Remove from active sessions
+    if (activeTrackingSessions.has(orderId)) {
+      activeTrackingSessions.get(orderId).delete(socket.id);
+      if (activeTrackingSessions.get(orderId).size === 0) {
+        activeTrackingSessions.delete(orderId);
+      }
+    }
+  });
+  
+  // Order delivered notification
+  socket.on('order-delivered', (data) => {
+    const { orderId } = data;
+    console.log(`✅ Order ${orderId} marked as delivered`);
+    
+    // Notify all clients tracking this order
+    io.to(`order-${orderId}`).emit('order-status-changed', {
+      orderId,
+      status: 'delivered',
+      message: 'Your order has been delivered!',
+      timestamp: new Date().toISOString()
+    });
+    
+    // Update database
+    db.query('UPDATE orders SET delivery_status = ? WHERE order_id = ?', ['delivered', orderId])
+      .catch(err => console.error('Error updating order status:', err));
+  });
+  
+  // Admin updates delivery status
+  socket.on('admin-update-status', async (data) => {
+    const { orderId, deliveryStatus } = data;
+    console.log(`👨‍💼 Admin updating order ${orderId} status to: ${deliveryStatus}`);
+    
+    try {
+      await db.query('UPDATE orders SET delivery_status = ? WHERE order_id = ?', [deliveryStatus, orderId]);
+      
+      // Broadcast to all tracking clients
+      io.to(`order-${orderId}`).emit('order-status-changed', {
+        orderId,
+        status: deliveryStatus,
+        timestamp: new Date().toISOString()
+      });
+      
+      socket.emit('status-update-success', { orderId, deliveryStatus });
+    } catch (error) {
+      console.error('Error updating status:', error);
+      socket.emit('status-update-error', { orderId, error: error.message });
+    }
+  });
+  
+  // Handle disconnection
   socket.on('disconnect', () => {
-    console.log('❌ Admin disconnected:', socket.id);
+    console.log('❌ Client disconnected:', socket.id);
+    
+    // Clean up active tracking sessions
+    for (const [orderId, socketIds] of activeTrackingSessions.entries()) {
+      socketIds.delete(socket.id);
+      if (socketIds.size === 0) {
+        activeTrackingSessions.delete(orderId);
+      }
+    }
+  });
+  
+  // Admin dashboard connection
+  socket.on('admin-connect', () => {
+    console.log('👨‍💼 Admin connected:', socket.id);
+    socket.join('admin-room');
   });
 });
+
+// Helper function to broadcast new orders to admin dashboard
+function broadcastNewOrder(orderData) {
+  io.to('admin-room').emit('new-order', orderData);
+}
+
+// Helper function to broadcast order updates
+function broadcastOrderUpdate(orderId, updateData) {
+  io.to('admin-room').emit('order-updated', { orderId, ...updateData });
+  io.to(`order-${orderId}`).emit('order-status-changed', { orderId, ...updateData });
+}
 
 // JWT Middleware
 const verifyToken = (req, res, next) => {
@@ -381,7 +501,7 @@ app.post('/auth/signup', async (req, res) => {
 });
 
 /**
- * 📝 POST /auth/login
+ * 🔐 POST /auth/login
  */
 
 app.post('/auth/login', async (req, res) => {
@@ -795,51 +915,6 @@ app.post('/auth/google', async (req, res) => {
   }
 });
 
-app.post('/auth/verify-login-code', async (req, res) => {
-  try {
-    let { email, code } = req.body;
-
-    console.log('🔍 Verifying login code for:', email);
-    console.log('📥 Received code:', code, 'Length:', code?.length);
-
-    if (!email || !code) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Email and code are required' 
-      });
-    }
-
-    const [users] = await db.query(
-      'SELECT id, email, name, password_hash, role FROM users WHERE email = ? AND auth_type = ?',
-      [email, 'email']
-    );
-
-    if (users.length === 0 || password !== users[0].password_hash) {
-      return res.status(401).json({ success: false, message: 'Invalid email or password' });
-    }
-
-    const user = users[0];
-    await db.query('UPDATE users SET last_login = NOW() WHERE id = ?', [user.id]);
-
-    const appToken = jwt.sign(
-      { userId: user.id, email: user.email, name: user.name, role: user.role },
-      JWT_SECRET,
-      { expiresIn: '24h' }
-    );
-
-    res.json({
-      success: true,
-      message: 'Login successful',
-      token: appToken,
-      user: { id: user.id, email: user.email, name: user.name, role: user.role, authType: 'email' }
-    });
-
-  } catch (error) {
-    console.error('Login error:', error.message);
-    res.status(500).json({ success: false, message: 'Login failed', error: error.message });
-  }
-});
-
 app.get('/auth/me', verifyToken, async (req, res) => {
   try {
     const [users] = await db.query(
@@ -858,6 +933,14 @@ app.get('/auth/me', verifyToken, async (req, res) => {
   }
 });
 
+// Get Google Maps API Key 
+app.get('/api/config/google-maps', (req, res) => {
+  res.json({ 
+    success: true, 
+    apiKey: process.env.GOOGLE_MAPS_API_KEY || '' 
+  });
+});
+
 // ==================== ORDER ROUTES ====================
 
 app.get('/api/health', (req, res) => {
@@ -866,7 +949,9 @@ app.get('/api/health', (req, res) => {
     timestamp: new Date().toISOString(),
     database: 'connected',
     paymongo: PAYMONGO_SECRET_KEY ? 'configured' : 'not configured',
-    email: process.env.MAIL_USER ? 'configured' : 'not configured'
+    email: process.env.MAIL_USER ? 'configured' : 'not configured',
+    socketio: 'enabled',
+    activeTrackingSessions: activeTrackingSessions.size
   });
 });
 
@@ -879,11 +964,14 @@ app.post('/api/create-order', verifyToken, async (req, res) => {
       `INSERT INTO orders (
         order_id, user_id, customer_name, customer_email, customer_phone,
         items, subtotal, delivery_fee, tax, total,
-        delivery_option, payment_method, payment_status
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        delivery_option, payment_method, payment_status, delivery_status
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
-        orderId, req.user.userId, orderData.customer_name,
-        orderData.customer_email, orderData.customer_phone,
+        orderId, 
+        req.user.userId, 
+        orderData.customer_name,
+        orderData.customer_email, 
+        orderData.customer_phone,
         JSON.stringify(orderData.items || []),
         parseFloat(orderData.subtotal || 0),
         parseFloat(orderData.delivery_fee || 0),
@@ -891,20 +979,22 @@ app.post('/api/create-order', verifyToken, async (req, res) => {
         parseFloat(orderData.total || 0),
         orderData.delivery_option || 'delivery',
         orderData.payment_method || 'card',
-        orderData.payment_status || 'pending'
+        orderData.payment_status || 'pending',
+        'placed'
       ]
     );
 
-    // 🔥 EMIT NEW ORDER TO ALL CONNECTED ADMINS
-    io.emit('new-order', {
+    // 🔥 BROADCAST NEW ORDER TO ADMIN DASHBOARD
+    broadcastNewOrder({
       order_id: orderId,
       customer_name: orderData.customer_name,
       total: orderData.total,
       payment_status: orderData.payment_status,
+      delivery_status: 'placed',
       created_at: new Date().toISOString()
     });
 
-    console.log('✅ Order saved and broadcasted:', orderId);
+    console.log('✅ Order created and broadcasted:', orderId);
     res.json({ success: true, order_id: orderId });
 
   } catch (error) {
@@ -913,19 +1003,25 @@ app.post('/api/create-order', verifyToken, async (req, res) => {
   }
 });
 
-// ==================== ORDER ROUTES ====================
-
-app.get('/api/get-orders', verifyToken, async (req, res) => {
+// Get orders for current user
+app.get('/api/my-orders', verifyToken, async (req, res) => {
   try {
+    console.log('📦 Fetching orders for user:', req.user.userId);
+    
     const [rows] = await db.query(
-      'SELECT * FROM orders WHERE user_id = ? ORDER BY created_at DESC LIMIT 100',
+      'SELECT * FROM orders WHERE user_id = ? ORDER BY created_at DESC',
       [req.user.userId]
     );
     
+    console.log(`✅ Found ${rows.length} orders for user ${req.user.userId}`);
     res.json({ success: true, orders: rows });
   } catch (error) {
-    console.error('Get orders error:', error);
-    res.status(500).json({ success: false, message: 'Failed to retrieve orders', error: error.message });
+    console.error('❌ Get my orders error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to retrieve orders', 
+      error: error.message 
+    });
   }
 });
 
@@ -961,6 +1057,9 @@ app.post('/api/update-order-status', verifyToken, async (req, res) => {
       [status, order_id, req.user.userId]
     );
 
+    // Broadcast update
+    broadcastOrderUpdate(order_id, { payment_status: status });
+
     console.log(`✅ Order ${order_id} status updated to ${status}`);
     res.json({ success: true, message: 'Order status updated' });
   } catch (error) {
@@ -971,29 +1070,120 @@ app.post('/api/update-order-status', verifyToken, async (req, res) => {
 
 // Admin route to get ALL orders
 app.get('/api/admin/get-all-orders', verifyToken, verifyAdmin, async (req, res) => {
-  const [rows] = await db.query(
-    'SELECT * FROM orders ORDER BY created_at DESC LIMIT 500'
-  );
-  res.json({ success: true, orders: rows });
+  try {
+    const [rows] = await db.query(
+      `SELECT 
+        order_id, user_id, customer_name, customer_email, customer_phone,
+        items, subtotal, delivery_fee, tax, total,
+        payment_method, payment_status, delivery_status, delivery_option, created_at
+      FROM orders ORDER BY created_at DESC LIMIT 500`
+    );
+    res.json({ success: true, orders: rows });
+  } catch (error) {
+    console.error('Get orders error:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch orders' });
+  }
 });
 
 // Admin route to update order status
 app.patch('/api/admin/update-order-status', verifyToken, verifyAdmin, async (req, res) => {
-  const { order_id, status } = req.body;
+  try {
+    const { order_id, status } = req.body;
 
-  if (!order_id || !status) {
-    return res.status(400).json({ success: false, message: 'Missing order_id or status' });
+    if (!order_id || !status) {
+      return res.status(400).json({ success: false, message: 'Missing order_id or status' });
+    }
+
+    await db.query(
+      'UPDATE orders SET payment_status = ? WHERE order_id = ?',
+      [status, order_id]
+    );
+
+    // Broadcast update
+    broadcastOrderUpdate(order_id, { payment_status: status });
+
+    res.json({ success: true, message: 'Order status updated' });
+  } catch (error) {
+    console.error('Update order status error:', error);
+    res.status(500).json({ success: false, message: 'Failed to update order status' });
   }
-
-  await db.query(
-    'UPDATE orders SET payment_status = ? WHERE order_id = ?',
-    [status, order_id]
-  );
-
-  io.emit('order-status-updated', { order_id, status, updated_at: new Date().toISOString() });
-  res.json({ success: true, message: 'Order status updated' });
 });
 
+// Update Delivery Status (Admin or Customer)
+app.patch('/api/update-delivery-status', verifyToken, async (req, res) => {
+  try {
+    const { order_id, delivery_status } = req.body;
+
+    if (!order_id || !delivery_status) {
+      return res.status(400).json({ success: false, message: 'Missing order_id or delivery_status' });
+    }
+
+    const validStatuses = ['placed', 'preparing', 'delivering', 'delivered', 'cancelled'];
+    if (!validStatuses.includes(delivery_status)) {
+      return res.status(400).json({ success: false, message: 'Invalid delivery status' });
+    }
+
+    const [result] = await db.query(
+      'UPDATE orders SET delivery_status = ? WHERE order_id = ?',
+      [delivery_status, order_id]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: 'Order not found' });
+    }
+
+    // Broadcast delivery status update via Socket.IO
+    broadcastOrderUpdate(order_id, { 
+      delivery_status: delivery_status,
+      timestamp: new Date().toISOString()
+    });
+
+    console.log(`✅ Delivery status updated: ${order_id} -> ${delivery_status}`);
+    res.json({ success: true, message: 'Delivery status updated' });
+
+  } catch (error) {
+    console.error('Update delivery status error:', error);
+    res.status(500).json({ success: false, message: 'Failed to update delivery status' });
+  }
+});
+
+// Admin-specific delivery status update
+app.patch('/api/admin/update-delivery-status', verifyToken, verifyAdmin, async (req, res) => {
+  try {
+    const { order_id, delivery_status } = req.body;
+
+    if (!order_id || !delivery_status) {
+      return res.status(400).json({ success: false, message: 'Missing order_id or delivery_status' });
+    }
+
+    const validStatuses = ['placed', 'preparing', 'delivering', 'delivered', 'cancelled'];
+    if (!validStatuses.includes(delivery_status)) {
+      return res.status(400).json({ success: false, message: 'Invalid delivery status' });
+    }
+
+    const [result] = await db.query(
+      'UPDATE orders SET delivery_status = ? WHERE order_id = ?',
+      [delivery_status, order_id]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: 'Order not found' });
+    }
+
+    // Broadcast update
+    broadcastOrderUpdate(order_id, { 
+      delivery_status: delivery_status,
+      timestamp: new Date().toISOString()
+    });
+
+    console.log(`✅ Admin updated delivery status: ${order_id} -> ${delivery_status}`);
+    res.json({ success: true, message: 'Delivery status updated' });
+
+  } catch (error) {
+    console.error('Admin update delivery status error:', error);
+    res.status(500).json({ success: false, message: 'Failed to update delivery status' });
+  }
+});
 
 // ==================== PAYMONGO PAYMENT ROUTES ====================
 
@@ -1218,8 +1408,6 @@ setInterval(() => {
 // ==================== START SERVER ====================
 
 server.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`🔌 Socket.IO enabled`);});
   console.log('\n🚀 ========================================');
   console.log(`🍽️  Kusina ni Katya Backend Server`);
   console.log(`📡 Running on port ${PORT}`);
@@ -1228,28 +1416,40 @@ server.listen(PORT, () => {
   console.log(`💳 PayMongo: ${PAYMONGO_SECRET_KEY ? '✅ Configured' : '❌ Not configured'}`);
   console.log(`📧 Email Service: ${process.env.MAIL_USER ? '✅ Configured' : '❌ Not configured'}`);
   console.log(`🗄️  Database: ${process.env.DB_NAME || 'kusina_db'}`);
+  console.log(`📌 Socket.IO: ✅ Enabled for real-time tracking`);
   console.log('========================================\n');
   console.log('📋 Available endpoints:');
   console.log('   AUTH ROUTES:');
   console.log('   POST /auth/signup                - Send verification code');
   console.log('   POST /auth/verify-code           - Verify code & create account');
   console.log('   POST /auth/resend-code           - Resend verification code');
-  console.log('   POST /auth/send-login-code       - Send login verification code (NEW) 🔐');
-  console.log('   POST /auth/verify-login-code     - Verify login code & sign in (NEW) 🔐');
+  console.log('   POST /auth/send-login-code       - Send login verification code 🔐');
+  console.log('   POST /auth/verify-login-code     - Verify login code & sign in 🔐');
   console.log('   POST /auth/google                - Google OAuth');
-  console.log('   POST /auth/login                 - Email/password login (old method)');
+  console.log('   POST /auth/login                 - Email/password login');
   console.log('   GET  /auth/me                    - Get current user (protected)');
   console.log('   ORDER ROUTES (Protected):');
-  console.log('   GET  /api/health');
-  console.log('   GET  /api/get-orders');
-  console.log('   POST /api/create-order');
-  console.log('   GET  /api/get-order/:id');
-  console.log('   POST /api/update-order-status');
+  console.log('   GET  /api/health                 - Server health check');
+  console.log('   POST /api/create-order           - Create new order');
+  console.log('   GET  /api/my-orders              - Get user orders');
+  console.log('   GET  /api/get-order/:id          - Get specific order');
+  console.log('   POST /api/update-order-status    - Update order status');
+  console.log('   PATCH /api/update-delivery-status - Update delivery status');
+  console.log('   ADMIN ROUTES (Protected + Admin):');
+  console.log('   GET  /api/admin/get-all-orders   - Get all orders');
+  console.log('   PATCH /api/admin/update-order-status - Admin update order');
+  console.log('   PATCH /api/admin/update-delivery-status - Admin update delivery');
   console.log('   PAYMONGO ROUTES (Protected):');
   console.log('   POST /api/create-payment-intent');
   console.log('   POST /api/paymongo/create-gcash-payment');
   console.log('   POST /api/paymongo/webhook');
+  console.log('   SOCKET.IO EVENTS:');
+  console.log('   📍 track-order                  - Start tracking order');
+  console.log('   📍 update-location              - Rider location update');
+  console.log('   📍 stop-tracking                - Stop tracking order');
+  console.log('   📍 order-delivered              - Mark order delivered');
+  console.log('   📍 admin-update-status          - Admin status update');
   console.log('========================================\n');
-
+});
 
 module.exports = app;
