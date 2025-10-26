@@ -8,8 +8,11 @@
 <!-- Tailwind CSS CDN -->
 <script src="https://cdn.tailwindcss.com"></script>
 
+<!-- Socket.IO for Real-time Updates -->
+<script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+
 <!-- Google Font -->
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
 <script>
   tailwind.config = {
@@ -25,7 +28,7 @@
           'cream': '#f5e9da',
         },
         fontFamily: {
-          poppins: ['Poppins', 'sans-serif'],
+          Inter: ['Inter', 'sans-serif'],
         },
         animation: {
           'fade-in': 'fadeIn 0.6s ease-out',
@@ -63,11 +66,11 @@
 }
 
 body {
-  font-family: 'Poppins', sans-serif;
+  font-family: 'Inter', sans-serif;
 }
 
 .font-quiapo {
-  font-family: 'Quiapo', 'Poppins', sans-serif;
+  font-family: 'Quiapo', 'Inter', sans-serif;
 }
 
 .hero-gradient {
@@ -246,9 +249,6 @@ body {
   <a href="orders.html" class="text-dark-light hover:text-accent font-medium transition-colors duration-300 text-[15px]">
     Orders
   </a>
-  <a href="locations.html" class="text-dark-light hover:text-accent font-medium transition-colors duration-300 text-[15px]">
-    Locations
-  </a>
   <a href="#contact" class="text-dark-light hover:text-accent font-medium transition-colors duration-300 text-[15px]">
     Contact
   </a>
@@ -298,7 +298,6 @@ body {
         <a href="index.html" class="text-dark-light hover:text-accent font-medium py-2 transition-colors duration-300"> Home</a>
         <a href="menu.html" class="text-dark-light hover:text-accent font-medium py-2 transition-colors duration-300"> Menu</a>
         <a href="orders.html" class="text-dark-light hover:text-accent font-medium py-2 transition-colors duration-300"> Orders</a>
-        <a href="locations.html" class="text-dark-light hover:text-accent font-medium py-2 transition-colors duration-300"> Locations</a>
         <button onclick="goToCart()" class="text-left text-dark-light hover:text-accent font-medium py-2 transition-colors duration-300">
           🛒 View Cart (<span id="mobile-cart-count">0</span>)
         </button>
@@ -373,64 +372,19 @@ body {
   <div class="max-w-7xl mx-auto">
     <!-- Section Header -->
     <div class="text-center mb-16 animate-fade-in">
-      <h2 class="text-4xl md:text-5xl font-bold text-dark mb-4">
+      <h2 class="font-quiapo text-5xl md:text-6xl font-bold text-dark mb-4 animate-slide-up">
         <span class="text-accent">Featured Meals</span>
       </h2>
       <div class="w-24 h-1 bg-gradient-to-r from-accent-dark via-accent to-accent-light mx-auto rounded-full"></div>
       <p class="mt-4 text-gray-600 text-lg max-w-2xl mx-auto">Discover our most loved dishes, prepared with authentic Filipino recipes</p>
     </div>
 
-    <!-- Meals Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-      <!-- Meal Card 1 -->
-      <div class="meal-card group bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl cursor-pointer">
-        <div class="relative overflow-hidden h-64">
-          <img src="assets/images/adobo.jpg" alt="Pork Adobo" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-          <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-          <div class="absolute top-4 right-4 bg-accent text-white px-3 py-1 rounded-full text-sm font-semibold">Popular</div>
-        </div>
-        <div class="p-6">
-          <h3 class="text-2xl font-bold text-dark mb-2 group-hover:text-accent transition-colors duration-300">Pork Adobo</h3>
-          <p class="text-gray-600 mb-4">Classic Filipino soy-vinegar braised pork with a perfect balance of savory and tangy flavors</p>
-          <div class="flex items-center justify-between">
-            <span class="text-accent font-bold text-xl">₱150</span>
-            <button onclick="addToCart(this, 'Pork Adobo', 150, 'assets/images/adobo.jpg')" class="px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent-dark transition-colors duration-300 text-sm font-semibold">Add to Cart</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Meal Card 2 -->
-      <div class="meal-card group bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl cursor-pointer">
-        <div class="relative overflow-hidden h-64">
-          <img src="assets/images/tapsilog.jpg" alt="Tapsilog" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-          <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-          <div class="absolute top-4 right-4 bg-green-500 text-white px-3 py-1 rounded-full text-sm font-semibold">Breakfast</div>
-        </div>
-        <div class="p-6">
-          <h3 class="text-2xl font-bold text-dark mb-2 group-hover:text-accent transition-colors duration-300">Tapsilog</h3>
-          <p class="text-gray-600 mb-4">Beef tapa, garlic rice, and sunny-side egg - the ultimate Filipino breakfast combo</p>
-          <div class="flex items-center justify-between">
-            <span class="text-accent font-bold text-xl">₱120</span>
-            <button onclick="addToCart(this, 'Tapsilog', 150, 'assets/images/tapsilog.jpg')" class="px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent-dark transition-colors duration-300 text-sm font-semibold">Add to Cart</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Meal Card 3 -->
-      <div class="meal-card group bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl cursor-pointer">
-        <div class="relative overflow-hidden h-64">
-          <img src="assets/images/bicolexpress.jpg" alt="Bicol Express" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-          <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-          <div class="absolute top-4 right-4 bg-red-500 text-white px-3 py-1 rounded-full text-sm font-semibold">Spicy</div>
-        </div>
-        <div class="p-6">
-          <h3 class="text-2xl font-bold text-dark mb-2 group-hover:text-accent transition-colors duration-300">Bicol Express</h3>
-          <p class="text-gray-600 mb-4">Savory-sour tamarind soup with tender pork and fresh vegetables</p>
-          <div class="flex items-center justify-between">
-            <span class="text-accent font-bold text-xl">₱180</span>
-           <button onclick="addToCart(this, 'Bicol Express', 150, 'assets/images/bicolexpress.jpg')" class="px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent-dark transition-colors duration-300 text-sm font-semibold">Add to Cart</button>
-          </div>
-        </div>
+    <!-- Meals Grid - Dynamic -->
+    <div id="featured-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      <!-- Loading State -->
+      <div class="col-span-full text-center py-12">
+        <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-accent"></div>
+        <p class="mt-4 text-gray-600">Loading featured meals...</p>
       </div>
     </div>
   </div>
@@ -441,67 +395,19 @@ body {
   <div class="max-w-7xl mx-auto">
     <!-- Section Header -->
     <div class="text-center mb-16 animate-fade-in">
-      <h2 class="text-4xl md:text-5xl font-bold text-dark mb-4">
+       <h2 class="font-quiapo text-5xl md:text-6xl font-bold text-dark mb-4 animate-slide-up">
        <span class="text-accent">Today's Specials</span>
       </h2>
       <div class="w-24 h-1 bg-gradient-to-r from-accent-dark via-accent to-accent-light mx-auto rounded-full"></div>
       <p class="mt-4 text-gray-600 text-lg max-w-2xl mx-auto">Limited time offers on your favorite Filipino dishes</p>
     </div>
 
-    <!-- Specials Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-      <!-- Special Card 1 -->
-      <div class="meal-card group bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl cursor-pointer">
-        <div class="relative overflow-hidden h-64">
-          <img src="assets/images/menudo.jpg" alt="Menudo" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-          <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-          <div class="absolute top-4 left-4 bg-red-600 text-white px-3 py-1 rounded-full text-sm font-semibold animate-pulse">20% OFF</div>
-        </div>
-        <div class="p-6">
-          <h3 class="text-2xl font-bold text-dark mb-2 group-hover:text-accent transition-colors duration-300">Menudo</h3>
-          <p class="text-gray-600 mb-4">Rich tomato stew with tender pork and liver, perfectly seasoned</p>
-          <div class="flex items-center justify-between">
-            <div>
-              <span class="text-gray-400 line-through text-sm">₱160</span>
-              <span class="text-accent font-bold text-xl ml-2">₱128</span>
-            </div>
-            <button onclick="addToCart(this, 'Menudo', 150, 'assets/images/menudo.jpg')" class="px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent-dark transition-colors duration-300 text-sm font-semibold">Add to Cart</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Special Card 2 -->
-      <div class="meal-card group bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl cursor-pointer">
-        <div class="relative overflow-hidden h-64">
-          <img src="assets/images/bangussardines.jpg" alt="Sardinas na Bangus" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-          <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-          <div class="absolute top-4 left-4 bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-semibold">New</div>
-        </div>
-        <div class="p-6">
-          <h3 class="text-2xl font-bold text-dark mb-2 group-hover:text-accent transition-colors duration-300">Sardinas na Bangus</h3>
-          <p class="text-gray-600 mb-4">Slow-cooked bangus sardines in tomato sauce and oil, bursting with flavor</p>
-          <div class="flex items-center justify-between">
-            <span class="text-accent font-bold text-xl">₱140</span>
-            <button onclick="addToCart(this, 'Sardinas na Bangus', 150, 'assets/images/bangussardines.jpg')" class="px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent-dark transition-colors duration-300 text-sm font-semibold">Add to Cart</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Special Card 3 -->
-      <div class="meal-card group bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl cursor-pointer">
-        <div class="relative overflow-hidden h-64">
-          <img src="assets/images/pinakbet.jpg" alt="Pinakbet" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-          <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-          <div class="absolute top-4 left-4 bg-green-600 text-white px-3 py-1 rounded-full text-sm font-semibold">Healthy</div>
-        </div>
-        <div class="p-6">
-          <h3 class="text-2xl font-bold text-dark mb-2 group-hover:text-accent transition-colors duration-300">Pinakbet</h3>
-          <p class="text-gray-600 mb-4">Healthy vegetable stew with bagoong - nutritious and delicious</p>
-          <div class="flex items-center justify-between">
-            <span class="text-accent font-bold text-xl">₱110</span>
-            <button onclick="addToCart(this, 'Pinakbet', 150, 'assets/images/pinakbet.jpg')" class="px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent-dark transition-colors duration-300 text-sm font-semibold">Add to Cart</button>
-          </div>
-        </div>
+    <!-- Specials Grid - Dynamic -->
+    <div id="specials-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      <!-- Loading State -->
+      <div class="col-span-full text-center py-12">
+        <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-accent"></div>
+        <p class="mt-4 text-gray-600">Loading today's specials...</p>
       </div>
     </div>
   </div>
@@ -664,9 +570,197 @@ body {
 </div>
 
 <script>
-// Check login status and update UI
+// ==================== DYNAMIC MENU LOADING ====================
+
+/**
+ * Fetch and render menu items dynamically from API
+ */
+async function fetchAndRenderMenu() {
+  try {
+    console.log('📡 Fetching menu from API...');
+    const res = await fetch('/api/menu');
+    
+    if (!res.ok) {
+      throw new Error('Failed to fetch menu');
+    }
+    
+    const data = await res.json();
+    const items = data.items || [];
+    
+    console.log('✅ Menu loaded:', items.length, 'items');
+    
+
+    const featuredItems = items.filter(item => item.is_featured);
+    
+    
+    const specialItems = items.filter(item => 
+      item.category === 'special' || item.category === 'Special'
+    );
+    
+    console.log('⭐ Featured items:', featuredItems.length);
+    console.log('🎯 Special items:', specialItems.length);
+    
+    renderMenuSection('featured-grid', featuredItems.slice(0, 6));
+    
+    if (specialItems.length === 0) {
+      console.log('⚠️ No special category items, showing badge items instead');
+      const badgeItems = items.filter(item => 
+        !item.is_featured && item.badge
+      );
+      renderMenuSection('specials-grid', badgeItems.slice(0, 6));
+    } else {
+      renderMenuSection('specials-grid', specialItems.slice(0, 6));
+    }
+    
+  } catch (err) {
+    console.error('❌ Menu fetch error:', err);
+    showMenuError();
+  }
+}
+
+/**
+ * Render menu items into a grid container
+ */
+function renderMenuSection(gridId, items) {
+  const grid = document.getElementById(gridId);
+  if (!grid) return;
+  
+  if (items.length === 0) {
+    grid.innerHTML = `
+      <div class="col-span-full text-center py-12">
+        <p class="text-gray-500 text-lg">No items available at the moment</p>
+        <p class="text-gray-400 text-sm mt-2">Check back soon for delicious dishes!</p>
+      </div>
+    `;
+    return;
+  }
+  
+  grid.innerHTML = '';
+  
+  items.forEach(item => {
+    const card = document.createElement('div');
+    card.className = 'meal-card group bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl cursor-pointer';
+    
+    // Determine badge display
+    let badgeHtml = '';
+    if (item.badge) {
+      const badgeColors = {
+        'Popular': 'bg-accent',
+        'New': 'bg-blue-600',
+        'Spicy': 'bg-red-500',
+        'Healthy': 'bg-green-600',
+        'Breakfast': 'bg-green-500',
+        '20% OFF': 'bg-red-600 animate-pulse'
+      };
+      const badgeColor = badgeColors[item.badge] || 'bg-accent';
+      badgeHtml = `<div class="absolute top-4 right-4 ${badgeColor} text-white px-3 py-1 rounded-full text-sm font-semibold">${escapeHtml(item.badge)}</div>`;
+    }
+    
+    card.innerHTML = `
+      <div class="relative overflow-hidden h-64">
+        <img 
+          src="${item.image_url || 'assets/images/placeholder.jpg'}" 
+          alt="${escapeHtml(item.name)}" 
+          class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+          onerror="this.src='assets/images/placeholder.jpg'"
+        />
+        <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+        ${badgeHtml}
+      </div>
+      <div class="p-6">
+        <h3 class="text-2xl font-bold text-dark mb-2 group-hover:text-accent transition-colors duration-300">
+          ${escapeHtml(item.name)}
+        </h3>
+        <p class="text-gray-600 mb-4 line-clamp-2">
+          ${escapeHtml(item.description || 'Delicious Filipino dish')}
+        </p>
+        <div class="flex items-center justify-between">
+          <span class="text-accent font-bold text-xl">₱${parseFloat(item.price || 0).toFixed(2)}</span>
+          <button 
+            onclick="addToCart(this, '${escapeJs(item.name)}', ${item.price}, '${escapeJs(item.image_url || '')}')" 
+            class="px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent-dark transition-colors duration-300 text-sm font-semibold">
+            Add to Cart
+          </button>
+        </div>
+      </div>
+    `;
+    
+    grid.appendChild(card);
+  });
+}
+
+/**
+ * Show error message when menu fails to load
+ */
+function showMenuError() {
+  const sections = ['featured-grid', 'specials-grid'];
+  
+  sections.forEach(gridId => {
+    const grid = document.getElementById(gridId);
+    if (!grid) return;
+    
+    grid.innerHTML = `
+      <div class="col-span-full text-center py-12">
+        <svg class="w-20 h-20 mx-auto mb-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+        <p class="text-xl font-semibold text-gray-700 mb-2">Failed to load menu</p>
+        <p class="text-gray-500 mb-4">Please refresh the page or try again later</p>
+        <button onclick="fetchAndRenderMenu()" class="px-6 py-2 bg-accent text-white rounded-full hover:bg-accent-dark transition-colors">
+          Retry
+        </button>
+      </div>
+    `;
+  });
+}
+
+/**
+ * Listen for real-time menu updates via Socket.IO
+ */
+function initMenuSocketListener() {
+  if (typeof io === 'undefined') {
+    console.log('⚠️ Socket.IO not available for menu updates');
+    return;
+  }
+  
+  try {
+    const socket = io();
+    
+    socket.on('menu-updated', (data) => {
+      console.log('🔄 Menu updated:', data.action);
+      // Refresh menu when admin makes changes
+      fetchAndRenderMenu();
+    });
+    
+    console.log('✅ Menu socket listener initialized');
+  } catch(e) {
+    console.log('⚠️ Socket.IO initialization failed:', e);
+  }
+}
+
+/**
+ * Escape HTML to prevent XSS
+ */
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text || '';
+  return div.innerHTML;
+}
+
+/**
+ * Escape JavaScript string (for onclick attributes)
+ */
+function escapeJs(str) {
+  return (str || '').replace(/'/g, "\\'").replace(/"/g, '\\"');
+}
+
+// ==================== AUTH & USER MANAGEMENT ====================
+
+/**
+ * Check login status and update UI
+ */
 function checkLoginStatus() {
-  const user = JSON.parse(localStorage.getItem('kusinaUser') || '{}');
+  const user = JSON.parse(localStorage.getItem('currentUser') || '{}');
   const isLoggedIn = user && user.email;
   
   // Desktop elements
@@ -716,15 +810,20 @@ function checkLoginStatus() {
   }
 }
 
-// Logout function
+/**
+ * Logout function
+ */
 function logout() {
   if (confirm('Are you sure you want to logout?')) {
-    // 🔹 Clear user and session data
-    localStorage.removeItem('kusinaUser');
-    localStorage.removeItem('kusinaCart');
+    // Clear user-specific cart
+    const cartKey = getCartKey();
+    localStorage.removeItem(cartKey);
+    
+    // Clear user and session data
+    localStorage.removeItem('currentUser');
     sessionStorage.removeItem('authToken');
-
-    // 🔹 Update UI immediately (no need to refresh first)
+    
+    // Update UI immediately
     const authButtons = document.getElementById('auth-buttons');
     const userProfile = document.getElementById('user-profile');
     const mobileAuthButtons = document.getElementById('mobile-auth-buttons');
@@ -742,21 +841,21 @@ function logout() {
       mobileUserProfile.classList.remove('flex');
     }
 
-    // 🔹 Give user feedback
+    // Give user feedback
     alert('✅ You have been logged out successfully!');
 
-    // 🔹 Redirect to homepage after short delay
+    // Redirect to homepage after short delay
     setTimeout(() => {
       window.location.href = 'index.html';
     }, 500);
   }
 }
 
+// ==================== TIME STATUS ====================
 
-// Initialize login status check
-checkLoginStatus();
-
-// Update time status
+/**
+ * Update time status indicator
+ */
 function updateTimeStatus() {
   const now = new Date();
   const hours = now.getHours();
@@ -768,38 +867,53 @@ function updateTimeStatus() {
 
   const status = document.getElementById("time-status");
   if (isOpen) {
-    status.innerHTML = '<span class="inline-block w-2 h-2 rounded-full bg-green-400 animate-pulse mr-2"></span><span class="text-sm">🕒 ' + formatted + ' — </span><strong>We\'re Open!</strong>';
+    status.innerHTML = '<span class="inline-block w-2 h-2 rounded-full bg-green-400 animate-pulse mr-2"></span><span class="text-sm">🕐 ' + formatted + ' — </span><strong>We\'re Open!</strong>';
     status.className = "glass-effect px-6 py-3 rounded-full text-white font-semibold shadow-xl border border-green-400/30";
   } else {
-    status.innerHTML = '<span class="inline-block w-2 h-2 rounded-full bg-red-400 animate-pulse mr-2"></span><span class="text-sm">🕒 ' + formatted + ' — </span><strong>Closed</strong>';
+    status.innerHTML = '<span class="inline-block w-2 h-2 rounded-full bg-red-400 animate-pulse mr-2"></span><span class="text-sm">🕐 ' + formatted + ' — </span><strong>Closed</strong>';
     status.className = "glass-effect px-6 py-3 rounded-full text-white font-semibold shadow-xl border border-red-400/30";
   }
 }
 
-setInterval(updateTimeStatus, 1000);
-updateTimeStatus();
+// ==================== CART MANAGEMENT ====================
 
-// Cart functionality with localStorage persistence
 let menuCart = [];
 
-// Load cart from localStorage on page load
+// Get user-specific cart key
+function getCartKey() {
+  const user = JSON.parse(localStorage.getItem('currentUser') || 'null');
+  return user && user.email ? `kusinaCart_${user.email}` : 'kusinaCart_guest';
+}
+
+/**
+ * Load cart from localStorage on page load
+ */
 function loadCart() {
-  const savedCart = localStorage.getItem('kusinaCart');
+  const cartKey = getCartKey();
+  const savedCart = localStorage.getItem(cartKey);
   if (savedCart) {
     menuCart = JSON.parse(savedCart);
-    updateCartCount();
+  } else {
+    menuCart = [];
+  }
+  updateCartCount();
+}
+
+/**
+ * Save cart to localStorage
+ */
+function saveCart() {
+  const cartKey = getCartKey();
+  if (menuCart.length === 0) {
+    localStorage.removeItem(cartKey);
+  } else {
+    localStorage.setItem(cartKey, JSON.stringify(menuCart));
   }
 }
 
-// Save cart to localStorage
-function saveCart() {
-  localStorage.setItem('kusinaCart', JSON.stringify(menuCart));
-}
-
-// Initialize cart on page load
-loadCart();
-
-// Update cart count display
+/**
+ * Update cart count display
+ */
 function updateCartCount() {
   const count = menuCart.reduce((sum, item) => sum + (item.quantity || 0), 0);
   const cartCountEl = document.getElementById('cart-count');
@@ -808,9 +922,10 @@ function updateCartCount() {
   if (mobileCartCountEl) mobileCartCountEl.textContent = count;
 }
 
-// Add to cart function
+/**
+ * Add item to cart
+ */
 function addToCart(button, mealName, mealPrice, mealImage) {
-
   const existingItem = menuCart.find(item => item.name === mealName);
   
   if (existingItem) {
@@ -841,7 +956,9 @@ function addToCart(button, mealName, mealPrice, mealImage) {
   console.log('Cart:', menuCart);
 }
 
-// Open cart modal
+/**
+ * Open cart modal
+ */
 function goToCart() {
   if (menuCart.length === 0) {
     alert('Your cart is empty!');
@@ -851,7 +968,9 @@ function goToCart() {
   displayCartModal();
 }
 
-// Display cart modal
+/**
+ * Display cart modal
+ */
 function displayCartModal() {
   const modal = document.getElementById('cart-modal');
   const container = document.getElementById('cart-items-container');
@@ -900,7 +1019,9 @@ function displayCartModal() {
   modal.classList.add('show');
 }
 
-// Update quantity
+/**
+ * Update quantity
+ */
 function updateQuantity(index, change) {
   if (menuCart[index]) {
     menuCart[index].quantity += change;
@@ -923,7 +1044,9 @@ function updateQuantity(index, change) {
   }
 }
 
-// Remove from cart
+/**
+ * Remove from cart
+ */
 function removeFromCart(index) {
   if (confirm('Remove this item from cart?')) {
     menuCart.splice(index, 1);
@@ -939,14 +1062,18 @@ function removeFromCart(index) {
   }
 }
 
-// Close cart modal
+/**
+ * Close cart modal
+ */
 function closeCartModal() {
   const modal = document.getElementById('cart-modal');
   modal.classList.remove('show');
   modal.classList.add('hidden');
 }
 
-// Proceed to checkout
+/**
+ * Proceed to checkout
+ */
 function proceedToCheckout() {
   if (menuCart.length === 0) {
     alert('Your cart is empty!');
@@ -957,24 +1084,19 @@ function proceedToCheckout() {
   window.location.href = `cart.html?cart=${cartParam}`;
 }
 
-// Close modal when clicking outside
-document.addEventListener('click', function(event) {
-  const modal = document.getElementById('cart-modal');
-  if (event.target === modal) {
-    closeCartModal();
-  }
-});
+// ==================== NAVIGATION ====================
 
-// Update cart count on page load
-updateCartCount();
-
-// Toggle mobile menu
+/**
+ * Toggle mobile menu
+ */
 function toggleMobileMenu() {
   const menu = document.getElementById("mobile-menu");
   menu.classList.toggle("hidden");
 }
 
-// Order now function
+/**
+ * Order now function - checks if store is open
+ */
 function orderNow() {
   const now = new Date();
   const hour = now.getHours();
@@ -995,14 +1117,20 @@ function orderNow() {
   }
 }
 
-// Close popup
+/**
+ * Close popup
+ */
 function closePopup() {
   const popup = document.getElementById("closed-popup");
   popup.classList.add("hidden");
   popup.classList.remove("flex");
 }
 
-// Smooth scroll for anchor links
+// ==================== SMOOTH SCROLLING ====================
+
+/**
+ * Smooth scroll for anchor links
+ */
 document.querySelectorAll('a[href^="#"]').forEach(function(anchor) {
   anchor.addEventListener('click', function (e) {
     e.preventDefault();
@@ -1015,7 +1143,11 @@ document.querySelectorAll('a[href^="#"]').forEach(function(anchor) {
   });
 });
 
-// Add scroll animation observer
+// ==================== ANIMATION OBSERVER ====================
+
+/**
+ * Add scroll animation observer
+ */
 const observerOptions = {
   threshold: 0.1,
   rootMargin: '0px 0px -50px 0px'
@@ -1030,8 +1162,28 @@ const observer = new IntersectionObserver(function(entries) {
   });
 }, observerOptions);
 
-// Observe all meal cards
+// ==================== INITIALIZE ON PAGE LOAD ====================
+
 document.addEventListener('DOMContentLoaded', function() {
+  console.log('🚀 Initializing Kusina ni Katya...');
+  
+  // Initialize login status
+  checkLoginStatus();
+  
+  // Initialize cart
+  loadCart();
+  
+  // Fetch and render dynamic menu
+  fetchAndRenderMenu();
+  
+  // Initialize Socket.IO for real-time updates
+  initMenuSocketListener();
+  
+  // Start time status updates
+  updateTimeStatus();
+  setInterval(updateTimeStatus, 1000);
+  
+  // Observe meal cards for scroll animations
   const cards = document.querySelectorAll('.meal-card');
   cards.forEach(function(card, index) {
     card.style.opacity = '0';
@@ -1039,6 +1191,16 @@ document.addEventListener('DOMContentLoaded', function() {
     card.style.transition = 'all 0.6s ease ' + (index * 0.1) + 's';
     observer.observe(card);
   });
+  
+  // Close modal when clicking outside
+  document.addEventListener('click', function(event) {
+    const modal = document.getElementById('cart-modal');
+    if (event.target === modal) {
+      closeCartModal();
+    }
+  });
+  
+  console.log('✅ Initialization complete');
 });
 </script>
 

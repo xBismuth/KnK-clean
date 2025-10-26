@@ -20,17 +20,18 @@
           dark: '#1a1a1a',
           'dark-light': '#2d2d2d',
           'light-bg': '#fef9f3',
-          'cream': '#f5e9da',
+          cream: '#f5e9da',
         },
         fontFamily: {
           poppins: ['Poppins', 'sans-serif'],
         },
         animation: {
-          'fade-in': 'fadeIn 0.6s ease-out',
-          'slide-up': 'slideUp 0.5s ease-out',
-          'scale-in': 'scaleIn 0.4s ease-out',
-          'slide-in-left': 'slideInLeft 0.5s ease-out',
-          'slide-in-right': 'slideInRight 0.5s ease-out',
+          'fade-in': 'fadeIn 0.6s ease-out forwards',
+          'slide-up': 'slideUp 0.5s ease-out forwards',
+          'scale-in': 'scaleIn 0.4s ease-out forwards',
+          'slide-in-left': 'slideInLeft 0.5s ease-out forwards',
+          'slide-in-right': 'slideInRight 0.5s ease-out forwards',
+          spin: 'spin 1s linear infinite',
         },
         keyframes: {
           fadeIn: {
@@ -56,8 +57,9 @@
         },
       },
     },
-  }
+  };
 </script>
+
 
 <style>
 body {
@@ -100,6 +102,45 @@ body {
   display: flex;
   justify-content: center;
 }
+
+.spinner {
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #cda45e;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+  
+}
+
+@keyframes slideInLeft {
+  0% {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideInRight {
+  0% {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+
 </style>
 </head>
 
@@ -120,8 +161,8 @@ body {
     <!-- Left Side - Branding & Image -->
     <div class="hidden lg:flex flex-col justify-center items-center bg-gradient-to-br from-accent-dark to-accent rounded-3xl p-12 shadow-2xl animate-slide-in-left">
       <div class="text-center text-white">
-        <div class="w-24 h-24 bg-white rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
-          <span class="text-accent text-5xl font-bold">K</span>
+        <div class="w-24 h-24 bg-white rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg overflow-hidden">
+          <img src="assets/images/logo1.png" alt="Kusina ni Katya Logo" class="w-20 h-20 object-contain" onerror="this.style.display='none';">
         </div>
         <h1 class="text-4xl font-bold mb-4">Kusina ni Katya</h1>
         <p class="text-xl mb-6 text-white/90">Authentic Filipino Cuisine</p>
@@ -141,8 +182,8 @@ body {
     <div class="bg-white rounded-3xl shadow-2xl p-8 sm:p-12 animate-slide-in-right">
       <!-- Logo for Mobile -->
       <div class="lg:hidden text-center mb-8">
-        <div class="w-20 h-20 bg-gradient-to-br from-accent to-accent-dark rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
-          <span class="text-white text-3xl font-bold">K</span>
+        <div class="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg overflow-hidden border-2 border-accent">
+          <img src="assets/images/logo1.png" alt="Kusina ni Katya Logo" class="w-16 h-16 object-contain" onerror="this.style.display='none';">
         </div>
         <h2 class="text-2xl font-bold text-dark">Kusina ni Katya</h2>
         <p class="text-gray-600 text-sm">Authentic Filipino Cuisine</p>
@@ -153,20 +194,34 @@ body {
         <h2 class="text-3xl font-bold text-dark mb-2" id="form-title">Welcome Back!</h2>
         <p class="text-gray-600 mb-8" id="form-subtitle">Sign in to continue your culinary journey</p>
 
+        <!-- Error Alert -->
+        <div id="error-alert" class="hidden mb-6 p-4 bg-red-50 border-l-4 border-red-500 rounded-lg">
+          <div class="flex items-center">
+            <svg class="w-5 h-5 text-red-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <p id="error-message" class="text-sm text-red-700"></p>
+          </div>
+        </div>
+
         <!-- Credentials Form -->
         <form id="credentials-form" class="transition-all duration-300">
 
           <!-- Email -->
           <div class="mb-6">
             <label class="block text-dark font-semibold mb-2" for="signin-email">Email Address</label>
-            <input type="email" name="email" id="signin-email" required class="input-field w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-accent focus:outline-none" placeholder="Email Address">
+            <input type="email" name="email" id="signin-email" required 
+              class="input-field w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-accent focus:outline-none" 
+              placeholder="Email">
           </div>
 
           <!-- Password -->
           <div class="mb-6">
             <label class="block text-dark font-semibold mb-2" for="signin-password">Password</label>
             <div class="relative">
-              <input type="password" name="password" id="signin-password" required class="input-field w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-accent focus:outline-none" placeholder="Password">
+              <input type="password" name="password" id="signin-password" required 
+                class="input-field w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-accent focus:outline-none pr-12" 
+                placeholder="Password">
               <button type="button" onclick="togglePassword('signin-password', this)" class="password-toggle absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
@@ -188,8 +243,10 @@ body {
           </div>
 
           <!-- Submit Button -->
-          <button type="button" onclick="proceedToVerification()" class="w-full py-4 bg-gradient-to-r from-accent to-accent-dark text-white font-bold text-lg rounded-full hover:shadow-xl hover:scale-105 transition-all duration-300 mb-6">
-            Sign In
+          <button type="button" id="signin-btn" onclick="proceedToVerification()" 
+            class="w-full py-4 bg-gradient-to-r from-accent to-accent-dark text-white font-bold text-lg rounded-full hover:shadow-xl hover:scale-105 transition-all duration-300 mb-6 flex items-center justify-center">
+            <span id="signin-btn-text">Sign In</span>
+            <div id="signin-spinner" class="spinner ml-3 hidden"></div>
           </button>
         </form>
 
@@ -224,15 +281,18 @@ body {
             Invalid verification code. Please try again.
           </div>
 
-          <button type="button" onclick="verifyLoginCode()" class="w-full py-4 bg-gradient-to-r from-accent to-accent-dark text-white font-bold text-lg rounded-full hover:shadow-xl hover:scale-105 transition-all duration-300 mb-4">
+          <button type="button" onclick="verifyLoginCode()" 
+            class="w-full py-4 bg-gradient-to-r from-accent to-accent-dark text-white font-bold text-lg rounded-full hover:shadow-xl hover:scale-105 transition-all duration-300 mb-4">
             Verify & Sign In
           </button>
 
           <div class="flex gap-3">
-            <button type="button" onclick="resendLoginCode()" class="flex-1 py-3 bg-gray-100 text-dark font-semibold rounded-full hover:bg-gray-200 transition-all duration-300">
+            <button type="button" onclick="resendLoginCode()" 
+              class="flex-1 py-3 bg-gray-100 text-dark font-semibold rounded-full hover:bg-gray-200 transition-all duration-300">
               Resend Code
             </button>
-            <button type="button" onclick="backToCredentials()" class="flex-1 py-3 bg-gray-100 text-dark font-semibold rounded-full hover:bg-gray-200 transition-all duration-300">
+            <button type="button" onclick="backToCredentials()" 
+              class="flex-1 py-3 bg-gray-100 text-dark font-semibold rounded-full hover:bg-gray-200 transition-all duration-300">
               Back
             </button>
           </div>
@@ -286,6 +346,7 @@ body {
 let userEmail = '';
 let userPassword = '';
 let codeExpiryTimer;
+let isSubmitting = false;
 
 function togglePassword(inputId, button) {
   const input = document.getElementById(inputId);
@@ -297,25 +358,69 @@ function togglePassword(inputId, button) {
     : '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"></path></svg>';
 }
 
+function showErrorAlert(message) {
+  const errorAlert = document.getElementById('error-alert');
+  const errorMessage = document.getElementById('error-message');
+  errorMessage.textContent = message;
+  errorAlert.classList.remove('hidden');
+  
+  setTimeout(() => {
+    errorAlert.classList.add('hidden');
+  }, 5000);
+}
+
+function hideErrorAlert() {
+  document.getElementById('error-alert').classList.add('hidden');
+}
+
+function setButtonLoading(isLoading) {
+  const btn = document.getElementById('signin-btn');
+  const btnText = document.getElementById('signin-btn-text');
+  const spinner = document.getElementById('signin-spinner');
+  
+  if (isLoading) {
+    btn.disabled = true;
+    btn.classList.add('opacity-75', 'cursor-not-allowed');
+    btnText.textContent = 'Signing in...';
+    spinner.classList.remove('hidden');
+  } else {
+    btn.disabled = false;
+    btn.classList.remove('opacity-75', 'cursor-not-allowed');
+    btnText.textContent = 'Sign In';
+    spinner.classList.add('hidden');
+  }
+}
+
 function proceedToVerification() {
-  const email = document.getElementById('signin-email').value;
+  if (isSubmitting) return;
+  
+  const email = document.getElementById('signin-email').value.trim();
   const password = document.getElementById('signin-password').value;
   
   if (!email || !password) {
-    alert('Please enter email and password');
+    showErrorAlert('Please enter both email and password');
     return;
   }
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(email)) {
-    alert('Please enter a valid email address');
+    showErrorAlert('Please enter a valid email address');
+    return;
+  }
+
+  if (password.length < 6) {
+    showErrorAlert('Password must be at least 6 characters');
     return;
   }
 
   userEmail = email;
   userPassword = password;
+  
+  isSubmitting = true;
+  hideErrorAlert();
+  setButtonLoading(true);
 
-  console.log('🔄 Attempting to send login verification code...');
+  console.log('🔄 Attempting login for:', email);
 
   fetch('http://localhost:3000/auth/send-login-code', {
     method: 'POST',
@@ -324,22 +429,25 @@ function proceedToVerification() {
   })
   .then(res => {
     if (!res.ok) {
-      throw new Error(`Server responded with status: ${res.status}`);
+      if (res.status === 401) {
+        throw new Error('Invalid email or password');
+      } else if (res.status === 500) {
+        throw new Error('Server error. Please try again later');
+      }
+      throw new Error(`Server error: ${res.status}`);
     }
     return res.json();
   })
   .then(data => {
-    console.log('📦 Response data:', data);
+    console.log('📦 Response:', data);
     
     if (data.success) {
-      // 🔥 CHECK IF ADMIN - SKIP VERIFICATION
       if (data.skipVerification) {
-        console.log('✅ Admin login - skipping verification');
+        console.log('✅ Admin login successful');
         
-        // Save token and user data
+        localStorage.setItem('adminToken', data.token);
         sessionStorage.setItem('authToken', data.token);
-        localStorage.setItem('kusinaUser', JSON.stringify(data.user));
-        localStorage.setItem('adminToken', data.token); // Save admin token
+        localStorage.setItem('currentUser', JSON.stringify(data.user));
         
         showSuccessModal('Welcome Admin!', `Welcome back, ${data.user.name}!`);
         
@@ -349,8 +457,7 @@ function proceedToVerification() {
         return;
       }
 
-      // Regular user - show verification form
-      console.log('✅ Verification code sent successfully');
+      console.log('✅ Verification code sent');
       
       document.getElementById('credentials-form').classList.add('hidden');
       document.getElementById('verification-form').classList.remove('hidden');
@@ -364,17 +471,19 @@ function proceedToVerification() {
       startCodeTimer();
 
       if (data.devCode) {
-        console.log('🔑 Development Login Code:', data.devCode);
-        alert('Development Mode: Verification code is ' + data.devCode);
+        console.log('🔑 Development Code:', data.devCode);
       }
     } else {
-      console.error('❌ Server returned error:', data.message);
-      alert('Login failed: ' + (data.message || 'Unknown error'));
+      showErrorAlert(data.message || 'Login failed. Please try again.');
     }
   })
   .catch(error => {
     console.error('❌ Login error:', error);
-    alert('Connection error: ' + error.message);
+    showErrorAlert(error.message || 'Connection error. Please check your internet connection.');
+  })
+  .finally(() => {
+    isSubmitting = false;
+    setButtonLoading(false);
   });
 }
 
@@ -388,14 +497,19 @@ function backToCredentials() {
   document.getElementById('social-login').classList.remove('hidden');
   document.getElementById('verification-error').classList.add('hidden');
   document.getElementById('verification-code').value = '';
+  hideErrorAlert();
 }
 
-// Verify login code
 function verifyLoginCode() {
-  const code = document.getElementById('verification-code').value;
+  const code = document.getElementById('verification-code').value.trim();
 
   if (code.length !== 6) {
     showError('Please enter a 6-digit code');
+    return;
+  }
+
+  if (!/^\d{6}$/.test(code)) {
+    showError('Code must contain only numbers');
     return;
   }
 
@@ -409,15 +523,14 @@ function verifyLoginCode() {
     if (data.success) {
       clearInterval(codeExpiryTimer);
       
-      // Save token and user data
       sessionStorage.setItem('authToken', data.token);
-      localStorage.setItem('kusinaUser', JSON.stringify(data.user));
+      localStorage.setItem('currentUser', JSON.stringify(data.user));
       
       showSuccessModal('Welcome Back!', `Welcome back, ${data.user.name}!`);
       
       setTimeout(() => {
         handleRedirectByRole(data.user.role);
-      }, 2000);
+      }, 1500);
     } else {
       showError(data.message || 'Invalid verification code');
     }
@@ -428,7 +541,6 @@ function verifyLoginCode() {
   });
 }
 
-// Resend login code
 function resendLoginCode() {
   fetch('http://localhost:3000/auth/send-login-code', {
     method: 'POST',
@@ -438,29 +550,29 @@ function resendLoginCode() {
   .then(res => res.json())
   .then(data => {
     if (data.success) {
-      alert('New verification code sent to your email!');
+      showSuccessModal('Code Sent!', 'New verification code sent to your email');
       document.getElementById('verification-code').value = '';
       clearInterval(codeExpiryTimer);
       startCodeTimer();
       hideError();
       
-      // Show dev code in console for testing
+      setTimeout(closeModal, 2000);
+      
       if (data.devCode) {
-        console.log('🔒 New Development Code:', data.devCode);
+        console.log('🔑 New Development Code:', data.devCode);
       }
     } else {
-      alert('Failed to resend code: ' + data.message);
+      showError(data.message || 'Failed to resend code');
     }
   })
   .catch(error => {
     console.error('Resend error:', error);
-    alert('Failed to resend code');
+    showError('Failed to resend code. Please try again.');
   });
 }
 
-// Start countdown timer
 function startCodeTimer() {
-  let timeLeft = 600; // 10 minutes in seconds
+  let timeLeft = 600;
   
   codeExpiryTimer = setInterval(() => {
     timeLeft--;
@@ -477,34 +589,29 @@ function startCodeTimer() {
   }, 1000);
 }
 
-// Show error message
 function showError(message) {
   const errorDiv = document.getElementById('verification-error');
   errorDiv.textContent = message;
   errorDiv.classList.remove('hidden');
 }
 
-// Hide error message
 function hideError() {
   document.getElementById('verification-error').classList.add('hidden');
 }
 
 function handleCredentialResponse(response) {
-  console.log('Google response received');
+  console.log('Google sign-in initiated');
 
   const token = response.credential;
 
   if (!token) {
-    console.error('No token received');
-    alert('Failed to get Google credential');
+    showErrorAlert('Failed to get Google credentials');
     return;
   }
 
   fetch('http://localhost:3000/auth/google', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ token })
   })
   .then(res => {
@@ -512,31 +619,22 @@ function handleCredentialResponse(response) {
     return res.json();
   })
   .then(data => {
-    console.log('Auth response:', data);
-    
     if (data.success) {
       sessionStorage.setItem('authToken', data.token);
+      localStorage.setItem('currentUser', JSON.stringify(data.user));
       
-      const userData = {
-        name: data.user.name,
-        email: data.user.email,
-        phone: data.user.phone || '+63 912 345 6789',
-        role: data.user.role,
-        createdAt: data.user.createdAt || new Date().toISOString()
-      };
-      localStorage.setItem('kusinaUser', JSON.stringify(userData));
-  
+      showSuccessModal('Welcome!', `Welcome, ${data.user.name}!`);
 
       setTimeout(() => {
         handleRedirectByRole(data.user.role);
-      }, 2000);
+      }, 1500);
     } else {
-      alert('Authentication failed: ' + data.message);
+      showErrorAlert(data.message || 'Google authentication failed');
     }
   })
   .catch(error => {
-    console.error('Error:', error);
-    alert('An error occurred: ' + error.message);
+    console.error('Google auth error:', error);
+    showErrorAlert('Google authentication failed. Please try again.');
   });
 }
 
@@ -560,21 +658,72 @@ document.getElementById('success-modal').addEventListener('click', function(e) {
   }
 });
 
-document.getElementById('verification-code').addEventListener('keyup', function(e) {
+document.getElementById('verification-code').addEventListener('input', function(e) {
+  this.value = this.value.replace(/\D/g, '');
+  
   if (this.value.length === 6) {
     verifyLoginCode();
   }
 });
 
+document.getElementById('signin-email').addEventListener('keypress', function(e) {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    document.getElementById('signin-password').focus();
+  }
+});
+
+document.getElementById('signin-password').addEventListener('keypress', function(e) {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    proceedToVerification();
+  }
+});
+
+document.getElementById('verification-code').addEventListener('keypress', function(e) {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    verifyLoginCode();
+  }
+});
+
 function handleRedirectByRole(role) {
+  console.log('🔄 Redirecting user with role:', role);
+  
   if (role === 'admin') {
+    console.log('➡️ Admin detected, redirecting to dashboard');
     window.location.href = 'dashboard.html';
   } else {
+    console.log('➡️ Customer detected, redirecting to home');
     window.location.href = 'index.html';
   }
 }
 
-console.log('Login with email verification loaded');
+// Check if already logged in on page load
+window.addEventListener('DOMContentLoaded', function() {
+  console.log('🔍 Checking login status...');
+  
+  // Check if user just logged out
+  const justLoggedOut = sessionStorage.getItem('justLoggedOut');
+  if (justLoggedOut) {
+    sessionStorage.removeItem('justLoggedOut');
+    console.log('🚪 User just logged out, showing login page');
+    return;
+  }
+  
+  // Check for existing tokens
+  const token = sessionStorage.getItem('authToken');
+  const adminToken = localStorage.getItem('adminToken');
+  const user = JSON.parse(localStorage.getItem('currentUser') || '{}');
+  
+  if ((token || adminToken) && user.email) {
+    console.log('✅ User already logged in:', user.email, 'Role:', user.role);
+    handleRedirectByRole(user.role);
+  } else {
+    console.log('❌ No valid session found, showing login form');
+  }
+});
+console.log('✅ Login page loaded successfully');
 </script>
 
 </body>

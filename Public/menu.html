@@ -7,7 +7,7 @@
 
 <script src="https://cdn.tailwindcss.com"></script>
 
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
 <script>
   tailwind.config = {
@@ -23,7 +23,7 @@
           'cream': '#f5e9da',
         },
         fontFamily: {
-          poppins: ['Poppins', 'sans-serif'],
+          Inter: ['Inter', 'sans-serif'],
         },
         animation: {
           'fade-in': 'fadeIn 0.6s ease-out',
@@ -56,11 +56,11 @@
 }
 
 body {
-  font-family: 'Poppins', sans-serif;
+  font-family: 'Inter', sans-serif;
 }
 
 .font-quiapo {
-  font-family: 'Quiapo', 'Poppins', sans-serif;
+  font-family: 'Quiapo', 'Inter', sans-serif;
 }
 
 .smooth-scroll {
@@ -90,6 +90,10 @@ body {
 
 .meal-card:hover {
   transform: translateY(-12px) scale(1.02);
+}
+
+.meal-card.hidden-item {
+  display: none !important;
 }
 
 .pattern-bg {
@@ -198,23 +202,45 @@ body {
   transform: scale(1.05);
 }
 
-/* Modern Hamburger Menu Animation */
-#menu-toggle.active .hamburger-line:nth-child(1) {
-  transform: translateY(9px) rotate(45deg);
+.search-container {
+  position: relative;
+  max-width: 600px;
+  margin: 0 auto;
 }
 
-#menu-toggle.active .hamburger-line:nth-child(2) {
-  opacity: 0;
-  transform: translateX(-10px);
+.search-icon {
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9ca3af;
 }
 
-#menu-toggle.active .hamburger-line:nth-child(3) {
-  transform: translateY(-9px) rotate(-45deg);
+#search-input {
+  width: 100%;
+  padding: 1rem 1rem 1rem 3rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 9999px;
+  font-size: 1rem;
+  transition: all 0.3s ease;
 }
 
-/* Smooth transitions for hamburger */
-.hamburger-line {
-  display: block;
+#search-input:focus {
+  outline: none;
+  border-color: #cda45e;
+  box-shadow: 0 0 0 3px rgba(205, 164, 94, 0.1);
+}
+
+.no-results {
+  text-align: center;
+  padding: 3rem;
+  color: #6b7280;
+  font-size: 1.125rem;
+}
+
+.glass-effect {
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 </style>
 </head>
@@ -251,10 +277,7 @@ body {
   <a href="orders.html" class="text-dark-light hover:text-accent font-medium transition-colors duration-300 text-[15px]">
     Orders
   </a>
-  <a href="locations.html" class="text-dark-light hover:text-accent font-medium transition-colors duration-300 text-[15px]">
-    Locations
-  </a>
-  <a href="#contact" class="text-dark-light hover:text-accent font-medium transition-colors duration-300 text-[15px]">
+  <a href="index.html#contact" class="text-dark-light hover:text-accent font-medium transition-colors duration-300 text-[15px]">
     Contact
   </a>
   
@@ -300,14 +323,13 @@ body {
     <!-- Mobile Menu -->
     <div id="mobile-menu" class="hidden lg:hidden pb-6 animate-slide-up">
       <div class="flex flex-col space-y-3">
-        <a href="index.html" class="text-dark-light hover:text-accent font-medium py-2 transition-colors duration-300"> Home</a>
-        <a href="menu.html" class="text-dark-light hover:text-accent font-medium py-2 transition-colors duration-300"> Menu</a>
-        <a href="orders.html" class="text-dark-light hover:text-accent font-medium py-2 transition-colors duration-300"> Orders</a>
-        <a href="locations.html" class="text-dark-light hover:text-accent font-medium py-2 transition-colors duration-300"> Locations</a>
+        <a href="index.html" class="text-dark-light hover:text-accent font-medium py-2 transition-colors duration-300">Home</a>
+        <a href="menu.html" class="text-dark-light hover:text-accent font-medium py-2 transition-colors duration-300">Menu</a>
+        <a href="orders.html" class="text-dark-light hover:text-accent font-medium py-2 transition-colors duration-300">Orders</a>
         <button onclick="goToCart()" class="text-left text-dark-light hover:text-accent font-medium py-2 transition-colors duration-300">
           🛒 View Cart (<span id="mobile-cart-count">0</span>)
         </button>
-        <a href="#contact" class="text-dark-light hover:text-accent font-medium py-2 transition-colors duration-300"> Contact</a>
+        <a href="index.html#contact" class="text-dark-light hover:text-accent font-medium py-2 transition-colors duration-300">Contact</a>
         
         <!-- Auth Buttons for Mobile - Hidden when logged in -->
         <div id="mobile-auth-buttons" class="flex flex-col space-y-3 pt-3 border-t border-gray-200">
@@ -320,17 +342,17 @@ body {
         </div>
 
         <!-- User Profile for Mobile - Shown when logged in -->
-<div id="mobile-user-profile" class="hidden flex-col space-y-3 pt-3 border-t border-gray-200">
-  <a href="profile.html" class="flex items-center space-x-3 px-4 py-2 bg-accent/10 rounded-full hover:bg-accent/20 transition-all duration-300">
-    <div class="w-10 h-10 bg-accent rounded-full flex items-center justify-center">
-      <span id="mobile-user-initial" class="text-white font-bold">U</span>
-    </div>
-    <span id="mobile-user-name" class="text-dark font-semibold">User</span>
-  </a>
-  <button onclick="logout()" class="px-6 py-2.5 bg-red-500 text-white font-semibold rounded-full hover:bg-red-600 hover:shadow-lg hover:scale-105 transition-all duration-300 text-center">
-    Logout
-  </button>
-</div>
+        <div id="mobile-user-profile" class="hidden flex-col space-y-3 pt-3 border-t border-gray-200">
+          <a href="profile.html" class="flex items-center space-x-3 px-4 py-2 bg-accent/10 rounded-full hover:bg-accent/20 transition-all duration-300">
+            <div class="w-10 h-10 bg-accent rounded-full flex items-center justify-center">
+              <span id="mobile-user-initial" class="text-white font-bold">U</span>
+            </div>
+            <span id="mobile-user-name" class="text-dark font-semibold">User</span>
+          </a>
+          <button onclick="logout()" class="px-6 py-2.5 bg-red-500 text-white font-semibold rounded-full hover:bg-red-600 hover:shadow-lg hover:scale-105 transition-all duration-300 text-center">
+            Logout
+          </button>
+        </div>
       </div>
     </div>
   </nav>
@@ -339,333 +361,68 @@ body {
 <section class="relative py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-accent-dark/10 to-cream">
   <div class="max-w-7xl mx-auto text-center">
     <h1 class="font-quiapo text-5xl md:text-6xl font-bold text-dark mb-4 animate-slide-up">
-     <span class="text-accent">OUR Menu</span>
+     <span class="text-accent">Our Menu</span>
     </h1>
     <div class="w-32 h-1 bg-gradient-to-r from-accent-dark via-accent to-accent-light mx-auto rounded-full mb-6"></div>
-    <p class="text-xl text-gray-700 max-w-3xl mx-auto animate-fade-in">
+    <p class="text-xl text-gray-700 max-w-3xl mx-auto animate-fade-in mb-8">
       Explore our delicious selection of authentic Filipino dishes, lovingly prepared with traditional recipes and fresh ingredients
     </p>
+    
+    <!-- Search Bar -->
+    <div class="search-container mt-8">
+      <svg class="search-icon w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+      </svg>
+      <input 
+        type="text" 
+        id="search-input" 
+        placeholder="Search for dishes... (e.g., Adobo, Sinigang, Desserts)"
+        onkeyup="searchMenu()"
+      />
+    </div>
   </div>
 </section>
 
 <section class="py-12 px-4 sm:px-6 lg:px-8">
   <div class="max-w-7xl mx-auto">
     <div class="flex flex-wrap justify-center gap-3 mb-12">
-      <button onclick="filterMenu('all')" class="filter-btn active px-6 py-3 rounded-full font-semibold transition-all duration-300 bg-gray-100 hover:bg-accent hover:text-white">
+      <button onclick="scrollToCategory('all', this)" class="filter-btn active px-6 py-3 rounded-full font-semibold transition-all duration-300 bg-gray-100 hover:bg-accent hover:text-white">
         All Items
       </button>
-      <button onclick="filterMenu('rice')" class="filter-btn px-6 py-3 rounded-full font-semibold transition-all duration-300 bg-gray-100 hover:bg-accent hover:text-white">
-        Rice Meals
+      <button onclick="scrollToCategory('main', this)" class="filter-btn px-6 py-3 rounded-full font-semibold transition-all duration-300 bg-gray-100 hover:bg-accent hover:text-white">
+        Main Course
       </button>
-      <button onclick="filterMenu('silog')" class="filter-btn px-6 py-3 rounded-full font-semibold transition-all duration-300 bg-gray-100 hover:bg-accent hover:text-white">
-        Silog Meals
+      <button onclick="scrollToCategory('breakfast', this)" class="filter-btn px-6 py-3 rounded-full font-semibold transition-all duration-300 bg-gray-100 hover:bg-accent hover:text-white">
+        Breakfast
       </button>
-      <button onclick="filterMenu('desserts')" class="filter-btn px-6 py-3 rounded-full font-semibold transition-all duration-300 bg-gray-100 hover:bg-accent hover:text-white">
+      <button onclick="scrollToCategory('dessert', this)" class="filter-btn px-6 py-3 rounded-full font-semibold transition-all duration-300 bg-gray-100 hover:bg-accent hover:text-white">
         Desserts
       </button>
-      <button onclick="filterMenu('drinks')" class="filter-btn px-6 py-3 rounded-full font-semibold transition-all duration-300 bg-gray-100 hover:bg-accent hover:text-white">
+      <button onclick="scrollToCategory('drink', this)" class="filter-btn px-6 py-3 rounded-full font-semibold transition-all duration-300 bg-gray-100 hover:bg-accent hover:text-white">
         Drinks
       </button>
     </div>
 
-    <div id="rice" class="menu-category mb-16">
-      <h2 class="text-3xl md:text-4xl font-bold text-dark mb-8 pb-3 border-b-2 border-accent/30">
-        <span class="text-accent">Rice Meals</span> 
-      </h2>
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        
-        <div class="meal-card group bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl cursor-pointer" data-category="rice">
-          <div class="relative overflow-hidden h-64">
-            <img src="assets/images/adobo.jpg" alt="Pork Adobo" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-            <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-            <div class="absolute top-4 right-4 bg-red-600 text-white px-3 py-1 rounded-full text-sm font-semibold">Popular</div>
-          </div>
-          <div class="p-6">
-            <h3 class="text-2xl font-bold text-dark mb-2 group-hover:text-accent transition-colors duration-300">Pork Adobo</h3>
-            <p class="text-gray-600 mb-4">Classic Filipino soy-vinegar braised pork, tender and flavorful with garlic and bay leaves</p>
-            <div class="flex items-center justify-between">
-              <span class="text-accent font-bold text-2xl">₱150</span>
-              <button onclick="addToCart(this, 'Pork Adobo', 150, 'assets/images/adobo.jpg')" class="px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent-dark transition-colors duration-300 text-sm font-semibold">Add to Cart</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="meal-card group bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl cursor-pointer" data-category="rice">
-          <div class="relative overflow-hidden h-64">
-            <img src="assets/images/sinigang.jpg" alt="Sinigang na Baboy" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-            <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-          </div>
-          <div class="p-6">
-            <h3 class="text-2xl font-bold text-dark mb-2 group-hover:text-accent transition-colors duration-300">Sinigang na Baboy</h3>
-            <p class="text-gray-600 mb-4">Savory-sour tamarind soup with tender pork ribs and fresh vegetables</p>
-            <div class="flex items-center justify-between">
-              <span class="text-accent font-bold text-2xl">₱180</span>
-              <button onclick="addToCart(this, 'Sinigang na Baboy', 180, 'assets/images/sinigang.jpg')" class="px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent-dark transition-colors duration-300 text-sm font-semibold">Add to Cart</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="meal-card group bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl cursor-pointer" data-category="rice">
-          <div class="relative overflow-hidden h-64">
-            <img src="assets/images/menudo.jpg" alt="Menudo" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-            <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-          </div>
-          <div class="p-6">
-            <h3 class="text-2xl font-bold text-dark mb-2 group-hover:text-accent transition-colors duration-300">Menudo</h3>
-            <p class="text-gray-600 mb-4">Rich tomato stew with diced pork, liver, potatoes, and bell peppers</p>
-            <div class="flex items-center justify-between">
-              <span class="text-accent font-bold text-2xl">₱160</span>
-              <button onclick="addToCart(this, 'Menudo', 160, 'assets/images/menudo.jpg')" class="px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent-dark transition-colors duration-300 text-sm font-semibold">Add to Cart</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="meal-card group bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl cursor-pointer" data-category="rice">
-          <div class="relative overflow-hidden h-64">
-            <img src="assets/images/pinakbet.jpg" alt="Pinakbet" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-            <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-            <div class="absolute top-4 right-4 bg-green-600 text-white px-3 py-1 rounded-full text-sm font-semibold">Healthy</div>
-          </div>
-          <div class="p-6">
-            <h3 class="text-2xl font-bold text-dark mb-2 group-hover:text-accent transition-colors duration-300">Pinakbet</h3>
-            <p class="text-gray-600 mb-4">Vegetable medley with squash, eggplant, okra, and bitter melon in shrimp paste</p>
-            <div class="flex items-center justify-between">
-              <span class="text-accent font-bold text-2xl">₱110</span>
-              <button onclick="addToCart(this, 'Pinakbet', 110, 'assets/images/pinakbet.jpg')" class="px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent-dark transition-colors duration-300 text-sm font-semibold">Add to Cart</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="meal-card group bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl cursor-pointer" data-category="rice">
-          <div class="relative overflow-hidden h-64">
-            <img src="assets/images/karekare.jpg" alt="Kare-Kare" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-            <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-          </div>
-          <div class="p-6">
-            <h3 class="text-2xl font-bold text-dark mb-2 group-hover:text-accent transition-colors duration-300">Kare-Kare</h3>
-            <p class="text-gray-600 mb-4">Oxtail and vegetable stew in peanut sauce, served with bagoong</p>
-            <div class="flex items-center justify-between">
-              <span class="text-accent font-bold text-2xl">₱220</span>
-              <button onclick="addToCart(this, 'Kare-Kare', 220, 'assets/images/karekare.jpg')" class="px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent-dark transition-colors duration-300 text-sm font-semibold">Add to Cart</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="meal-card group bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl cursor-pointer" data-category="rice">
-          <div class="relative overflow-hidden h-64">
-            <img src="assets/images/friedbangus.jpg" alt="Fried Bangus" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-            <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-          </div>
-          <div class="p-6">
-            <h3 class="text-2xl font-bold text-dark mb-2 group-hover:text-accent transition-colors duration-300">Fried Bangus</h3>
-            <p class="text-gray-600 mb-4">Crispy fried milkfish, perfectly seasoned and golden brown</p>
-            <div class="flex items-center justify-between">
-              <span class="text-accent font-bold text-2xl">₱130</span>
-              <button onclick="addToCart(this, 'Fried Bangus', 130, 'assets/images/friedbangus.jpg')" class="px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent-dark transition-colors duration-300 text-sm font-semibold">Add to Cart</button>
-            </div>
-          </div>
-        </div>
-
-      </div>
+    <!-- No Results Message -->
+    <div id="no-results" class="no-results hidden">
+      <svg class="w-20 h-20 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+      </svg>
+      <p class="text-xl font-semibold mb-2">No dishes found</p>
+      <p>Try searching for something else or browse all categories</p>
     </div>
 
-    <div id="silog" class="menu-category mb-16">
-      <h2 class="text-3xl md:text-4xl font-bold text-dark mb-8 pb-3 border-b-2 border-accent/30">
-        <span class="text-accent">Silog Meals</span> 
-      </h2>
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        
-        <div class="meal-card group bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl cursor-pointer" data-category="silog">
-          <div class="relative overflow-hidden h-64">
-            <img src="assets/images/tapsilog.jpg" alt="Tapsilog" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-            <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-            <div class="absolute top-4 right-4 bg-orange-600 text-white px-3 py-1 rounded-full text-sm font-semibold">Breakfast</div>
-          </div>
-          <div class="p-6">
-            <h3 class="text-2xl font-bold text-dark mb-2 group-hover:text-accent transition-colors duration-300">Tapsilog</h3>
-            <p class="text-gray-600 mb-4">Beef tapa, garlic fried rice, and sunny-side up egg - the ultimate Filipino breakfast</p>
-            <div class="flex items-center justify-between">
-              <span class="text-accent font-bold text-2xl">₱120</span>
-              <button onclick="addToCart(this, 'Tapsilog', 120, 'assets/images/tapsilog.jpg')" class="px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent-dark transition-colors duration-300 text-sm font-semibold">Add to Cart</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="meal-card group bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl cursor-pointer" data-category="silog">
-          <div class="relative overflow-hidden h-64">
-            <img src="assets/images/longsilog.jpg"alt= "Longsilog" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-            <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-            <div class="absolute top-4 right-4 bg-orange-600 text-white px-3 py-1 rounded-full text-sm font-semibold">Breakfast</div>
-          </div>
-          <div class="p-6">
-            <h3 class="text-2xl font-bold text-dark mb-2 group-hover:text-accent transition-colors duration-300">Longsilog</h3>
-            <p class="text-gray-600 mb-4">Filipino sweet sausage, garlic rice, and egg - sweet and savory perfection</p>
-            <div class="flex items-center justify-between">
-              <span class="text-accent font-bold text-2xl">₱115</span>
-              <button onclick="addToCart(this, 'Longsilog', 115, 'assets/images/longsilog.jpg')" class="px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent-dark transition-colors duration-300 text-sm font-semibold">Add to Cart</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="meal-card group bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl cursor-pointer" data-category="silog">
-          <div class="relative overflow-hidden h-64">
-            <img src="assets/images/tocilog.jpg" alt="Tocilog" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-            <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-            <div class="absolute top-4 right-4 bg-orange-600 text-white px-3 py-1 rounded-full text-sm font-semibold">Breakfast</div>
-          </div>
-          <div class="p-6">
-            <h3 class="text-2xl font-bold text-dark mb-2 group-hover:text-accent transition-colors duration-300">Tocilog</h3>
-            <p class="text-gray-600 mb-4">Sweet cured pork, garlic rice, and egg - a breakfast favorite</p>
-            <div class="flex items-center justify-between">
-              <span class="text-accent font-bold text-2xl">₱110</span>
-              <button onclick="addToCart(this, 'Tocilog', 110, 'assets/images/tocilog.jpg')" class="px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent-dark transition-colors duration-300 text-sm font-semibold">Add to Cart</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="meal-card group bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl cursor-pointer" data-category="silog">
-          <div class="relative overflow-hidden h-64">
-            <img src="assets/images/bangsilog.jpg" alt="Bangsilog" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-            <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-            <div class="absolute top-4 right-4 bg-orange-600 text-white px-3 py-1 rounded-full text-sm font-semibold">Breakfast</div>
-          </div>
-          <div class="p-6">
-            <h3 class="text-2xl font-bold text-dark mb-2 group-hover:text-accent transition-colors duration-300">Bangsilog</h3>
-            <p class="text-gray-600 mb-4">Fried milkfish, garlic rice, and egg - crispy and delicious</p>
-            <div class="flex items-center justify-between">
-              <span class="text-accent font-bold text-2xl">₱135</span>
-              <button onclick="addToCart(this, 'Bangsilog', 135, 'assets/images/bangsilog.jpg')" class="px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent-dark transition-colors duration-300 text-sm font-semibold">Add to Cart</button>
-            </div>
-          </div>
-        </div>
-
+    <!-- Dynamic Menu Grid - Will be populated by JavaScript -->
+    <div id="menu-container">
+      <!-- Loading state -->
+      <div id="loading-state" class="text-center py-12">
+        <div class="inline-block animate-spin rounded-full h-16 w-16 border-b-4 border-accent mb-4"></div>
+        <p class="text-xl text-gray-600">Loading delicious dishes...</p>
       </div>
-    </div>
-
-    <div id="desserts" class="menu-category mb-16">
-      <h2 class="text-3xl md:text-4xl font-bold text-dark mb-8 pb-3 border-b-2 border-accent/30">
-        <span class="text-accent">Desserts</span>
-      </h2>
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        
-        <div class="meal-card group bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl cursor-pointer" data-category="desserts">
-          <div class="relative overflow-hidden h-64">
-            <img src="assets/images/halohalo.jpg" alt="Halo-Halo" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-            <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-            <div class="absolute top-4 right-4 bg-purple-600 text-white px-3 py-1 rounded-full text-sm font-semibold">Popular</div>
-          </div>
-          <div class="p-6">
-            <h3 class="text-2xl font-bold text-dark mb-2 group-hover:text-accent transition-colors duration-300">Halo-Halo</h3>
-            <p class="text-gray-600 mb-4">Mixed shaved ice dessert with sweet beans, fruits, leche flan, and ube ice cream</p>
-            <div class="flex items-center justify-between">
-              <span class="text-accent font-bold text-2xl">₱95</span>
-              <button onclick="addToCart(this, 'Halo-Halo', 95, 'assets/images/halohalo')" class="px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent-dark transition-colors duration-300 text-sm font-semibold">Add to Cart</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="meal-card group bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl cursor-pointer" data-category="desserts">
-          <div class="relative overflow-hidden h-64">
-            <img src="assets/images/lecheflan.jpg" alt="Leche Flan" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-            <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-          </div>
-          <div class="p-6">
-            <h3 class="text-2xl font-bold text-dark mb-2 group-hover:text-accent transition-colors duration-300">Leche Flan</h3>
-            <p class="text-gray-600 mb-4">Creamy caramel custard, rich and sweet - a Filipino classic</p>
-            <div class="flex items-center justify-between">
-              <span class="text-accent font-bold text-2xl">₱70</span>
-              <button onclick="addToCart(this, 'Leche Flan', 70, 'assets/images/lecheflan')" class="px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent-dark transition-colors duration-300 text-sm font-semibold">Add to Cart</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="meal-card group bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl cursor-pointer" data-category="desserts">
-          <div class="relative overflow-hidden h-64">
-            <img src="assets/images/turon.jpg" alt="Turon" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-            <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-          </div>
-          <div class="p-6">
-            <h3 class="text-2xl font-bold text-dark mb-2 group-hover:text-accent transition-colors duration-300">Turon</h3>
-            <p class="text-gray-600 mb-4">Fried banana spring rolls with jackfruit, crispy and caramelized</p>
-            <div class="flex items-center justify-between">
-              <span class="text-accent font-bold text-2xl">₱50</span>
-              <button onclick="addToCart(this, 'Turon', 50, 'assets/images/turon')" class="px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent-dark transition-colors duration-300 text-sm font-semibold">Add to Cart</button>
-            </div>
-          </div>
-        </div>
-
-      </div>
-    </div>
-
-    <div id="drinks" class="menu-category mb-16">
-      <h2 class="text-3xl md:text-4xl font-bold text-dark mb-8 pb-3 border-b-2 border-accent/30">
-        <span class="text-accent">Drinks</span>
-      </h2>
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        
-        <div class="meal-card group bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl cursor-pointer" data-category="drinks">
-          <div class="relative overflow-hidden h-64">
-            <img src="assets/images/calamansij.jpg" alt="Calamansi Juice" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-            <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-            <div class="absolute top-4 right-4 bg-yellow-500 text-white px-3 py-1 rounded-full text-sm font-semibold">Refreshing</div>
-          </div>
-          <div class="p-6">
-            <h3 class="text-2xl font-bold text-dark mb-2 group-hover:text-accent transition-colors duration-300">Calamansi Juice</h3>
-            <p class="text-gray-600 mb-4">Fresh squeezed Philippine lime juice, tangy and refreshing</p>
-            <div class="flex items-center justify-between">
-              <span class="text-accent font-bold text-2xl">₱40</span>
-              <button onclick="addToCart(this, 'Calamansi Juice', 40, 'assets/images/calamansi')" class="px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent-dark transition-colors duration-300 text-sm font-semibold">Add to Cart</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="meal-card group bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl cursor-pointer" data-category="drinks">
-          <div class="relative overflow-hidden h-64">
-            <img src="assets/images/mangoshake.jpg" alt="Mango Shake" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-            <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-          </div>
-          <div class="p-6">
-            <h3 class="text-2xl font-bold text-dark mb-2 group-hover:text-accent transition-colors duration-300">Mango Shake</h3>
-            <p class="text-gray-600 mb-4">Creamy blend of fresh Philippine mangoes, sweet and tropical</p>
-            <div class="flex items-center justify-between">
-              <span class="text-accent font-bold text-2xl">₱75</span>
-              <button onclick="addToCart(this, 'Mango Shake', 75, 'assets/images/mangoshake')" class="px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent-dark transition-colors duration-300 text-sm font-semibold">Add to Cart</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="meal-card group bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl cursor-pointer" data-category="drinks">
-          <div class="relative overflow-hidden h-64">
-            <img src="assets/images/icedcof.jpg" alt="Iced Coffee" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-            <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-          </div>
-          <div class="p-6">
-            <h3 class="text-2xl font-bold text-dark mb-2 group-hover:text-accent transition-colors duration-300">Barako Iced Coffee</h3>
-            <p class="text-gray-600 mb-4">Strong Filipino coffee served cold with condensed milk</p>
-            <div class="flex items-center justify-between">
-              <span class="text-accent font-bold text-2xl">₱65</span>
-              <button onclick="addToCart(this, 'Barako Iced Coffee', 65, 'assets/images/coffee')" class="px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent-dark transition-colors duration-300 text-sm font-semibold">Add to Cart</button>
-
-            </div>
-          </div>
-        </div>
-
-        <div class="meal-card group bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl cursor-pointer" data-category="drinks">
-          <div class="relative overflow-hidden h-64">
-            <img src="assets/images/bukoj.jpeg" alt="Buko Juice" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-            <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-          </div>
-          <div class="p-6">
-            <h3 class="text-2xl font-bold text-dark mb-2 group-hover:text-accent transition-colors duration-300">Buko Juice</h3>
-            <p class="text-gray-600 mb-4">Fresh young coconut water, naturally sweet and hydrating</p>
-            <div class="flex items-center justify-between">
-              <span class="text-accent font-bold text-2xl">₱50</span>
-              <button onclick="addToCart(this, 'Buko Juice', 50, 'assets/images/bukojuice')" class="px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent-dark transition-colors duration-300 text-sm font-semibold">Add to Cart</button>
-            </div>
     </div>
   </div>
-</div>
 </section>
+
 <!-- FLOATING CART MODAL -->
 <div id="cart-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 backdrop-blur-sm">
   <div class="bg-white rounded-3xl p-8 max-w-2xl w-full mx-4 shadow-2xl animate-scale-in max-h-[80vh] flex flex-col">
@@ -716,17 +473,6 @@ body {
       <div class="col-span-1 md:col-span-2">
         <h3 class="font-quiapo text-3xl font-bold text-accent mb-3">Kusina ni Katya</h3>
         <p class="text-gray-400 mb-4">Bringing authentic Filipino home cooking to your table since 2020.</p>
-        <div class="flex space-x-4">
-          <a href="#" class="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center hover:bg-accent transition-colors duration-300">
-            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
-          </a>
-          <a href="#" class="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center hover:bg-accent transition-colors duration-300">
-            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
-          </a>
-          <a href="#" class="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center hover:bg-accent transition-colors duration-300">
-            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/></svg>
-          </a>
-        </div>
       </div>
 
       <div>
@@ -735,7 +481,6 @@ body {
           <li><a href="index.html" class="hover:text-accent transition-colors duration-300">Home</a></li>
           <li><a href="menu.html" class="hover:text-accent transition-colors duration-300">Menu</a></li>
           <li><a href="index.html#contact" class="hover:text-accent transition-colors duration-300">Contact</a></li>
-          <li><a href="#" class="hover:text-accent transition-colors duration-300">About Us</a></li>
         </ul>
       </div>
 
@@ -744,215 +489,575 @@ body {
         <ul class="space-y-2 text-gray-400">
           <li><a href="#" class="hover:text-accent transition-colors duration-300">Privacy Policy</a></li>
           <li><a href="#" class="hover:text-accent transition-colors duration-300">Terms of Service</a></li>
-          <li><a href="#" class="hover:text-accent transition-colors duration-300">Cookie Policy</a></li>
-          <li><a href="#" class="hover:text-accent transition-colors duration-300">Refund Policy</a></li>
         </ul>
       </div>
     </div>
 
     <div class="border-t border-white/10 pt-8 text-center text-gray-400">
-      <p>&copy; 2025 Kusina ni Katya. All Rights Reserved. Made with ❤️ in the Philippines.</p>
+      <p>&copy; 2025 Kusina ni Katya. All Rights Reserved.</p>
     </div>
   </div>
 </footer>
 
 <script>
-function toggleMobileMenu() {
-  const menu = document.getElementById("mobile-menu");
-  const menuToggle = document.getElementById("menu-toggle");
-  
-  menu.classList.toggle("hidden");
-  menuToggle.classList.toggle("active");
-}
+// ==================== GLOBAL VARIABLES ====================
+let allMenuItems = [];
+let cart = [];
+let socketInitialized = false;
 
-function filterMenu(category) {
-  const allCards = document.querySelectorAll('.meal-card');
-  const allButtons = document.querySelectorAll('.filter-btn');
+// ==================== INITIALIZATION ====================
+window.addEventListener('DOMContentLoaded', function() {
+  console.log('🚀 Initializing menu page...');
   
-  allButtons.forEach(function(btn) {
-    btn.classList.remove('active');
-  });
+  // Load auth state
+  checkAuthStatus();
   
-  event.target.classList.add('active');
+  // Load cart
+  loadCart();
   
-  if (category === 'all') {
-    allCards.forEach(function(card) {
-      card.style.display = 'block';
-    });
-  } else {
-    allCards.forEach(function(card) {
-      if (card.getAttribute('data-category') === category) {
-        card.style.display = 'block';
-      } else {
-        card.style.display = 'none';
+  // Fetch menu from API
+  fetchMenuFromAPI();
+  
+  // Close modal when clicking outside
+  const cartModal = document.getElementById('cart-modal');
+  if (cartModal) {
+    cartModal.addEventListener('click', function(e) {
+      if (e.target === this) {
+        closeCartModal();
       }
     });
   }
+  
+  console.log('✅ Menu page initialized');
+});
+
+// ==================== FETCH MENU FROM API ====================
+async function fetchMenuFromAPI() {
+  try {
+    console.log('📡 Fetching menu from API...');
+    const res = await fetch('/api/menu');
+    
+    if (!res.ok) {
+      throw new Error(`HTTP error! status: ${res.status}`);
+    }
+    
+    const data = await res.json();
+    
+    if (!data.success) {
+      throw new Error(data.message || 'Failed to fetch menu');
+    }
+    
+    allMenuItems = data.items || [];
+    console.log('✅ Menu loaded:', allMenuItems.length, 'items');
+    
+    // Render menu
+    renderMenuByCategories();
+    
+    // Initialize Socket.IO for real-time updates
+    initMenuSocketListener();
+    
+  } catch (error) {
+    console.error('❌ Menu fetch error:', error);
+    showMenuError(error.message);
+  }
 }
 
-document.querySelectorAll('a[href^="#"]').forEach(function(anchor) {
-  anchor.addEventListener('click', function (e) {
-    e.preventDefault();
-    const target = document.querySelector(this.getAttribute('href'));
-    if (target) {
-      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      document.getElementById("mobile-menu").classList.add("hidden");
+// ==================== RENDER MENU BY CATEGORIES ====================
+function renderMenuByCategories() {
+  const container = document.getElementById('menu-container');
+  const loadingState = document.getElementById('loading-state');
+  
+  if (!container) {
+    console.error('❌ Menu container not found');
+    return;
+  }
+  
+  // Hide loading state
+  if (loadingState) {
+    loadingState.style.display = 'none';
+  }
+  
+  if (allMenuItems.length === 0) {
+    container.innerHTML = `
+      <div class="text-center py-12">
+        <svg class="w-24 h-24 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
+        </svg>
+        <p class="text-xl text-gray-500 font-semibold">No menu items available</p>
+        <p class="text-gray-400 mt-2">Check back soon for delicious dishes!</p>
+      </div>
+    `;
+    return;
+  }
+  
+  // Group items by category
+  const categories = {
+    'main': { title: 'Main Course', items: [] },
+    'breakfast': { title: 'Breakfast', items: [] },
+    'dessert': { title: 'Desserts', items: [] },
+    'drink': { title: 'Drinks', items: [] },
+    'special': { title: 'Specials', items: [] }
+  };
+  
+  // Categorize items
+  allMenuItems.forEach(item => {
+    const cat = (item.category || 'main').toLowerCase();
+    if (categories[cat]) {
+      categories[cat].items.push(item);
+    } else {
+      categories['main'].items.push(item);
     }
   });
-});
-// Cart functionality with localStorage persistence
-let menuCart = [];
+  
+  // Build HTML
+  let html = '';
+  
+  Object.keys(categories).forEach(catKey => {
+    const category = categories[catKey];
+    
+    if (category.items.length > 0) {
+      html += `
+        <div id="category-${catKey}" class="menu-category mb-16" data-category="${catKey}">
+          <h2 class="text-3xl md:text-4xl font-bold text-dark mb-8 pb-3 border-b-2 border-accent/30">
+            <span class="text-accent">${category.title}</span>
+          </h2>
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            ${category.items.map(item => createMenuCardHTML(item, catKey)).join('')}
+          </div>
+        </div>
+      `;
+    }
+  });
+  
+  container.innerHTML = html;
+}
 
-// Load cart from localStorage on page load
+// ==================== CREATE MENU CARD HTML ====================
+function createMenuCardHTML(item, category) {
+  // Determine badge
+  let badgeHtml = '';
+  if (item.badge) {
+    const badgeColors = {
+      'Popular': 'bg-red-600',
+      'New': 'bg-blue-600',
+      'Spicy': 'bg-red-500',
+      'Healthy': 'bg-green-600',
+      'Breakfast': 'bg-orange-600',
+      'Refreshing': 'bg-yellow-500',
+      '20% OFF': 'bg-red-600 animate-pulse'
+    };
+    const badgeColor = badgeColors[item.badge] || 'bg-accent';
+    badgeHtml = `<div class="absolute top-4 right-4 ${badgeColor} text-white px-3 py-1 rounded-full text-sm font-semibold">${escapeHtml(item.badge)}</div>`;
+  }
+  
+  // Use SVG placeholder if no image
+  const imageUrl = item.image_url || 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300"%3E%3Crect fill="%23f3f4f6" width="400" height="300"/%3E%3Ctext fill="%239ca3af" font-family="Arial,sans-serif" font-size="24" text-anchor="middle" x="200" y="140"%3ENo Image%3C/text%3E%3Ctext fill="%23d1d5db" font-family="Arial,sans-serif" font-size="16" text-anchor="middle" x="200" y="170"%3EAvailable%3C/text%3E%3C/svg%3E';
+  const name = escapeHtml(item.name);
+  const description = escapeHtml(item.description || 'Delicious Filipino dish');
+  const price = parseFloat(item.price || 0).toFixed(2);
+  const nameForJs = escapeJs(item.name);
+  const imageForJs = escapeJs(imageUrl);
+  
+  return `
+    <div class="meal-card group bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl cursor-pointer" 
+         data-category="${category}" 
+         data-name="${name.toLowerCase()}"
+         data-description="${description.toLowerCase()}">
+      <div class="relative overflow-hidden h-64">
+        <img 
+          src="${imageUrl}" 
+          alt="${name}" 
+          class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+          loading="lazy"
+        />
+        <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+        ${badgeHtml}
+      </div>
+      <div class="p-6">
+        <h3 class="text-2xl font-bold text-dark mb-2 group-hover:text-accent transition-colors duration-300">
+          ${name}
+        </h3>
+        <p class="text-gray-600 mb-4 line-clamp-2">
+          ${description}
+        </p>
+        <div class="flex items-center justify-between">
+          <span class="text-accent font-bold text-2xl">₱${price}</span>
+          <button 
+            onclick="addToCart(this, '${nameForJs}', ${item.price}, '${imageForJs}')" 
+            class="px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent-dark transition-colors duration-300 text-sm font-semibold">
+            Add to Cart
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// ==================== SEARCH MENU ====================
+function searchMenu() {
+  const searchInput = document.getElementById('search-input');
+  const searchTerm = (searchInput?.value || '').toLowerCase().trim();
+  const noResults = document.getElementById('no-results');
+  const allCards = document.querySelectorAll('.meal-card');
+  
+  if (!searchTerm) {
+    // Show all items
+    allCards.forEach(card => card.classList.remove('hidden-item'));
+    if (noResults) noResults.classList.add('hidden');
+    return;
+  }
+  
+  let hasResults = false;
+  
+  allCards.forEach(card => {
+    const dishName = card.getAttribute('data-name') || '';
+    const category = card.getAttribute('data-category') || '';
+    const description = card.getAttribute('data-description') || '';
+    
+    if (dishName.includes(searchTerm) || 
+        category.includes(searchTerm) || 
+        description.includes(searchTerm)) {
+      card.classList.remove('hidden-item');
+      hasResults = true;
+    } else {
+      card.classList.add('hidden-item');
+    }
+  });
+  
+  // Show/hide no results message
+  if (noResults) {
+    if (!hasResults) {
+      noResults.classList.remove('hidden');
+    } else {
+      noResults.classList.add('hidden');
+    }
+  }
+}
+
+// ==================== SCROLL TO CATEGORY ====================
+function scrollToCategory(category, button) {
+  // Update active button
+  const allButtons = document.querySelectorAll('.filter-btn');
+  allButtons.forEach(btn => btn.classList.remove('active'));
+  if (button) {
+    button.classList.add('active');
+  }
+  
+  // Clear search
+  const searchInput = document.getElementById('search-input');
+  if (searchInput) searchInput.value = '';
+  
+  // Show all cards
+  const allCards = document.querySelectorAll('.meal-card');
+  allCards.forEach(card => card.classList.remove('hidden-item'));
+  
+  const noResults = document.getElementById('no-results');
+  if (noResults) noResults.classList.add('hidden');
+  
+  if (category === 'all') {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  } else {
+    const categorySection = document.getElementById(`category-${category}`);
+    if (categorySection) {
+      const offset = 100;
+      const elementPosition = categorySection.getBoundingClientRect().top;
+      const offsetPosition = elementPosition + window.pageYOffset - offset;
+      
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth'
+      });
+    }
+  }
+}
+
+// ==================== SOCKET.IO REAL-TIME UPDATES ====================
+function initMenuSocketListener() {
+  if (socketInitialized) {
+    console.log('⚠️ Socket already initialized');
+    return;
+  }
+  
+  if (typeof io === 'undefined') {
+    console.log('⚠️ Socket.IO not available');
+    return;
+  }
+  
+  try {
+    const socket = io();
+    
+    socket.on('connect', () => {
+      console.log('✅ Socket.IO connected');
+      socketInitialized = true;
+    });
+    
+    socket.on('menu-updated', (data) => {
+      console.log('🔄 Menu updated via Socket.IO:', data.action);
+      // Refresh menu when admin makes changes
+      fetchMenuFromAPI();
+    });
+    
+    socket.on('disconnect', () => {
+      console.log('❌ Socket.IO disconnected');
+      socketInitialized = false;
+    });
+    
+    socket.on('connect_error', (error) => {
+      console.error('❌ Socket.IO connection error:', error);
+    });
+    
+  } catch(e) {
+    console.error('❌ Socket.IO initialization failed:', e);
+  }
+}
+
+// ==================== ERROR HANDLING ====================
+function showMenuError(errorMessage) {
+  const container = document.getElementById('menu-container');
+  const loadingState = document.getElementById('loading-state');
+  
+  if (loadingState) {
+    loadingState.style.display = 'none';
+  }
+  
+  if (!container) return;
+  
+  container.innerHTML = `
+    <div class="text-center py-12">
+      <svg class="w-20 h-20 mx-auto mb-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+      </svg>
+      <p class="text-xl font-semibold text-gray-700 mb-2">Failed to load menu</p>
+      <p class="text-gray-500 mb-4">${errorMessage || 'Please try again later'}</p>
+      <button onclick="fetchMenuFromAPI()" class="px-6 py-3 bg-accent text-white rounded-full hover:bg-accent-dark transition-colors font-semibold">
+        Retry
+      </button>
+    </div>
+  `;
+}
+
+// ==================== UTILITY FUNCTIONS ====================
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text || '';
+  return div.innerHTML;
+}
+
+function escapeJs(str) {
+  return (str || '').replace(/'/g, "\\'").replace(/"/g, '\\"').replace(/\\/g, '\\\\');
+}
+
+// ==================== CART MANAGEMENT ====================
+function getCartKey() {
+  try {
+    const user = JSON.parse(localStorage.getItem('currentUser') || 'null');
+    return user && user.email ? `kusinaCart_${user.email}` : 'kusinaCart_guest';
+  } catch (e) {
+    console.error('Error getting cart key:', e);
+    return 'kusinaCart_guest';
+  }
+}
+
 function loadCart() {
-  const savedCart = localStorage.getItem('kusinaCart');
-  if (savedCart) {
-    menuCart = JSON.parse(savedCart);
+  try {
+    const cartKey = getCartKey();
+    const savedCart = localStorage.getItem(cartKey);
+    
+    if (savedCart) {
+      cart = JSON.parse(savedCart);
+    } else {
+      cart = [];
+    }
+    
+    updateCartCount();
+  } catch (e) {
+    console.error('Error loading cart:', e);
+    cart = [];
     updateCartCount();
   }
 }
 
-// Save cart to localStorage
 function saveCart() {
-  localStorage.setItem('kusinaCart', JSON.stringify(menuCart));
-}
-
-// Initialize cart on page load
-loadCart();
-
-// Update cart count display
-function updateCartCount() {
-  const count = menuCart.reduce((sum, item) => sum + (item.quantity || 0), 0);
-  const cartCountEl = document.getElementById('cart-count');
-  const mobileCartCountEl = document.getElementById('mobile-cart-count');
-  if (cartCountEl) cartCountEl.textContent = count;
-  if (mobileCartCountEl) mobileCartCountEl.textContent = count;
-}
-
-// Add to cart function
-function addToCart(button, mealName, mealPrice, mealImage) {
-
-  const existingItem = menuCart.find(item => item.name === mealName);
-  
-  if (existingItem) {
-    existingItem.quantity++;
-  } else {
-    menuCart.push({
-      id: Date.now(),
-      name: mealName,
-      price: mealPrice,
-      quantity: 1,
-      image: mealImage
-    });
+  try {
+    const cartKey = getCartKey();
+    
+    if (cart.length === 0) {
+      localStorage.removeItem(cartKey);
+    } else {
+      localStorage.setItem(cartKey, JSON.stringify(cart));
+    }
+    
+    updateCartCount();
+  } catch (e) {
+    console.error('Error saving cart:', e);
   }
-  
-  // Save to localStorage
-  saveCart();
-  
-  // Show feedback
-  const originalText = button.textContent;
-  button.textContent = 'Added!';
-  button.classList.add('bg-green-600');
-  setTimeout(() => {
-    button.textContent = originalText;
-    button.classList.remove('bg-green-600');
-  }, 1000);
-  
-  updateCartCount();
-  console.log('Cart:', menuCart);
 }
 
-// Open cart modal
+function addToCart(button, name, price, image) {
+  try {
+    const currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
+    if (!currentUser || !currentUser.email) {
+      alert('Please log in to add items to cart');
+      window.location.href = 'login.html';
+      return;
+    }
+
+    const existingItem = cart.find(item => item.name === name);
+    
+    if (existingItem) {
+      existingItem.quantity += 1;
+    } else {
+      cart.push({
+        id: Date.now(),
+        name: name,
+        price: parseFloat(price),
+        image: image,
+        quantity: 1
+      });
+    }
+    
+    saveCart();
+    
+    // Visual feedback
+    if (button) {
+      const originalText = button.textContent;
+      button.textContent = 'Added! ✓';
+      button.style.backgroundColor = '#10b981';
+      
+      setTimeout(() => {
+        button.textContent = originalText;
+        button.style.backgroundColor = '';
+      }, 1500);
+    }
+  } catch (e) {
+    console.error('Error adding to cart:', e);
+    alert('Failed to add item to cart');
+  }
+}
+
+function updateCartCount() {
+  try {
+    const totalItems = cart.reduce((sum, item) => sum + (item.quantity || 0), 0);
+    
+    const cartCount = document.getElementById('cart-count');
+    const mobileCartCount = document.getElementById('mobile-cart-count');
+    
+    if (cartCount) cartCount.textContent = totalItems;
+    if (mobileCartCount) mobileCartCount.textContent = totalItems;
+  } catch (e) {
+    console.error('Error updating cart count:', e);
+  }
+}
+
 function goToCart() {
-  if (menuCart.length === 0) {
-    alert('Your cart is empty!');
+  try {
+    const currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
+    if (!currentUser || !currentUser.email) {
+      alert('Please log in to view your cart');
+      window.location.href = 'login.html';
+      return;
+    }
+    
+    if (cart.length === 0) {
+      alert('Your cart is empty!');
+      return;
+    }
+    
+    openCartModal();
+  } catch (e) {
+    console.error('Error opening cart:', e);
+    alert('Failed to open cart');
+  }
+}
+
+function openCartModal() {
+  const modal = document.getElementById('cart-modal');
+  if (modal) {
+    modal.classList.remove('hidden');
+    modal.classList.add('show');
+    renderCartItems();
+  }
+}
+
+function closeCartModal() {
+  const modal = document.getElementById('cart-modal');
+  if (modal) {
+    modal.classList.remove('show');
+    modal.classList.add('hidden');
+  }
+}
+
+function renderCartItems() {
+  const container = document.getElementById('cart-items-container');
+  if (!container) return;
+  
+  if (cart.length === 0) {
+    container.innerHTML = `
+      <div class="text-center py-12">
+        <svg class="w-24 h-24 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
+        </svg>
+        <p class="text-xl text-gray-500 font-semibold">Your cart is empty</p>
+        <p class="text-gray-400 mt-2">Add some delicious items to get started!</p>
+      </div>
+    `;
+    updateCartSummary();
     return;
   }
   
-  displayCartModal();
-}
-
-// Display cart modal
-function displayCartModal() {
-  const modal = document.getElementById('cart-modal');
-  const container = document.getElementById('cart-items-container');
-  const subtotalEl = document.getElementById('cart-subtotal');
-  const totalItemsEl = document.getElementById('cart-total-items');
-  
-  // Clear previous items
-  container.innerHTML = '';
-  
-  // Calculate totals
-  let subtotal = 0;
-  let totalItems = 0;
-  
-  // Add each cart item
-  menuCart.forEach((item, index) => {
-    const itemTotal = item.price * item.quantity;
-    subtotal += itemTotal;
-    totalItems += item.quantity;
-    
-    const itemHTML = `
+  let html = '';
+  cart.forEach((item, index) => {
+    const itemTotal = (item.price * item.quantity).toFixed(2);
+    const placeholderSvg = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 80 80"%3E%3Crect fill="%23f3f4f6" width="80" height="80" rx="12"/%3E%3Ctext fill="%23cda45e" font-family="Arial,sans-serif" font-size="32" font-weight="bold" text-anchor="middle" x="40" y="50"%3EK%3C/text%3E%3C/svg%3E';
+    html += `
       <div class="cart-item">
-        <img src="${item.image}" alt="${item.name}" class="cart-item-image" />
+        <img src="${item.image || placeholderSvg}" alt="${escapeHtml(item.name)}" class="cart-item-image" loading="lazy" />
         <div class="cart-item-details">
-          <div class="cart-item-name">${item.name}</div>
-          <div class="cart-item-price">₱${item.price} each</div>
+          <div class="cart-item-name">${escapeHtml(item.name)}</div>
+          <div class="cart-item-price">₱${item.price.toFixed(2)} each</div>
           <div class="cart-item-quantity">
-            <button class="quantity-btn" onclick="updateQuantity(${index}, -1)">−</button>
+            <button class="quantity-btn" onclick="decreaseQuantity(${index})">−</button>
             <span class="quantity-display">${item.quantity}</span>
-            <button class="quantity-btn" onclick="updateQuantity(${index}, 1)">+</button>
+            <button class="quantity-btn" onclick="increaseQuantity(${index})">+</button>
             <span class="ml-4 font-semibold text-dark">₱${itemTotal}</span>
           </div>
         </div>
         <button class="remove-btn" onclick="removeFromCart(${index})">Remove</button>
       </div>
     `;
-    
-    container.innerHTML += itemHTML;
   });
   
-  // Update totals
-  subtotalEl.textContent = `₱${subtotal}`;
-  totalItemsEl.textContent = totalItems;
-  
-  // Show modal
-  modal.classList.remove('hidden');
-  modal.classList.add('show');
+  container.innerHTML = html;
+  updateCartSummary();
 }
 
-// Update quantity
-function updateQuantity(index, change) {
-  if (menuCart[index]) {
-    menuCart[index].quantity += change;
-    
-    // Remove if quantity is 0 or less
-    if (menuCart[index].quantity <= 0) {
-      menuCart.splice(index, 1);
-    }
-    
-    updateCartCount();
-    saveCart(); // <-- ADD THIS LINE
-    
-    // Refresh modal if still has items
-    if (menuCart.length > 0) {
-      displayCartModal();
+function increaseQuantity(index) {
+  if (cart[index]) {
+    cart[index].quantity += 1;
+    saveCart();
+    renderCartItems();
+  }
+}
+
+function decreaseQuantity(index) {
+  if (cart[index]) {
+    if (cart[index].quantity > 1) {
+      cart[index].quantity -= 1;
+      saveCart();
+      renderCartItems();
     } else {
-      closeCartModal();
-      alert('Your cart is now empty!');
+      removeFromCart(index);
     }
   }
 }
 
-// Remove from cart
 function removeFromCart(index) {
   if (confirm('Remove this item from cart?')) {
-    menuCart.splice(index, 1);
-    saveCart(); // <-- ADD THIS LINE
-    updateCartCount();
+    cart.splice(index, 1);
+    saveCart();
     
-    if (menuCart.length > 0) {
-      displayCartModal();
+    if (cart.length > 0) {
+      renderCartItems();
     } else {
       closeCartModal();
       alert('Your cart is now empty!');
@@ -960,37 +1065,129 @@ function removeFromCart(index) {
   }
 }
 
-// Close cart modal
-function closeCartModal() {
-  const modal = document.getElementById('cart-modal');
-  modal.classList.remove('show');
-  modal.classList.add('hidden');
-}
-
-// Proceed to checkout
-function proceedToCheckout() {
-  if (menuCart.length === 0) {
-    alert('Your cart is empty!');
-    return;
-  }
+function updateCartSummary() {
+  const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
   
-  const cartParam = encodeURIComponent(JSON.stringify(menuCart));
-  window.location.href = `cart.html?cart=${cartParam}`;
+  const subtotalEl = document.getElementById('cart-subtotal');
+  const totalItemsEl = document.getElementById('cart-total-items');
+  
+  if (subtotalEl) subtotalEl.textContent = '₱' + subtotal.toFixed(2);
+  if (totalItemsEl) totalItemsEl.textContent = totalItems;
 }
 
-// Close modal when clicking outside
-document.addEventListener('click', function(event) {
-  const modal = document.getElementById('cart-modal');
-  if (event.target === modal) {
-    closeCartModal();
+function proceedToCheckout() {
+  try {
+    const currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
+    if (!currentUser || !currentUser.email) {
+      alert('Please log in to proceed to checkout');
+      closeCartModal();
+      window.location.href = 'login.html';
+      return;
+    }
+    
+    if (cart.length === 0) {
+      alert('Your cart is empty!');
+      return;
+    }
+    
+    window.location.href = 'cart.html';
+  } catch (e) {
+    console.error('Error proceeding to checkout:', e);
+    alert('Failed to proceed to checkout');
   }
-});
+}
 
-// Update cart count on page load
-updateCartCount();
+// ==================== AUTH MANAGEMENT ====================
+function checkAuthStatus() {
+  try {
+    const currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
+    
+    const authButtons = document.getElementById('auth-buttons');
+    const userProfile = document.getElementById('user-profile');
+    const mobileAuthButtons = document.getElementById('mobile-auth-buttons');
+    const mobileUserProfile = document.getElementById('mobile-user-profile');
+    
+    if (currentUser && currentUser.email) {
+      // Desktop
+      if (authButtons) authButtons.classList.add('hidden');
+      if (userProfile) {
+        userProfile.classList.remove('hidden');
+        userProfile.classList.add('flex');
+      }
+      
+      // Mobile
+      if (mobileAuthButtons) mobileAuthButtons.classList.add('hidden');
+      if (mobileUserProfile) {
+        mobileUserProfile.classList.remove('hidden');
+        mobileUserProfile.classList.add('flex');
+      }
+      
+      // Set user info
+      const firstName = (currentUser.name || currentUser.email).split(' ')[0];
+      const initial = firstName.charAt(0).toUpperCase();
+      
+      const userName = document.getElementById('user-name');
+      const userInitial = document.getElementById('user-initial');
+      const mobileUserName = document.getElementById('mobile-user-name');
+      const mobileUserInitial = document.getElementById('mobile-user-initial');
+      
+      if (userName) userName.textContent = firstName;
+      if (userInitial) userInitial.textContent = initial;
+      if (mobileUserName) mobileUserName.textContent = firstName;
+      if (mobileUserInitial) mobileUserInitial.textContent = initial;
+    } else {
+      // Desktop
+      if (authButtons) authButtons.classList.remove('hidden');
+      if (userProfile) {
+        userProfile.classList.add('hidden');
+        userProfile.classList.remove('flex');
+      }
+      
+      // Mobile
+      if (mobileAuthButtons) mobileAuthButtons.classList.remove('hidden');
+      if (mobileUserProfile) {
+        mobileUserProfile.classList.add('hidden');
+        mobileUserProfile.classList.remove('flex');
+      }
+    }
+  } catch (e) {
+    console.error('Error checking auth status:', e);
+  }
+}
 
+function logout() {
+  if (confirm('Are you sure you want to log out?')) {
+    try {
+      // Clear cart
+      const cartKey = getCartKey();
+      localStorage.removeItem(cartKey);
+      cart = [];
+      updateCartCount();
+      
+      // Clear user data
+      localStorage.removeItem('currentUser');
+      sessionStorage.removeItem('authToken');
+      
+      // Update UI
+      checkAuthStatus();
+      
+      alert('✅ You have been logged out successfully!');
+      window.location.href = 'index.html';
+    } catch (e) {
+      console.error('Error during logout:', e);
+      alert('Failed to logout properly');
+    }
+  }
+}
+
+function toggleMobileMenu() {
+  const menu = document.getElementById("mobile-menu");
+  if (menu) {
+    menu.classList.toggle("hidden");
+  }
+}
 </script>
 
 </body>
 </html>
-

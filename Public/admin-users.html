@@ -1,0 +1,870 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>User Management - Kusina ni Katya</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+  * { font-family: 'Poppins', sans-serif; }
+  
+  body { 
+    background: #fafafa;
+    color: #1f2937;
+  }
+  
+  .card {
+    background: white;
+    border-radius: 12px;
+    border: 1px solid #e5e7eb;
+    padding: 24px;
+    transition: all 0.3s;
+  }
+  
+  .card:hover {
+    border-color: #cda45e;
+    box-shadow: 0 8px 24px rgba(205, 164, 94, 0.15);
+    transform: translateY(-4px);
+  }
+  
+  .btn {
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    border: none;
+  }
+  
+  .btn-primary { 
+    background: linear-gradient(135deg, #cda45e 0%, #b8924e 100%);
+    color: white;
+    box-shadow: 0 2px 8px rgba(205, 164, 94, 0.3);
+  }
+  .btn-primary:hover { 
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(205, 164, 94, 0.4);
+  }
+  
+  .btn-secondary { 
+    background: #f3f4f6; 
+    color: #374151; 
+    border: 1px solid #e5e7eb;
+  }
+  .btn-secondary:hover { 
+    background: #e5e7eb;
+    transform: translateY(-1px);
+  }
+  
+  .btn-danger { 
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: white;
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+  }
+  .btn-danger:hover { 
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+  }
+  
+  .badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  
+  .badge-admin { background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); color: #92400e; }
+  .badge-staff { background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); color: #1e40af; }
+  .badge-customer { background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%); color: #065f46; }
+  .badge-active { background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%); color: #065f46; }
+  .badge-inactive { background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%); color: #991b1b; }
+  
+  .filter-btn {
+    padding: 8px 20px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    border: 2px solid #e5e7eb;
+    background: white;
+    color: #6b7280;
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+  
+  .filter-btn:hover { 
+    border-color: #cda45e; 
+    color: #cda45e;
+    transform: translateY(-2px);
+  }
+  
+  .filter-btn.active { 
+    background: linear-gradient(135deg, #cda45e 0%, #b8924e 100%);
+    color: white;
+    border-color: #cda45e;
+    box-shadow: 0 4px 12px rgba(205, 164, 94, 0.3);
+  }
+  
+  .modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    backdrop-filter: blur(8px);
+  }
+  
+  .modal-content {
+    background: white;
+    border-radius: 16px;
+    padding: 28px;
+    max-width: 500px;
+    width: 90%;
+    max-height: 85vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    animation: slideIn 0.3s ease-out;
+  }
+  
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(-20px) scale(0.95); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  
+  .form-group { margin-bottom: 18px; }
+  .form-label { 
+    display: block; 
+    font-weight: 600; 
+    margin-bottom: 8px; 
+    color: #374151;
+    font-size: 13px;
+  }
+  
+  .form-input, .form-select {
+    width: 100%;
+    padding: 10px 14px;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: all 0.3s;
+  }
+  
+  .form-input:focus, .form-select:focus {
+    outline: none;
+    border-color: #cda45e;
+    box-shadow: 0 0 0 4px rgba(205, 164, 94, 0.1);
+  }
+  
+  .toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 48px;
+    height: 24px;
+  }
+  
+  .toggle-switch input { opacity: 0; width: 0; height: 0; }
+  
+  .toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, #d1d5db 0%, #9ca3af 100%);
+    transition: 0.3s;
+    border-radius: 24px;
+  }
+  
+  .toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background: white;
+    transition: 0.3s;
+    border-radius: 50%;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  }
+  
+  input:checked + .toggle-slider { 
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  }
+  input:checked + .toggle-slider:before { transform: translateX(24px); }
+  
+  .user-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #cda45e 0%, #b8924e 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    color: white;
+    font-size: 18px;
+    box-shadow: 0 4px 12px rgba(205, 164, 94, 0.3);
+  }
+  
+  #toast {
+    position: fixed;
+    right: 24px;
+    bottom: 24px;
+    background: #1f2937;
+    color: white;
+    padding: 12px 20px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 500;
+    z-index: 1100;
+    display: none;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    animation: slideIn 0.3s ease-out;
+  }
+</style>
+</head>
+
+<body>
+
+<header class="bg-white border-b sticky top-0 z-50 backdrop-blur-md bg-white/80">
+  <nav class="max-w-7xl mx-auto px-6">
+    <div class="flex justify-between items-center h-16">
+      <div class="flex items-center gap-3">
+        <img src="assets/images/logo1.png" alt="Logo" class="w-12 h-12 rounded-full shadow-lg" />
+        <div>
+          <h1 class="text-lg font-bold bg-gradient-to-r from-[#cda45e] to-[#b8924e] bg-clip-text text-transparent">User Management</h1>
+          <div class="text-xs text-gray-500">Kusina ni Katya</div>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <a href="dashboard.html" class="px-4 py-2 text-sm font-medium text-gray-600 hover:text-[#cda45e] rounded-lg hover:bg-gray-50 transition">Dashboard</a>
+        <a href="admin-menu.html" class="px-4 py-2 text-sm font-medium text-gray-600 hover:text-[#cda45e] rounded-lg hover:bg-gray-50 transition">Menu</a>
+        <div class="border-l pl-3 ml-3 flex items-center gap-2">
+          <div class="text-sm font-semibold" id="user-name">Admin</div>
+          <button onclick="logout()" class="px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition">Logout</button>
+        </div>
+      </div>
+    </div>
+  </nav>
+</header>
+
+<main class="max-w-7xl mx-auto px-6 py-8">
+
+  <div class="flex justify-between items-center mb-8">
+    <div>
+      <h2 class="text-3xl font-bold text-gray-900">Users</h2>
+      <p class="text-sm text-gray-500 mt-1">Manage users and vouchers</p>
+    </div>
+  </div>
+
+  <div class="mb-6 flex gap-3 flex-wrap">
+    <button onclick="filterUsers('all', this)" class="filter-btn active">All</button>
+    <button onclick="filterUsers('admin', this)" class="filter-btn">Admins</button>
+    <button onclick="filterUsers('customer', this)" class="filter-btn">Customers</button>
+    <button onclick="filterUsers('inactive', this)" class="filter-btn">Inactive</button>
+  </div>
+
+  <div class="mb-6">
+    <input type="text" id="search-input" placeholder="Search users by name or email..." 
+           onkeyup="searchUsers()" 
+           class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-sm focus:border-[#cda45e] focus:outline-none transition shadow-sm">
+  </div>
+
+  <div id="users-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div class="col-span-full text-center py-12 text-gray-400">
+      <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-[#cda45e] mb-4"></div>
+      <p>Loading users...</p>
+    </div>
+  </div>
+
+</main>
+
+<!-- Voucher Modal -->
+<div id="voucher-modal" class="modal-overlay hidden" onclick="closeVoucherModal(event)">
+  <div class="modal-content" onclick="event.stopPropagation()">
+    <h3 class="text-xl font-bold mb-4">Add Voucher</h3>
+    <p class="text-xs text-gray-600 mb-6 bg-[#cda45e]/10 p-3 rounded-lg">User: <span id="voucher-user-name" class="font-bold text-[#cda45e]"></span></p>
+    
+    <form id="voucher-form" onsubmit="saveVoucher(event)">
+      <input type="hidden" id="voucher-user-id">
+      
+      <div class="form-group">
+        <label class="form-label" for="voucher-code">Voucher Code *</label>
+        <input type="text" id="voucher-code" class="form-input" required placeholder="e.g., SAVE20">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="voucher-type">Discount Type *</label>
+        <select id="voucher-type" class="form-select" required>
+          <option value="percentage">Percentage (%)</option>
+          <option value="fixed">Fixed Amount (₱)</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="voucher-value">Discount Value *</label>
+        <input type="number" id="voucher-value" class="form-input" required min="1" step="0.01" placeholder="e.g., 20">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="voucher-expires">Expiration Date *</label>
+        <input type="date" id="voucher-expires" class="form-input" required>
+      </div>
+
+      <div class="flex gap-3 mt-6">
+        <button type="button" onclick="closeVoucherModal()" class="flex-1 btn btn-secondary">Cancel</button>
+        <button type="submit" class="flex-1 btn btn-primary">Create</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- View Vouchers Modal -->
+<div id="view-vouchers-modal" class="modal-overlay hidden" onclick="closeViewVouchersModal(event)">
+  <div class="modal-content" onclick="event.stopPropagation()">
+    <h3 class="text-xl font-bold mb-4">Vouchers</h3>
+    <p class="text-xs text-gray-600 mb-6 bg-[#cda45e]/10 p-3 rounded-lg">User: <span id="view-vouchers-user-name" class="font-bold text-[#cda45e]"></span></p>
+    <div id="vouchers-list" class="mb-6"></div>
+    <button onclick="closeViewVouchersModal()" class="w-full btn btn-secondary">Close</button>
+  </div>
+</div>
+
+<!-- Delete Modal -->
+<div id="delete-modal" class="modal-overlay hidden" onclick="closeDeleteModal(event)">
+  <div class="modal-content" style="max-width: 420px;" onclick="event.stopPropagation()">
+    <h3 class="text-xl font-bold mb-3 text-red-600">Delete User?</h3>
+    <p class="text-sm text-gray-600 mb-6">Delete "<span id="delete-user-name" class="font-bold"></span>"? This cannot be undone.</p>
+    <input type="hidden" id="delete-user-id">
+    <div class="flex gap-3">
+      <button onclick="closeDeleteModal()" class="flex-1 btn btn-secondary">Cancel</button>
+      <button onclick="confirmDelete()" class="flex-1 btn btn-danger">Delete</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+  
+let token = null;
+let allUsers = [];
+let currentFilter = 'all';
+
+document.addEventListener('DOMContentLoaded', async () => {
+  token = localStorage.getItem('adminToken');
+  if (!token) {
+    window.location.href = 'login.html';
+    return;
+  }
+  
+  await loadUserInfo();
+  await loadUsers();
+  
+  const today = new Date().toISOString().split('T')[0];
+  const expiryInput = document.getElementById('voucher-expires');
+  if (expiryInput) {
+    expiryInput.min = today;
+  }
+});
+
+async function loadUserInfo() {
+  try {
+    const res = await fetch('/auth/me', { 
+      headers: { 'Authorization': `Bearer ${token}` } 
+    });
+    
+    if (!res.ok) {
+      localStorage.removeItem('adminToken');
+      window.location.href = 'login.html';
+      return;
+    }
+    
+    const data = await res.json();
+    if (data.success && data.user) {
+      document.getElementById('user-name').textContent = data.user.name || 'Admin';
+    }
+  } catch(e) {
+    console.error('User load error:', e);
+  }
+}
+
+async function loadUsers() {
+  try {
+    const res = await fetch('/api/admin/users', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    
+    if (!res.ok) throw new Error('Failed to load users');
+    
+    const data = await res.json();
+    allUsers = data.users || [];
+    console.log('✅ Loaded', allUsers.length, 'users');
+    renderUsers();
+    
+  } catch(e) {
+    console.error('Load users error:', e);
+    showToast('Failed to load users', 'error');
+  }
+}
+
+function renderUsers() {
+  const grid = document.getElementById('users-grid');
+  if (!grid) return;
+  
+  let filtered = allUsers.filter(user => {
+    if (currentFilter === 'all') return true;
+    if (currentFilter === 'inactive') return !user.is_active;
+    return user.role === currentFilter;
+  });
+  
+  if (filtered.length === 0) {
+    grid.innerHTML = '<div class="col-span-full text-center py-12 text-gray-400">No users found</div>';
+    return;
+  }
+  
+  grid.innerHTML = '';
+  
+  filtered.forEach(user => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    const joinDate = user.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A';
+    const initial = (user.name || user.email).charAt(0).toUpperCase();
+    
+    card.innerHTML = `
+      <div class="flex items-start gap-4 mb-4">
+        <div class="user-avatar">${initial}</div>
+        <div class="flex-1 min-w-0">
+          <h3 class="text-lg font-bold truncate text-gray-900">${escapeHtml(user.name || 'Unknown')}</h3>
+          <p class="text-xs text-gray-600 truncate">${escapeHtml(user.email)}</p>
+          ${user.phone ? `<p class="text-xs text-gray-500 mt-1">${escapeHtml(user.phone)}</p>` : ''}
+        </div>
+      </div>
+      
+      <div class="flex gap-2 mb-4 flex-wrap">
+        <span class="badge badge-${user.role}">${user.role}</span>
+        <span class="badge ${user.is_active ? 'badge-active' : 'badge-inactive'}">${user.is_active ? 'Active' : 'Inactive'}</span>
+      </div>
+      
+      <div class="text-xs text-gray-500 mb-4 pb-4 border-b">Joined: ${joinDate}</div>
+      
+      <div class="flex items-center justify-between mb-4 p-3 bg-gray-50 rounded-lg">
+        <span class="text-xs font-semibold text-gray-700">Active Status</span>
+        <label class="toggle-switch" onclick="event.stopPropagation()">
+          <input type="checkbox" ${user.is_active ? 'checked' : ''} onchange="toggleUserActive(${user.id}, this.checked)">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      
+      <div class="grid grid-cols-2 gap-2">
+        <button onclick="openVoucherModal(${user.id}, '${escapeHtml(user.name || user.email)}')" class="btn btn-primary text-xs">Add Voucher</button>
+        <button onclick="viewUserVouchers(${user.id}, '${escapeHtml(user.name || user.email)}')" class="btn btn-secondary text-xs">View Vouchers</button>
+        ${user.role !== 'admin' ? `<button onclick="openDeleteModal(${user.id}, '${escapeHtml(user.name || user.email)}')" class="btn btn-danger text-xs col-span-2">Delete User</button>` : ''}
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+async function toggleUserActive(userId, isActive) {
+  try {
+    console.log('🔄 Toggling user active status:', userId, isActive);
+    
+    const res = await fetch(`/api/admin/users/${userId}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ is_active: isActive })
+    });
+    
+    const data = await res.json();
+    
+    if (data.success) {
+      showToast(`User ${isActive ? 'activated' : 'deactivated'}`, 'success');
+      await loadUsers();
+    } else {
+      showToast(data.message || 'Failed to update', 'error');
+      await loadUsers();
+    }
+  } catch(e) {
+    console.error('Toggle active error:', e);
+    showToast('Error updating status', 'error');
+    await loadUsers();
+  }
+}
+
+function filterUsers(filter, btn) {
+  currentFilter = filter;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderUsers();
+}
+
+function searchUsers() {
+  const val = document.getElementById('search-input').value.toLowerCase();
+  
+  if (!val) {
+    renderUsers();
+    return;
+  }
+  
+  const grid = document.getElementById('users-grid');
+  const filtered = allUsers.filter(u => 
+    (u.name || '').toLowerCase().includes(val) || 
+    (u.email || '').toLowerCase().includes(val)
+  );
+  
+  if (filtered.length === 0) {
+    grid.innerHTML = '<div class="col-span-full text-center py-12 text-gray-400">No users found</div>';
+    return;
+  }
+  
+  grid.innerHTML = '';
+  filtered.forEach(user => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    const initial = (user.name || user.email).charAt(0).toUpperCase();
+    
+    card.innerHTML = `
+      <div class="flex items-start gap-4 mb-4">
+        <div class="user-avatar">${initial}</div>
+        <div class="flex-1 min-w-0">
+          <h3 class="text-lg font-bold truncate">${escapeHtml(user.name || 'Unknown')}</h3>
+          <p class="text-xs text-gray-600 truncate">${escapeHtml(user.email)}</p>
+        </div>
+      </div>
+      <div class="flex gap-2 mb-3"><span class="badge badge-${user.role}">${user.role}</span></div>
+      <div class="grid grid-cols-2 gap-2">
+        <button onclick="openVoucherModal(${user.id}, '${escapeHtml(user.name)}')" class="btn btn-primary text-xs">Voucher</button>
+        <button onclick="viewUserVouchers(${user.id}, '${escapeHtml(user.name)}')" class="btn btn-secondary text-xs">View</button>
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+// Open voucher modal
+function openVoucherModal(userId, userName) {
+  document.getElementById('voucher-user-id').value = userId;
+  document.getElementById('voucher-user-name').textContent = userName;
+  document.getElementById('voucher-form').reset();
+  
+  // Set minimum date to today
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('voucher-expires').min = today;
+  
+  document.getElementById('voucher-modal').classList.remove('hidden');
+}
+
+// Save voucher - FIXED to use backend API
+async function saveVoucher(event) {
+  event.preventDefault();
+  
+  const userId = document.getElementById('voucher-user-id').value;
+  const code = document.getElementById('voucher-code').value.trim().toUpperCase();
+  const type = document.getElementById('voucher-type').value;
+  const value = parseFloat(document.getElementById('voucher-value').value);
+  const expiresAt = document.getElementById('voucher-expires').value;
+  
+  console.log('📝 Creating voucher:', { userId, code, type, value, expiresAt });
+  
+  // Validation
+  if (!code || !value || !expiresAt) {
+    showToast('All fields are required', 'error');
+    return;
+  }
+  
+  if (code.length < 3) {
+    showToast('Voucher code must be at least 3 characters', 'error');
+    return;
+  }
+  
+  if (type === 'percentage' && (value < 1 || value > 100)) {
+    showToast('Percentage must be between 1-100', 'error');
+    return;
+  }
+  
+  if (value <= 0) {
+    showToast('Value must be positive', 'error');
+    return;
+  }
+  
+  try {
+    const res = await fetch('http://localhost:3000/api/admin/vouchers', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        user_id: parseInt(userId),
+        code: code,
+        discount_type: type,
+        discount_value: value,
+        expires_at: expiresAt
+      })
+    });
+    
+    const data = await res.json();
+    
+    if (data.success) {
+      showToast('✅ Voucher created successfully! 🎟️', 'success');
+      closeVoucherModal();
+      
+      // Refresh the user list to show updated voucher count
+      setTimeout(() => {
+        loadUsers();
+      }, 500);
+    } else {
+      showToast(data.message || 'Failed to create voucher', 'error');
+    }
+  } catch(e) {
+    console.error('❌ Create voucher error:', e);
+    showToast('Error creating voucher: ' + e.message, 'error');
+  }
+}
+
+// View user vouchers - FIXED to use backend API
+async function viewUserVouchers(userId, userName) {
+  document.getElementById('view-vouchers-user-name').textContent = userName;
+  const list = document.getElementById('vouchers-list');
+  list.innerHTML = '<p class="text-center text-gray-400 py-4">Loading...</p>';
+  
+  document.getElementById('view-vouchers-modal').classList.remove('hidden');
+  
+  try {
+    console.log('📡 Fetching vouchers for user:', userId);
+    
+    const res = await fetch(`http://localhost:3000/api/admin/vouchers?user_id=${userId}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+    }
+    
+    const data = await res.json();
+    
+    console.log('📦 Vouchers response:', data);
+    
+    if (data.success && data.vouchers && data.vouchers.length > 0) {
+      list.innerHTML = '';
+      data.vouchers.forEach(v => {
+        const isExpired = new Date(v.expires_at) < new Date();
+        const div = document.createElement('div');
+        div.className = 'border-l-4 border-[#cda45e] bg-gradient-to-r from-[#cda45e]/5 to-transparent p-4 mb-3 rounded-lg';
+        div.innerHTML = `
+          <div class="flex justify-between items-start mb-2">
+            <div class="font-mono font-bold text-base text-[#cda45e]">${v.code}</div>
+            <div class="flex gap-2">
+              <span class="badge ${v.is_used ? 'badge-inactive' : isExpired ? 'badge-inactive' : 'badge-active'}">
+                ${v.is_used ? 'Used' : isExpired ? 'Expired' : 'Active'}
+              </span>
+              <button onclick="deleteVoucher(${v.id}, '${v.code}')" class="text-red-500 hover:text-red-700 text-xs font-bold">
+                Delete
+              </button>
+            </div>
+          </div>
+          <div class="text-sm text-gray-700 mb-1">
+            <strong>Discount:</strong> ${v.discount_type === 'percentage' ? `${v.discount_value}%` : `₱${v.discount_value}`}
+          </div>
+          <div class="text-xs text-gray-500">
+            <strong>Expires:</strong> ${new Date(v.expires_at).toLocaleDateString()}
+          </div>
+          ${v.is_used && v.used_at ? `
+          <div class="text-xs text-gray-500 mt-1">
+            <strong>Used:</strong> ${new Date(v.used_at).toLocaleString()}
+          </div>
+          ` : ''}
+        `;
+        list.appendChild(div);
+      });
+    } else {
+      list.innerHTML = `
+        <div class="text-center py-8">
+          <div class="text-4xl mb-2">🎟️</div>
+          <p class="text-gray-400">No vouchers</p>
+        </div>
+      `;
+    }
+  } catch(e) {
+    console.error('❌ Load vouchers error:', e);
+    list.innerHTML = '<p class="text-center text-red-500 py-4">Failed to load vouchers</p>';
+  }
+}
+
+// Delete voucher - FIXED to use backend API
+async function deleteVoucher(voucherId, voucherCode) {
+  if (!confirm(`Delete voucher "${voucherCode}"? This cannot be undone.`)) return;
+  
+  try {
+    const res = await fetch(`http://localhost:3000/api/admin/vouchers/${voucherId}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    
+    const data = await res.json();
+    
+    if (data.success) {
+      showToast('✅ Voucher deleted', 'success');
+      
+      // Refresh vouchers list
+      const userId = document.getElementById('voucher-user-id').value || 
+                     document.querySelector('[onclick^="viewUserVouchers"]')?.onclick.toString().match(/\d+/)?.[0];
+      
+      if (userId) {
+        const userName = document.getElementById('view-vouchers-user-name').textContent;
+        viewUserVouchers(userId, userName);
+      } else {
+        closeViewVouchersModal();
+      }
+    } else {
+      showToast(data.message || 'Failed to delete voucher', 'error');
+    }
+  } catch(e) {
+    console.error('❌ Delete voucher error:', e);
+    showToast('Error deleting voucher', 'error');
+  }
+}
+
+// Close voucher modals
+function closeVoucherModal(e) {
+  if (!e || e.target === e.currentTarget) {
+    document.getElementById('voucher-modal').classList.add('hidden');
+  }
+}
+
+function closeViewVouchersModal(e) {
+  if (!e || e.target === e.currentTarget) {
+    document.getElementById('view-vouchers-modal').classList.add('hidden');
+  }
+}
+
+// ==================== USER MANAGEMENT FUNCTIONS ====================
+
+// Toggle user active status - FIXED
+async function toggleUserActive(userId, isActive) {
+  try {
+    console.log('🔄 Toggling user active status:', userId, isActive);
+    
+    const res = await fetch(`http://localhost:3000/api/admin/users/${userId}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ is_active: isActive })
+    });
+    
+    const data = await res.json();
+    
+    if (data.success) {
+      showToast(`✅ User ${isActive ? 'activated' : 'deactivated'}`, 'success');
+      await loadUsers();
+    } else {
+      showToast(data.message || 'Failed to update', 'error');
+      await loadUsers(); // Reload to reset toggle
+    }
+  } catch(e) {
+    console.error('❌ Toggle active error:', e);
+    showToast('Error updating status', 'error');
+    await loadUsers(); // Reload to reset toggle
+  }
+}
+
+// Delete user - FIXED
+async function confirmDelete() {
+  const id = document.getElementById('delete-user-id').value;
+  
+  try {
+    const res = await fetch(`http://localhost:3000/api/admin/users/${id}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    
+    const data = await res.json();
+    
+    if (data.success) {
+      showToast('✅ User deleted', 'success');
+      closeDeleteModal();
+      await loadUsers();
+    } else {
+      showToast(data.message || 'Failed to delete', 'error');
+    }
+  } catch(e) {
+    console.error('❌ Delete error:', e);
+    showToast('Error deleting user', 'error');
+  }
+}
+
+function closeVoucherModal(e) {
+  if (!e || e.target === e.currentTarget) {
+    document.getElementById('voucher-modal').classList.add('hidden');
+  }
+}
+
+function closeViewVouchersModal(e) {
+  if (!e || e.target === e.currentTarget) {
+    document.getElementById('view-vouchers-modal').classList.add('hidden');
+  }
+}
+
+function closeDeleteModal(e) {
+  if (!e || e.target === e.currentTarget) {
+    document.getElementById('delete-modal').classList.add('hidden');
+  }
+}
+
+function logout() {
+  if (confirm('Logout?')) {
+    localStorage.removeItem('adminToken');
+    window.location.href = 'login.html';
+  }
+}
+
+function showToast(msg, type = 'info') {
+  const toast = document.getElementById('toast');
+  if (!toast) return;
+  
+  toast.textContent = msg;
+  
+  if (type === 'success') {
+    toast.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
+  } else if (type === 'error') {
+    toast.style.background = 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)';
+  } else {
+    toast.style.background = '#1f2937';
+  }
+  
+  toast.style.display = 'block';
+  
+  clearTimeout(toast.hideTimeout);
+  toast.hideTimeout = setTimeout(() => { 
+    toast.style.display = 'none'; 
+  }, 3000);
+}
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text || '';
+  return div.innerHTML;
+}
+
+console.log('✅ Admin Users page loaded');
+</script>
+
+</body>
+</html>

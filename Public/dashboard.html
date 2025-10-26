@@ -3,154 +3,106 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Admin Dashboard - Kusina ni Katya</title>
+<title>Dashboard - Kusina ni Katya</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-
-<script>
-  tailwind.config = {
-    theme: {
-      extend: {
-        colors: {
-          accent: '#cda45e',
-          'accent-light': '#e5b66a',
-          'accent-dark': '#b8924e',
-        }
-      }
-    }
-  }
-</script>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
 <style>
-  body { font-family: 'Poppins', sans-serif; }
-  .status-badge { padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.875rem; font-weight: 600; }
-  .status-pending { background: #FEF3C7; color: #92400E; }
-  .status-paid { background: #D1FAE5; color: #065F46; }
-  .status-failed { background: #FEE2E2; color: #991B1B; }
+  * { font-family: 'Poppins', sans-serif; }
   
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
+  body { 
+    background: #fafafa;
+    color: #1f2937;
   }
   
-  .fade-in {
-    animation: fadeIn 0.5s ease-out;
-  }
-
-  @keyframes slide-in {
-    from {
-      opacity: 0;
-      transform: translateX(100%);
-    }
-    to {
-      opacity: 1;
-      transform: translateX(0);
-    }
-  }
-  
-  .animate-slide-in {
-    animation: slide-in 0.3s ease-out;
-  }
-
-  .filter-tab {
+  .card {
     background: white;
-    color: #4B5563;
-    border: 2px solid #E5E7EB;
+    border-radius: 12px;
+    border: 1px solid #e5e7eb;
+    padding: 20px;
+    transition: all 0.3s;
   }
   
-  .filter-tab:hover {
+  .card:hover {
+    border-color: #cda45e;
+    box-shadow: 0 8px 24px rgba(205, 164, 94, 0.15);
+  }
+  
+  .btn {
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    border: none;
+  }
+  
+  .btn-primary { 
+    background: linear-gradient(135deg, #cda45e 0%, #b8924e 100%);
+    color: white;
+    box-shadow: 0 2px 8px rgba(205, 164, 94, 0.3);
+  }
+  .btn-primary:hover { 
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(205, 164, 94, 0.4);
+  }
+  
+  .btn-secondary { 
+    background: #f3f4f6; 
+    color: #374151; 
+    border: 1px solid #e5e7eb;
+  }
+  .btn-secondary:hover { background: #e5e7eb; }
+  
+  .badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 11px;
+    font-weight: 700;
+  }
+  
+  .badge-pending { background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); color: #92400e; }
+  .badge-paid { background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%); color: #065f46; }
+  .badge-failed { background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%); color: #991b1b; }
+  
+  .filter-btn {
+    padding: 8px 20px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    border: 2px solid #e5e7eb;
+    background: white;
+    color: #6b7280;
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+  
+  .filter-btn:hover {
     border-color: #cda45e;
     color: #cda45e;
+    transform: translateY(-2px);
   }
   
-  .filter-tab.active {
-    background: linear-gradient(135deg, #cda45e, #b8924e);
+  .filter-btn.active {
+    background: linear-gradient(135deg, #cda45e 0%, #b8924e 100%);
     color: white;
     border-color: #cda45e;
+    box-shadow: 0 4px 12px rgba(205, 164, 94, 0.3);
   }
-
-  .connection-indicator {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 1rem;
-    border-radius: 0.5rem;
-    font-size: 0.875rem;
+  
+  .status-indicator {
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-size: 12px;
     font-weight: 500;
   }
-
-  .connection-indicator.connected {
-    background: #D1FAE5;
-    color: #065F46;
-  }
-
-  .connection-indicator.disconnected {
-    background: #FEE2E2;
-    color: #991B1B;
-  }
-
-  .pulse {
-    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-  }
-
-  @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: .5; }
-  }
-
-  .order-card {
-    background: white;
-    border-radius: 8px;
-    padding: 20px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    transition: all 0.3s ease;
-  }
-
-  .order-card:hover {
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-  }
-
-  .order-row {
-    border-bottom: 1px solid #E5E7EB;
-    transition: background-color 0.2s;
-  }
-
-  .order-row:hover {
-    background-color: #F9FAFB;
-  }
-
-  .order-row:last-child {
-    border-bottom: none;
-  }
-
-  .action-btn {
-    padding: 6px 12px;
-    border-radius: 4px;
-    font-size: 0.875rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-
-  .action-btn-primary {
-    background: #cda45e;
-    color: white;
-  }
-
-  .action-btn-primary:hover {
-    background: #b8924e;
-  }
-
-  .action-btn-secondary {
-    background: #E5E7EB;
-    color: #374151;
-  }
-
-  .action-btn-secondary:hover {
-    background: #D1D5DB;
-  }
-
+  
+  .status-connected { background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%); color: #065f46; }
+  .status-disconnected { background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%); color: #991b1b; }
+  
   .modal-overlay {
     position: fixed;
     top: 0;
@@ -162,294 +114,126 @@
     align-items: center;
     justify-content: center;
     z-index: 1000;
+    backdrop-filter: blur(8px);
   }
-
+  
   .modal-content {
     background: white;
-    border-radius: 8px;
-    padding: 30px;
+    border-radius: 16px;
+    padding: 28px;
     max-width: 500px;
     width: 90%;
     max-height: 80vh;
     overflow-y: auto;
-    box-shadow: 0 20px 25px rgba(0,0,0,0.15);
-    animation: slide-in 0.3s ease-out;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    animation: slideIn 0.3s ease-out;
   }
-
-  .empty-state {
-    text-align: center;
-    padding: 60px 20px;
-    color: #9CA3AF;
+  
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(-20px) scale(0.95); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
   }
-
-  .empty-state-icon {
-    font-size: 48px;
-    margin-bottom: 15px;
-  }
-
-  .stat-card {
-    background: white;
-    border-radius: 8px;
-    padding: 24px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    transition: all 0.3s ease;
-  }
-
-  .stat-card:hover {
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    transform: translateY(-2px);
-  }
-
-  .stat-value {
-    font-size: 28px;
-    font-weight: 700;
-    margin-top: 10px;
-  }
-
-  .stat-label {
-    font-size: 14px;
-    color: #6B7280;
-    margin-top: 8px;
-  }
-
-  .header-search {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 20px;
-  }
-
-  .search-input {
-    flex: 1;
-    padding: 10px 15px;
-    border: 1px solid #E5E7EB;
-    border-radius: 6px;
-    font-size: 14px;
-  }
-
-  .search-input:focus {
-    outline: none;
-    border-color: #cda45e;
-    box-shadow: 0 0 0 3px rgba(205, 164, 94, 0.1);
-  }
-
-  .badge-sm {
-    display: inline-block;
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 0.75rem;
-    font-weight: 600;
-  }
-
-  .order-detail-row {
-    display: flex;
-    justify-content: space-between;
-    padding: 10px 0;
-    border-bottom: 1px solid #E5E7EB;
-  }
-
-  .order-detail-row:last-child {
-    border-bottom: none;
-  }
-
-  .detail-label {
-    color: #6B7280;
-    font-weight: 500;
-  }
-
-  .detail-value {
-    color: #1F2937;
-    font-weight: 600;
-  }
-
-  @media (max-width: 1024px) {
-    .desktop-only {
-      display: none !important;
-    }
-  }
-
-  @media (min-width: 1024px) {
-    .mobile-only {
-      display: none !important;
-    }
-  }
-
+  
   #toast {
     position: fixed;
-    right: 20px;
-    bottom: 20px;
-    background: rgba(0,0,0,0.8);
+    right: 24px;
+    bottom: 24px;
+    background: #1f2937;
     color: white;
-    padding: 10px 14px;
-    border-radius: 8px;
+    padding: 12px 20px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 500;
     z-index: 1100;
     display: none;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
   }
 </style>
 </head>
 
-<body class="bg-gray-50">
+<body>
 
-<!-- HEADER -->
-<header class="bg-white shadow-md sticky top-0 z-50">
-  <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+<header class="bg-white border-b sticky top-0 z-50 backdrop-blur-md bg-white/80">
+  <nav class="max-w-7xl mx-auto px-6">
     <div class="flex justify-between items-center h-16">
-      <div class="flex items-center space-x-3">
-        <img 
-          src="assets/images/logo1.png" 
-          alt="Kusina ni Katya Logo" 
-          class="w-14 h-14 object-contain rounded-full shadow-lg"
-        />
+      <div class="flex items-center gap-3">
+        <img src="assets/images/logo1.png" alt="Logo" class="w-12 h-12 rounded-full shadow-lg" />
         <div>
-          <h1 class="text-xl font-bold text-gray-800">Kusina ni Katya</h1>
-          <div class="text-xs text-gray-500">Admin Dashboard</div>
+          <h1 class="text-lg font-bold bg-gradient-to-r from-[#cda45e] to-[#b8924e] bg-clip-text text-transparent">Dashboard</h1>
+          <div class="text-xs text-gray-500">Kusina ni Katya</div>
         </div>
       </div>
-      <div class="flex items-center space-x-4">
-        <div id="connection-status" class="connection-indicator disconnected">
-          <span class="w-2 h-2 rounded-full bg-current pulse"></span>
-          <span id="connection-text">Connecting...</span>
+      <div class="flex items-center gap-3">
+        <div id="connection-status" class="status-indicator status-disconnected">
+          <span id="connection-text">Connecting</span>
         </div>
-        
-        <button onclick="location.reload()" class="text-gray-600 hover:text-accent font-medium transition-colors flex items-center gap-2">
-  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-  </svg>
-  Refresh
-</button>
-        <div class="flex items-center gap-3 pl-4 border-l border-gray-300">
-          <div class="text-right">
-            <div class="text-sm font-medium text-gray-800" id="user-name">Loading...</div>
-            <div class="text-xs text-gray-500" id="user-email">-</div>
-          </div>
-          <button onclick="logout()" class="text-gray-600 hover:text-red-600 font-medium transition-colors text-sm">
-            Logout
-          </button>
+        <a href="admin-menu.html" class="px-4 py-2 text-sm font-medium text-gray-600 hover:text-[#cda45e] rounded-lg hover:bg-gray-50 transition">Menu</a>
+        <a href="admin-users.html" class="px-4 py-2 text-sm font-medium text-gray-600 hover:text-[#cda45e] rounded-lg hover:bg-gray-50 transition">Users</a>
+        <button onclick="location.reload()" class="px-4 py-2 text-sm font-medium text-gray-600 hover:text-[#cda45e] rounded-lg hover:bg-gray-50 transition">Refresh</button>
+        <div class="border-l pl-3 ml-3 flex items-center gap-2">
+          <div class="text-sm font-semibold" id="user-name">Loading</div>
+          <button onclick="logout()" class="px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition">Logout</button>
         </div>
       </div>
     </div>
   </nav>
 </header>
 
-<!-- MAIN CONTENT -->
-<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+<main class="max-w-7xl mx-auto px-6 py-6">
 
-  <!-- Stats Cards -->
-  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-    <div class="stat-card fade-in">
-      <div class="flex items-center justify-between mb-2">
-        <div class="text-sm text-gray-600">Total Orders</div>
-        <svg class="w-8 h-8 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
-        </svg>
-      </div>
-      <div class="stat-value text-gray-800" id="total-orders">0</div>
-      <div class="stat-label">All customer orders</div>
+  <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+    <div class="card">
+      <div class="text-xs text-gray-500 mb-1">Total Orders</div>
+      <div class="text-2xl font-semibold" id="total-orders">0</div>
     </div>
-    
-    <div class="stat-card fade-in" style="animation-delay: 0.1s">
-      <div class="flex items-center justify-between mb-2">
-        <div class="text-sm text-gray-600">Total Revenue</div>
-        <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-        </svg>
-      </div>
-      <div class="stat-value text-green-600" id="total-revenue">₱0.00</div>
-      <div class="stat-label">From paid orders</div>
+    <div class="card">
+      <div class="text-xs text-gray-500 mb-1">Revenue</div>
+      <div class="text-2xl font-semibold text-green-600" id="total-revenue">₱0</div>
     </div>
-    
-    <div class="stat-card fade-in" style="animation-delay: 0.2s">
-      <div class="flex items-center justify-between mb-2">
-        <div class="text-sm text-gray-600">Pending Orders</div>
-        <svg class="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-        </svg>
-      </div>
-      <div class="stat-value text-yellow-600" id="pending-orders">0</div>
-      <div class="stat-label">Awaiting payment</div>
+    <div class="card">
+      <div class="text-xs text-gray-500 mb-1">Pending</div>
+      <div class="text-2xl font-semibold text-yellow-600" id="pending-orders">0</div>
     </div>
-    
-    <div class="stat-card fade-in" style="animation-delay: 0.3s">
-      <div class="flex items-center justify-between mb-2">
-        <div class="text-sm text-gray-600">Completed Orders</div>
-        <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-        </svg>
-      </div>
-      <div class="stat-value text-blue-600" id="completed-orders">0</div>
-      <div class="stat-label">Successfully paid</div>
+    <div class="card">
+      <div class="text-xs text-gray-500 mb-1">Completed</div>
+      <div class="text-2xl font-semibold text-blue-600" id="completed-orders">0</div>
     </div>
   </div>
 
-  <!-- Filter Tabs -->
-  <div class="mb-6 flex gap-2 flex-wrap">
-    <button onclick="filterOrders('all', this)" class="filter-tab active px-4 py-2 rounded-lg font-medium transition-all">
-      All Orders
-    </button>
-    <button onclick="filterOrders('pending', this)" class="filter-tab px-4 py-2 rounded-lg font-medium transition-all">
-      Pending
-    </button>
-    <button onclick="filterOrders('paid', this)" class="filter-tab px-4 py-2 rounded-lg font-medium transition-all">
-      Paid
-    </button>
-    <button onclick="filterOrders('failed', this)" class="filter-tab px-4 py-2 rounded-lg font-medium transition-all">
-      Failed
-    </button>
+  <div class="mb-4 flex gap-2 flex-wrap">
+    <button onclick="filterOrders('all', this)" class="filter-btn active">All</button>
+    <button onclick="filterOrders('pending', this)" class="filter-btn">Pending</button>
+    <button onclick="filterOrders('paid', this)" class="filter-btn">Paid</button>
+    <button onclick="filterOrders('failed', this)" class="filter-btn">Failed</button>
   </div>
 
-  <!-- Search Bar -->
-  <div class="header-search">
-    <input type="text" id="search-input" placeholder="Search by Order ID or Customer Name..." class="search-input" onkeyup="searchOrders()">
-    <button onclick="exportOrders()" class="action-btn action-btn-secondary">
-      Export CSV
-    </button>
+  <div class="mb-4 flex gap-2">
+    <input type="text" id="search-input" placeholder="Search orders..." 
+           onkeyup="searchOrders()" 
+           class="flex-1 px-3 py-2 border-2 border-gray-200 rounded-lg text-sm focus:border-[#cda45e] focus:outline-none transition">
+    <button onclick="exportOrders()" class="btn btn-secondary">Export CSV</button>
   </div>
 
-  <!-- Mobile Card View -->
-  <div id="orders-container" class="grid gap-4 sm:grid-cols-2 lg:hidden mb-8"></div>
-
-  <!-- Desktop Table View -->
-  <div class="bg-white rounded-lg shadow-md mb-8 desktop-only">
-    <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-      <h2 class="text-xl font-bold text-gray-800">All Orders</h2>
-      <div class="text-sm text-gray-500">
-        Showing <span id="showing-count">0</span> of <span id="total-count">0</span> orders
-      </div>
-    </div>
-
+  <div class="card">
     <div class="overflow-x-auto">
-      <table class="w-full">
-        <thead class="bg-gray-50">
-          <tr>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order ID</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Items</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Method</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="border-b text-left text-xs text-gray-500">
+            <th class="pb-3 font-medium">Order ID</th>
+            <th class="pb-3 font-medium">Customer</th>
+            <th class="pb-3 font-medium">Total</th>
+            <th class="pb-3 font-medium">Payment</th>
+            <th class="pb-3 font-medium">Delivery</th>
+            <th class="pb-3 font-medium">Date</th>
+            <th class="pb-3 font-medium">Actions</th>
           </tr>
         </thead>
-        <tbody id="orders-table-body" class="bg-white divide-y divide-gray-200">
+        <tbody id="orders-table-body">
           <tr>
-            <td colspan="9" class="px-6 py-8 text-center text-gray-500">
-              <div class="empty-state">
-                <div class="empty-state-icon">📦</div>
-                <p>Loading orders...</p>
-              </div>
-            </td>
+            <td colspan="7" class="py-12 text-center text-gray-400">Loading...</td>
           </tr>
         </tbody>
       </table>
-    </div>
-  </div>
-
-  <div id="no-results" class="hidden bg-white rounded-lg shadow-md p-8 text-center">
-    <div class="empty-state">
-      <div class="empty-state-icon">🔍</div>
-      <p class="text-lg font-medium text-gray-600">No orders found</p>
-      <p class="text-sm text-gray-500 mt-2">Try adjusting your filters or search terms</p>
     </div>
   </div>
 
@@ -457,50 +241,71 @@
 
 <div id="status-modal" class="modal-overlay hidden" onclick="closeStatusModal(event)">
   <div class="modal-content" onclick="event.stopPropagation()">
-    <h3 class="text-lg font-bold text-gray-800 mb-4">Update Order Status</h3>
-    <p class="text-sm text-gray-600 mb-6">Order ID: <span id="modal-order-id-display" class="font-mono text-accent font-bold"></span></p>
+    <h3 class="text-lg font-semibold mb-4">Update Payment Status</h3>
+    <p class="text-sm text-gray-600 mb-4">Order: <span id="modal-order-id-display" class="font-mono font-bold"></span></p>
     <input type="hidden" id="modal-order-id">
     
-    <div class="space-y-3 mb-6">
-      <label class="flex items-center cursor-pointer p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition">
-        <input type="radio" name="status" value="pending" class="mr-3 w-4 h-4" style="accent-color: #cda45e;">
-        <span class="text-yellow-600 font-medium">⏳ Pending</span>
+    <div class="space-y-2 mb-6">
+      <label class="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
+        <input type="radio" name="status" value="pending" class="mr-3">
+        <span class="text-sm font-medium">Pending</span>
       </label>
-      <label class="flex items-center cursor-pointer p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition">
-        <input type="radio" name="status" value="paid" class="mr-3 w-4 h-4" style="accent-color: #cda45e;">
-        <span class="text-green-600 font-medium">✓ Paid</span>
+      <label class="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
+        <input type="radio" name="status" value="paid" class="mr-3">
+        <span class="text-sm font-medium">Paid</span>
       </label>
-      <label class="flex items-center cursor-pointer p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition">
-        <input type="radio" name="status" value="failed" class="mr-3 w-4 h-4" style="accent-color: #cda45e;">
-        <span class="text-red-600 font-medium">✗ Failed</span>
+      <label class="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
+        <input type="radio" name="status" value="failed" class="mr-3">
+        <span class="text-sm font-medium">Failed</span>
       </label>
     </div>
     
-    <div class="flex gap-3">
-      <button onclick="closeStatusModal()" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium transition-colors">
-        Cancel
-      </button>
-      <button onclick="updateOrderStatus()" class="flex-1 px-4 py-2 bg-accent hover:bg-accent-dark text-white rounded-lg font-medium transition-colors">
-        Update Status
-      </button>
+    <div class="flex gap-2">
+      <button onclick="closeStatusModal()" class="flex-1 btn btn-secondary">Cancel</button>
+      <button onclick="updateOrderStatus()" class="flex-1 btn btn-primary">Update</button>
     </div>
   </div>
 </div>
 
-<div id="details-modal" class="modal-overlay hidden" onclick="closeDetailsModal(event)">
+<div id="delivery-status-modal" class="modal-overlay hidden" onclick="closeDeliveryStatusModal(event)">
   <div class="modal-content" onclick="event.stopPropagation()">
-    <h3 class="text-lg font-bold text-gray-800 mb-4">Order Details</h3>
-    <div id="order-details-content" class="space-y-4"></div>
-    <button onclick="closeDetailsModal()" class="w-full mt-6 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium transition-colors">
-      Close
-    </button>
+    <h3 class="text-lg font-semibold mb-4">Update Delivery Status</h3>
+    <p class="text-sm text-gray-600 mb-4">Order: <span id="delivery-modal-order-id-display" class="font-mono font-bold"></span></p>
+    <input type="hidden" id="delivery-modal-order-id">
+    
+    <div class="space-y-2 mb-6">
+      <label class="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
+        <input type="radio" name="delivery-status" value="placed" class="mr-3">
+        <span class="text-sm font-medium">Placed</span>
+      </label>
+      <label class="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
+        <input type="radio" name="delivery-status" value="preparing" class="mr-3">
+        <span class="text-sm font-medium">Preparing</span>
+      </label>
+      <label class="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
+        <input type="radio" name="delivery-status" value="delivering" class="mr-3">
+        <span class="text-sm font-medium">Delivering</span>
+      </label>
+      <label class="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
+        <input type="radio" name="delivery-status" value="delivered" class="mr-3">
+        <span class="text-sm font-medium">Delivered</span>
+      </label>
+      <label class="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
+        <input type="radio" name="delivery-status" value="cancelled" class="mr-3">
+        <span class="text-sm font-medium">Cancelled</span>
+      </label>
+    </div>
+    
+    <div class="flex gap-2">
+      <button onclick="closeDeliveryStatusModal()" class="flex-1 btn btn-secondary">Cancel</button>
+      <button onclick="updateDeliveryStatus()" class="flex-1 btn btn-primary">Update</button>
+    </div>
   </div>
 </div>
 
 <div id="toast"></div>
 
 <script>
-
   let token = null;
   let allOrders = [];
   let displayedOrders = [];
@@ -510,18 +315,11 @@
   document.addEventListener('DOMContentLoaded', async () => {
     token = localStorage.getItem('adminToken');
     if (!token) {
-      console.log('❌ No token found');
       window.location.href = 'login.html';
       return;
     }
-    console.log('✅ Token found');
     
-    const userLoaded = await loadUserInfo();
-    if (!userLoaded) {
-      console.log('❌ Auth failed');
-      return;
-    }
-    
+    await loadUserInfo();
     await loadOrders();
     await loadStats();
     initializeSocket();
@@ -531,34 +329,14 @@
     try {
       socket = io("http://localhost:3000", { 
         transports: ["websocket", "polling"], 
-        reconnection: true,
         auth: { token: token }
       });
       
-      socket.on('connect', () => {
-        console.log('✅ Socket connected');
-        updateConnectionStatus(true);
-      });
-      
-      socket.on('disconnect', () => {
-        console.log('⚠️ Socket disconnected');
-        updateConnectionStatus(false);
-      });
-      
-      socket.on('new-order', (data) => { 
-        console.log('🔔 New order:', data);
-        showNotification('New Order!', 'success'); 
-        loadOrders(); 
-        loadStats(); 
-      });
-      
-      socket.on('order-status-updated', () => { 
-        loadOrders(); 
-        loadStats(); 
-      });
-      
+      socket.on('connect', () => updateConnectionStatus(true));
+      socket.on('disconnect', () => updateConnectionStatus(false));
+      socket.on('new-order', () => { loadOrders(); loadStats(); });
+      socket.on('order-status-updated', () => { loadOrders(); loadStats(); });
     } catch(err) { 
-      console.error("❌ Socket error:", err);
       updateConnectionStatus(false); 
     }
   }
@@ -567,159 +345,95 @@
     const indicator = document.getElementById('connection-status');
     const text = document.getElementById('connection-text');
     if (connected) {
-      indicator.classList.remove('disconnected'); 
-      indicator.classList.add('connected'); 
+      indicator.className = 'status-indicator status-connected';
       text.textContent = 'Connected';
-    } else { 
-      indicator.classList.remove('connected'); 
-      indicator.classList.add('disconnected'); 
-      text.textContent = 'Disconnected'; 
+    } else {
+      indicator.className = 'status-indicator status-disconnected';
+      text.textContent = 'Disconnected';
     }
   }
 
   async function loadUserInfo() {
     try {
-      console.log('📡 Loading user...');
       const res = await fetch('/auth/me', { 
         headers: { 'Authorization': `Bearer ${token}` } 
       });
       
       if (!res.ok) {
-        console.error('❌ Auth failed:', res.status);
-        if (res.status === 401 || res.status === 403) {
-          localStorage.removeItem('adminToken'); 
-          setTimeout(() => window.location.href = 'login.html', 500);
-          return false;
-        }
-        return false;
+        localStorage.removeItem('adminToken');
+        window.location.href = 'login.html';
+        return;
       }
       
       const data = await res.json();
-      console.log('✅ User loaded');
-      
-      if (!data.success || !data.user) {
-        localStorage.removeItem('adminToken');
-        setTimeout(() => window.location.href = 'login.html', 500);
-        return false;
+      if (data.success && data.user) {
+        document.getElementById('user-name').textContent = data.user.name || 'Admin';
       }
-      
-      document.getElementById('user-name').textContent = data.user.name || 'Admin';
-      document.getElementById('user-email').textContent = data.user.email || '-';
-      return true;
-      
     } catch(e) { 
-      console.error("❌ User load error:", e);
-      return false;
+      console.error('User load error:', e);
     }
   }
 
   async function loadOrders() {
     try {
-      console.log('📦 Loading orders...');
       const res = await fetch('/api/admin/get-all-orders', { 
         headers: { 'Authorization': `Bearer ${token}` } 
       });
       
-      if (!res.ok) {
-        console.error('❌ Orders failed:', res.status);
-        showNotification('Failed to load orders', 'error');
-        return;
-      }
+      if (!res.ok) return;
       
       const data = await res.json();
-      console.log('✅ Orders loaded:', data.orders?.length || 0);
-      
-      if (!data.success) {
-        showNotification('Failed to load orders', 'error');
-        return;
-      }
-      
       allOrders = data.orders || [];
       displayedOrders = allOrders;
       renderOrders();
-      
     } catch(e) { 
-      console.error("❌ Orders error:", e);
-      showNotification('Error loading orders', 'error');
+      console.error('Orders error:', e);
     }
   }
 
   function renderOrders() {
-    const container = document.getElementById('orders-container');
-    const tableBody = document.getElementById('orders-table-body');
-    const noResults = document.getElementById('no-results');
+    const tbody = document.getElementById('orders-table-body');
+    if (!tbody) return;
     
-    if (!container || !tableBody) return;
-    
-    container.innerHTML = '';
-    tableBody.innerHTML = '';
-
     let filtered = displayedOrders.filter(order => {
       if (currentFilter === 'all') return true;
       return order.payment_status === currentFilter;
     });
 
     if (filtered.length === 0) {
-      tableBody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><div class="empty-state-icon">📦</div><p>No orders</p></div></td></tr>`;
-      if (noResults) noResults.classList.remove('hidden');
+      tbody.innerHTML = '<tr><td colspan="7" class="py-12 text-center text-gray-400">No orders</td></tr>';
       return;
-    } else { 
-      if (noResults) noResults.classList.add('hidden'); 
     }
 
-    document.getElementById('showing-count').textContent = filtered.length;
-    document.getElementById('total-count').textContent = allOrders.length;
-
+    tbody.innerHTML = '';
     filtered.forEach(order => {
-      const card = document.createElement('div');
-      card.className = 'order-card mobile-only fade-in';
-      
-      const items = order.items ? (typeof order.items === 'string' ? JSON.parse(order.items) : order.items) : [];
-      
-      card.innerHTML = `
-        <div class="flex justify-between mb-2">
-          <div class="font-mono font-bold text-sm">${order.order_id}</div>
-          <div class="status-badge status-${order.payment_status}">${order.payment_status.toUpperCase()}</div>
-        </div>
-        <div class="text-sm text-gray-700 mb-1">${order.customer_name || '-'}</div>
-        <div class="text-xs text-gray-500 mb-2">${order.customer_email || '-'}</div>
-        <div class="text-sm font-semibold text-accent mb-3">₱${parseFloat(order.total || 0).toFixed(2)}</div>
-        <div class="flex gap-2">
-          <button class="action-btn action-btn-primary flex-1" onclick="openDetailsModal('${order.order_id}')">Details</button>
-          <button class="action-btn action-btn-secondary flex-1" onclick="openStatusModal('${order.order_id}','${order.payment_status}')">Update</button>
-        </div>
-      `;
-      container.appendChild(card);
-
       const tr = document.createElement('tr');
-      tr.className = 'order-row';
+      tr.className = 'border-b hover:bg-gray-50';
       tr.innerHTML = `
-        <td class="px-6 py-4 font-mono text-sm">${order.order_id}</td>
-        <td class="px-6 py-4">${order.customer_name || '-'}</td>
-        <td class="px-6 py-4 text-sm">${order.customer_email || '-'}</td>
-        <td class="px-6 py-4 text-center">${items.length}</td>
-        <td class="px-6 py-4 font-semibold">₱${parseFloat(order.total || 0).toFixed(2)}</td>
-        <td class="px-6 py-4 capitalize">${order.payment_method || '-'}</td>
-        <td class="px-6 py-4"><span class="status-badge status-${order.payment_status}">${order.payment_status}</span></td>
-        <td class="px-6 py-4 text-sm">${order.created_at ? new Date(order.created_at).toLocaleString() : '-'}</td>
-        <td class="px-6 py-4">
-          <div class="flex gap-2">
-            <button class="action-btn action-btn-primary" onclick="openDetailsModal('${order.order_id}')">Details</button>
-            <button class="action-btn action-btn-secondary" onclick="openStatusModal('${order.order_id}','${order.payment_status}')">Update</button>
+        <td class="py-3 font-mono text-xs">${order.order_id}</td>
+        <td class="py-3 text-sm">${order.customer_name || '-'}</td>
+        <td class="py-3 font-semibold">₱${parseFloat(order.total || 0).toFixed(2)}</td>
+        <td class="py-3"><span class="badge badge-${order.payment_status}">${order.payment_status}</span></td>
+        <td class="py-3"><span class="badge" style="background: #e0e7ff; color: #4338ca;">${order.delivery_status || 'placed'}</span></td>
+        <td class="py-3 text-xs text-gray-500">${order.created_at ? new Date(order.created_at).toLocaleDateString() : '-'}</td>
+        <td class="py-3">
+          <div class="flex gap-1">
+            <button onclick="openStatusModal('${order.order_id}','${order.payment_status}')" class="btn btn-secondary text-xs">Payment</button>
+            <button onclick="openDeliveryStatusModal('${order.order_id}','${order.delivery_status || 'placed'}')" class="btn btn-primary text-xs">Delivery</button>
           </div>
         </td>
       `;
-      tableBody.appendChild(tr);
+      tbody.appendChild(tr);
     });
   }
 
   async function loadStats() {
-    const totalOrders = allOrders.length;
+    const total = allOrders.length;
     const pending = allOrders.filter(o => o.payment_status === 'pending').length;
     const paid = allOrders.filter(o => o.payment_status === 'paid').length;
     const revenue = allOrders.filter(o => o.payment_status === 'paid').reduce((sum, o) => sum + parseFloat(o.total || 0), 0);
 
-    document.getElementById('total-orders').textContent = totalOrders;
+    document.getElementById('total-orders').textContent = total;
     document.getElementById('pending-orders').textContent = pending;
     document.getElementById('completed-orders').textContent = paid;
     document.getElementById('total-revenue').textContent = `₱${revenue.toFixed(2)}`;
@@ -729,15 +443,14 @@
     const val = document.getElementById('search-input').value.toLowerCase();
     displayedOrders = allOrders.filter(o => 
       o.order_id.toLowerCase().includes(val) || 
-      (o.customer_name || '').toLowerCase().includes(val) ||
-      (o.customer_email || '').toLowerCase().includes(val)
+      (o.customer_name || '').toLowerCase().includes(val)
     );
     renderOrders();
   }
 
   function filterOrders(status, btn) {
     currentFilter = status;
-    document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     renderOrders();
   }
@@ -755,99 +468,23 @@
     }
   }
 
-  function openDetailsModal(id) {
-    const order = allOrders.find(o => o.order_id === id);
-    if (!order) return;
-    
-    const container = document.getElementById('order-details-content');
-    container.innerHTML = `
-      <div class="order-detail-row">
-        <div class="detail-label">Order ID:</div>
-        <div class="detail-value font-mono">${order.order_id}</div>
-      </div>
-      <div class="order-detail-row">
-        <div class="detail-label">Customer:</div>
-        <div class="detail-value">${order.customer_name || '-'}</div>
-      </div>
-      <div class="order-detail-row">
-        <div class="detail-label">Email:</div>
-        <div class="detail-value">${order.customer_email || '-'}</div>
-      </div>
-      <div class="order-detail-row">
-        <div class="detail-label">Phone:</div>
-        <div class="detail-value">${order.customer_phone || '-'}</div>
-      </div>
-      <div class="order-detail-row">
-        <div class="detail-label">Delivery:</div>
-        <div class="detail-value capitalize">${order.delivery_option || '-'}</div>
-      </div>
-      <div class="order-detail-row">
-        <div class="detail-label">Payment Method:</div>
-        <div class="detail-value capitalize">${order.payment_method || '-'}</div>
-      </div>
-      <div class="order-detail-row">
-        <div class="detail-label">Status:</div>
-        <div class="detail-value"><span class="status-badge status-${order.payment_status}">${order.payment_status}</span></div>
-      </div>
-      <div class="order-detail-row">
-        <div class="detail-label">Date:</div>
-        <div class="detail-value">${order.created_at ? new Date(order.created_at).toLocaleString() : '-'}</div>
-      </div>
-      <hr class="my-4">
-      <h4 class="font-bold text-gray-800 mb-3">Order Items:</h4>
-    `;
-    
-    const items = order.items ? (typeof order.items === 'string' ? JSON.parse(order.items) : order.items) : [];
-    
-    items.forEach(item => {
-      const row = document.createElement('div');
-      row.className = 'order-detail-row';
-      row.innerHTML = `
-        <div class="detail-label">${item.name} x${item.quantity}</div>
-        <div class="detail-value">₱${(parseFloat(item.price || 0) * parseInt(item.quantity || 1)).toFixed(2)}</div>
-      `;
-      container.appendChild(row);
-    });
-    
-    container.innerHTML += `
-      <hr class="my-4">
-      <div class="order-detail-row">
-        <div class="detail-label">Subtotal:</div>
-        <div class="detail-value">₱${parseFloat(order.subtotal || 0).toFixed(2)}</div>
-      </div>
-      <div class="order-detail-row">
-        <div class="detail-label">Delivery Fee:</div>
-        <div class="detail-value">₱${parseFloat(order.delivery_fee || 0).toFixed(2)}</div>
-      </div>
-      <div class="order-detail-row">
-        <div class="detail-label">Tax:</div>
-        <div class="detail-value">₱${parseFloat(order.tax || 0).toFixed(2)}</div>
-      </div>
-      <div class="order-detail-row border-t-2 border-accent pt-3 mt-3">
-        <div class="detail-label text-lg font-bold">Total:</div>
-        <div class="detail-value text-lg font-bold text-accent">₱${parseFloat(order.total || 0).toFixed(2)}</div>
-      </div>
-    `;
-    
-    document.getElementById('details-modal').classList.remove('hidden');
+  function openDeliveryStatusModal(id, status) {
+    document.getElementById('delivery-status-modal').classList.remove('hidden');
+    document.getElementById('delivery-modal-order-id').value = id;
+    document.getElementById('delivery-modal-order-id-display').textContent = id;
+    document.querySelectorAll('input[name="delivery-status"]').forEach(r => r.checked = r.value === status);
   }
   
-  function closeDetailsModal(e) { 
+  function closeDeliveryStatusModal(e) { 
     if (!e || e.target === e.currentTarget) {
-      document.getElementById('details-modal').classList.add('hidden'); 
+      document.getElementById('delivery-status-modal').classList.add('hidden'); 
     }
   }
 
   async function updateOrderStatus() {
     const id = document.getElementById('modal-order-id').value;
     const selected = document.querySelector('input[name="status"]:checked');
-    
-    if (!selected) {
-      showNotification('Please select a status', 'error');
-      return;
-    }
-    
-    const status = selected.value;
+    if (!selected) return;
     
     try {
       const res = await fetch(`/api/admin/update-order-status`, {
@@ -856,49 +493,63 @@
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ order_id: id, status })
+        body: JSON.stringify({ order_id: id, status: selected.value })
       });
       
       const data = await res.json();
-      
       if (data.success) { 
-        showNotification('Status updated', 'success'); 
+        showToast('Status updated', 'success'); 
         await loadOrders(); 
         await loadStats(); 
         closeStatusModal(); 
-      } else {
-        showNotification(data.message || 'Update failed', 'error');
       }
     } catch(e) { 
-      showNotification('Error updating', 'error'); 
-      console.error(e); 
+      showToast('Update failed', 'error'); 
+    }
+  }
+
+  async function updateDeliveryStatus() {
+    const id = document.getElementById('delivery-modal-order-id').value;
+    const selected = document.querySelector('input[name="delivery-status"]:checked');
+    if (!selected) return;
+    
+    try {
+      const res = await fetch(`/api/admin/update-delivery-status`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ order_id: id, delivery_status: selected.value })
+      });
+      
+      const data = await res.json();
+      if (data.success) { 
+        showToast('Delivery updated', 'success'); 
+        await loadOrders(); 
+        closeDeliveryStatusModal(); 
+      }
+    } catch(e) { 
+      showToast('Update failed', 'error'); 
     }
   }
 
   function logout() {
     if (confirm('Logout?')) {
       localStorage.removeItem('adminToken');
-      if (socket) socket.disconnect();
       window.location.href = 'login.html';
     }
   }
 
   function exportOrders() {
-    if (allOrders.length === 0) {
-      showNotification('No orders', 'error');
-      return;
-    }
+    if (allOrders.length === 0) return;
     
-    let csv = 'Order ID,Customer,Email,Phone,Items,Subtotal,Delivery,Tax,Total,Method,Status,Option,Date\n';
-    
+    let csv = 'Order ID,Customer,Total,Payment,Delivery,Date\n';
     allOrders.forEach(o => {
-      const items = o.items ? (typeof o.items === 'string' ? JSON.parse(o.items) : o.items) : [];
-      const itemsStr = items.map(i => `${i.name} x${i.quantity}`).join('; ');
-      
-      csv += `"${o.order_id}","${o.customer_name || ''}","${o.customer_email || ''}","${o.customer_phone || ''}","${itemsStr}",${o.subtotal || 0},${o.delivery_fee || 0},${o.tax || 0},${o.total || 0},"${o.payment_method || ''}","${o.payment_status}","${o.delivery_option || ''}","${o.created_at ? new Date(o.created_at).toLocaleString() : ''}"\n`;
+      csv += `"${o.order_id}","${o.customer_name}",${o.total},"${o.payment_status}","${o.delivery_status}","${new Date(o.created_at).toLocaleString()}"\n`;
     });
     
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
@@ -906,25 +557,21 @@
     link.click();
     URL.revokeObjectURL(url);
     
-    showNotification('Exported', 'success');
+    showToast('Exported', 'success');
   }
 
-  function refreshPage() {
-    location.reload();
-  }
-
-  function showNotification(msg, type = 'info') {
+  function showToast(msg, type = 'info') {
     const toast = document.getElementById('toast');
     if (!toast) return;
     
     toast.textContent = msg;
     
     if (type === 'success') {
-      toast.style.background = '#16a34a';
+      toast.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
     } else if (type === 'error') {
-      toast.style.background = '#dc2626';
+      toast.style.background = 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)';
     } else {
-      toast.style.background = '#111';
+      toast.style.background = '#1f2937';
     }
     
     toast.style.display = 'block';
@@ -934,45 +581,6 @@
       toast.style.display = 'none'; 
     }, 3000);
   }
-
-  setInterval(() => {
-    if (token && !document.hidden) {
-      loadOrders();
-      loadStats();
-    }
-  }, 30000);
-
-  document.addEventListener('visibilitychange', () => {
-    if (!document.hidden && token) {
-      loadOrders();
-      loadStats();
-    }
-  });
-
-  document.addEventListener('keydown', (e) => {
-    if ((e.ctrlKey || e.metaKey) && e.key === 'r') {
-      e.preventDefault();
-      loadOrders();
-      loadStats();
-    }
-    
-    if (e.key === 'Escape') {
-      closeStatusModal();
-      closeDetailsModal();
-    }
-  });
-
-  window.addEventListener('online', () => {
-    showNotification('Online', 'success');
-    if (socket && !socket.connected) socket.connect();
-    loadOrders();
-    loadStats();
-  });
-
-  window.addEventListener('offline', () => {
-    showNotification('Offline', 'error');
-    updateConnectionStatus(false);
-  });
 </script>
 
 </body>
