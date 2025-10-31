@@ -15,7 +15,6 @@ const path = require('path');
 const fs = require('fs');
 require('dotenv').config();
 
-
 // ==================== INITIALIZATION ====================
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -36,7 +35,7 @@ const io = socketIo(server, {
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
-app.use(express.static('public'));
+app.use(express.static('Public'));
 
 // ==================== DATABASE CONNECTION ====================
 const db = mysql.createPool({
@@ -350,7 +349,7 @@ const storage = multer.diskStorage({
     const timestamp = Date.now();
     const filename = `${slug}-${timestamp}${ext}`;
     
-    console.log('📝 Generating filename:', filename);
+    console.log('📁 Generating filename:', filename);
     cb(null, filename);
   }
 });
@@ -379,11 +378,25 @@ const upload = multer({
 const activeTrackingSessions = new Map();
 
 io.on('connection', (socket) => {
-  console.log('📌 Client connected:', socket.id);
+  console.log('🔌 Client connected:', socket.id);
+  
+  // Handle user joining their specific room
+  socket.on('join-user', async (data) => {
+    const { userId } = data;
+    if (!userId) {
+      console.log('⚠️ join-user: No userId provided');
+      return;
+    }
+    
+    // Join user-specific room
+    const roomName = `user-${userId}`;
+    socket.join(roomName);
+    console.log(`[SOCKET][USER_${userId}] User joined room: ${roomName}`);
+  });
   
   socket.on('track-order', (data) => {
     const { orderId } = data;
-    console.log(`🔍 Client ${socket.id} started tracking order: ${orderId}`);
+    console.log(`📍 Client ${socket.id} started tracking order: ${orderId}`);
     socket.join(`order-${orderId}`);
     
     if (!activeTrackingSessions.has(orderId)) {
@@ -440,11 +453,26 @@ io.on('connection', (socket) => {
     try {
       await db.query('UPDATE orders SET delivery_status = ? WHERE order_id = ?', [deliveryStatus, orderId]);
       
+      // Get user_id to notify user room
+      const [rows] = await db.query('SELECT user_id FROM orders WHERE order_id = ?', [orderId]);
+      const userId = rows.length > 0 ? rows[0].user_id : null;
+      
+      // Notify order room
       io.to(`order-${orderId}`).emit('order-status-changed', {
         orderId,
         status: deliveryStatus,
         timestamp: new Date().toISOString()
       });
+      
+      // Notify user room
+      if (userId) {
+        io.to(`user-${userId}`).emit('order-status-changed', {
+          orderId,
+          status: deliveryStatus,
+          timestamp: new Date().toISOString()
+        });
+        console.log(`[SOCKET][USER_${userId}] order-status-changed event triggered for order ${orderId}`);
+      }
       
       socket.emit('status-update-success', { orderId, deliveryStatus });
     } catch (error) {
@@ -476,8 +504,22 @@ function broadcastNewOrder(orderData) {
 }
 
 function broadcastOrderUpdate(orderId, updateData) {
+  // Notify admin room
   io.to('admin-room').emit('order-updated', { orderId, ...updateData });
+  
+  // Notify order room
   io.to(`order-${orderId}`).emit('order-status-changed', { orderId, ...updateData });
+  
+  // Get user_id from order and notify user room
+  db.query('SELECT user_id FROM orders WHERE order_id = ?', [orderId])
+    .then(([rows]) => {
+      if (rows.length > 0 && rows[0].user_id) {
+        const userId = rows[0].user_id;
+        io.to(`user-${userId}`).emit('order-status-changed', { orderId, ...updateData });
+        console.log(`[SOCKET][USER_${userId}] order-status-changed event triggered for order ${orderId}`);
+      }
+    })
+    .catch(err => console.error('Error getting user_id for order update:', err));
 }
 
 // ==================== AUTHENTICATION ROUTES ====================
@@ -734,7 +776,7 @@ app.post('/auth/send-login-code', async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    console.log('🔐 Login attempt for:', email);
+    console.log('🔍 Login attempt for:', email);
 
     if (!email || !password) {
       return res.status(400).json({ 
@@ -1012,154 +1054,341 @@ app.get('/auth/me', verifyToken, async (req, res) => {
 
 // ==================== ORDER ROUTES ====================
 
-// Create order
+// (Removed duplicate early implementations of create-order and orders routes; newer, safer versions defined below remain)
+
+// ==================== SAFEST FIX: SELECT ALL COLUMNS ====================
+// This will work regardless of your exact schema:
+
+app.get('/api/orders', verifyToken, async (req, res) => {
+  try {
+    console.log('📦 Fetching orders for user:', req.user.userId);
+    
+    // Use SELECT * to get all columns (safest approach)
+    const [orders] = await db.query(
+      `SELECT * FROM orders 
+       WHERE user_id = ?
+       ORDER BY created_at DESC`,
+      [req.user.userId]
+    );
+
+    console.log(`✅ Found ${orders.length} orders for user ${req.user.userId}`);
+
+    // Parse items JSON if it's a string
+    const ordersWithParsedItems = orders.map(order => {
+      try {
+        return {
+          ...order,
+          items: typeof order.items === 'string' ? JSON.parse(order.items) : order.items
+        };
+      } catch (e) {
+        console.error('Error parsing items for order:', order.order_id, e);
+        return {
+          ...order,
+          items: []
+        };
+      }
+    });
+
+    res.json(ordersWithParsedItems);
+
+  } catch (error) {
+    console.error('❌ Get user orders error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to fetch orders',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+});
+
+// ==================== ALSO FIX CREATE ORDER ROUTE ====================
+// Update the /api/create-order route to handle missing columns gracefully:
+
 app.post('/api/create-order', verifyToken, async (req, res) => {
   try {
     const orderData = req.body;
     const orderId = 'KK' + Date.now() + Math.floor(Math.random() * 1000);
 
-    const [result] = await db.query(
-      `INSERT INTO orders (
-        order_id, user_id, customer_name, customer_email, customer_phone,
-        items, subtotal, delivery_fee, tax, total,
-        delivery_option, payment_method, payment_status, delivery_status
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        orderId, 
-        req.user.userId, 
-        orderData.customer_name,
-        orderData.customer_email, 
-        orderData.customer_phone,
-        JSON.stringify(orderData.items || []),
-        parseFloat(orderData.subtotal || 0),
-        parseFloat(orderData.delivery_fee || 0),
-        parseFloat(orderData.tax || 0),
-        parseFloat(orderData.total || 0),
-        orderData.delivery_option || 'delivery',
-        orderData.payment_method || 'card',
-        orderData.payment_status || 'pending',
-        'placed'
-      ]
-    );
+    console.log('📦 Creating order:', orderId);
 
-    broadcastNewOrder({
+    // Check if delivery_address column exists
+    const [columns] = await db.query(`
+      SELECT COLUMN_NAME 
+      FROM INFORMATION_SCHEMA.COLUMNS 
+      WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'orders' 
+        AND COLUMN_NAME IN ('delivery_address', 'delivery_coordinates')
+    `, [process.env.DB_NAME || 'kusina_db']);
+    
+    const hasDeliveryAddress = columns.some(col => col.COLUMN_NAME === 'delivery_address');
+    const hasDeliveryCoords = columns.some(col => col.COLUMN_NAME === 'delivery_coordinates');
+
+    // Build INSERT query dynamically
+    let insertColumns = [
+      'order_id', 'user_id', 'customer_name', 'customer_email', 'customer_phone',
+      'items', 'subtotal', 'delivery_fee', 'tax', 'total',
+      'delivery_option', 'payment_method', 'payment_status', 'delivery_status',
+      'payment_intent_id', 'payment_source_id',
+      'voucher_code', 'voucher_discount'
+    ];
+    
+    let insertValues = [
+      orderId, 
+      req.user.userId, 
+      orderData.customer_name,
+      orderData.customer_email, 
+      orderData.customer_phone,
+      JSON.stringify(orderData.items || []),
+      parseFloat(orderData.subtotal || 0),
+      parseFloat(orderData.delivery_fee || 0),
+      parseFloat(orderData.tax || 0),
+      parseFloat(orderData.total || 0),
+      orderData.delivery_option || 'delivery',
+      orderData.payment_method || 'card',
+      orderData.payment_status || 'pending',
+      'placed',
+      orderData.payment_intent_id || null,
+      orderData.payment_source_id || null,
+      orderData.voucher_code || null,
+      parseFloat(orderData.voucher_discount || 0)
+    ];
+    
+    // Add delivery columns if they exist
+    if (hasDeliveryAddress) {
+      insertColumns.splice(5, 0, 'delivery_address');
+      insertValues.splice(5, 0, orderData.delivery_address || null);
+    }
+    
+    if (hasDeliveryCoords) {
+      insertColumns.splice(hasDeliveryAddress ? 6 : 5, 0, 'delivery_coordinates');
+      insertValues.splice(hasDeliveryAddress ? 6 : 5, 0, orderData.delivery_coordinates || null);
+    }
+    
+    const placeholders = insertColumns.map(() => '?').join(', ');
+    const query = `INSERT INTO orders (${insertColumns.join(', ')}, created_at) 
+                   VALUES (${placeholders}, NOW())`;
+
+    const [result] = await db.query(query, insertValues);
+
+    console.log('✅ Order created successfully:', orderId);
+
+    // Mark voucher as used
+    if (orderData.voucher_code) {
+      try {
+        await db.query(
+          `UPDATE vouchers 
+           SET is_used = TRUE, used_at = NOW() 
+           WHERE code = ? AND user_id = ? AND is_used = FALSE`,
+          [orderData.voucher_code, req.user.userId]
+        );
+        console.log(`✅ Voucher ${orderData.voucher_code} marked as used`);
+      } catch (voucherError) {
+        console.error('⚠️ Failed to mark voucher as used:', voucherError.message);
+      }
+    }
+
+    // Broadcast new order to admin
+    if (typeof broadcastNewOrder === 'function') {
+      broadcastNewOrder({
+        order_id: orderId,
+        customer_name: orderData.customer_name,
+        customer_email: orderData.customer_email,
+        total: orderData.total,
+        payment_status: orderData.payment_status,
+        payment_method: orderData.payment_method,
+        delivery_status: 'placed',
+        delivery_option: orderData.delivery_option,
+        items_count: orderData.items?.length || 0,
+        voucher_applied: !!orderData.voucher_code,
+        created_at: new Date().toISOString()
+      });
+    }
+
+    // Emit order-updated event to the user who placed the order (their specific room)
+    io.to(`user-${req.user.userId}`).emit('order-updated', {
+      user_id: req.user.userId,
+      order: {
+        order_id: orderId,
+        customer_name: orderData.customer_name,
+        customer_email: orderData.customer_email,
+        items: orderData.items || [],
+        subtotal: orderData.subtotal,
+        delivery_fee: orderData.delivery_fee,
+        tax: orderData.tax,
+        total: orderData.total,
+        payment_status: orderData.payment_status || 'pending',
+        delivery_status: 'placed',
+        created_at: new Date().toISOString()
+      },
+      action: 'created'
+    });
+    console.log(`[SOCKET][USER_${req.user.userId}] order-updated event triggered`);
+
+    res.json({ 
+      success: true, 
       order_id: orderId,
-      customer_name: orderData.customer_name,
-      total: orderData.total,
-      payment_status: orderData.payment_status,
-      delivery_status: 'placed',
-      created_at: new Date().toISOString()
+      message: 'Order created successfully'
     });
 
-    console.log('✅ Order created and broadcasted:', orderId);
-    res.json({ success: true, order_id: orderId });
-
   } catch (error) {
-    console.error('Create order error:', error);
-    res.status(500).json({ success: false, message: 'Failed to create order' });
-  }
-});
-
-// Get user orders
-app.get('/api/my-orders', verifyToken, async (req, res) => {
-  try {
-    console.log('📦 Fetching orders for user:', req.user.userId);
-    
-    const [rows] = await db.query(
-      'SELECT * FROM orders WHERE user_id = ? ORDER BY created_at DESC',
-      [req.user.userId]
-    );
-    
-    console.log(`✅ Found ${rows.length} orders for user ${req.user.userId}`);
-    res.json({ success: true, orders: rows });
-  } catch (error) {
-    console.error('❌ Get my orders error:', error);
+    console.error('❌ Create order error:', error);
     res.status(500).json({ 
       success: false, 
-      message: 'Failed to retrieve orders', 
-      error: error.message 
+      message: 'Failed to create order',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 });
 
-// Get specific order
-app.get('/api/get-order/:orderId', verifyToken, async (req, res) => {
+// ==================== VOUCHER ROUTES ====================
+
+// Validate voucher
+app.post('/api/user/vouchers/validate', verifyToken, async (req, res) => {
   try {
-    const { orderId } = req.params;
-    const [rows] = await db.query(
-      'SELECT * FROM orders WHERE order_id = ? AND user_id = ?',
-      [orderId, req.user.userId]
+    const { code, order_total } = req.body;
+
+    if (!code) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Voucher code is required' 
+      });
+    }
+
+    const [vouchers] = await db.query(
+      `SELECT * FROM vouchers 
+       WHERE code = ? AND user_id = ?`,
+      [code.toUpperCase(), req.user.userId]
     );
 
-    if (rows.length === 0) {
-      return res.status(404).json({ success: false, message: 'Order not found' });
+    if (vouchers.length === 0) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Invalid voucher code or voucher does not belong to you' 
+      });
     }
 
-    res.json({ success: true, order: rows[0] });
-  } catch (error) {
-    console.error('Get order error:', error);
-    res.status(500).json({ success: false, message: 'Failed to retrieve order', error: error.message });
-  }
-});
+    const voucher = vouchers[0];
 
-// Update order status
-app.post('/api/update-order-status', verifyToken, async (req, res) => {
-  try {
-    const { order_id, status } = req.body;
-
-    if (!order_id || !status) {
-      return res.status(400).json({ success: false, message: 'Missing order_id or status' });
+    if (voucher.is_used) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'This voucher has already been used' 
+      });
     }
 
-    await db.query(
-      'UPDATE orders SET payment_status = ? WHERE order_id = ? AND user_id = ?',
-      [status, order_id, req.user.userId]
-    );
+    const expiryDate = new Date(voucher.expires_at);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
-    broadcastOrderUpdate(order_id, { payment_status: status });
-
-    console.log(`✅ Order ${order_id} status updated to ${status}`);
-    res.json({ success: true, message: 'Order status updated' });
-  } catch (error) {
-    console.error('Update order error:', error);
-    res.status(500).json({ success: false, message: 'Failed to update order', error: error.message });
-  }
-});
-
-// Update delivery status
-app.patch('/api/update-delivery-status', verifyToken, async (req, res) => {
-  try {
-    const { order_id, delivery_status } = req.body;
-
-    if (!order_id || !delivery_status) {
-      return res.status(400).json({ success: false, message: 'Missing order_id or delivery_status' });
+    if (expiryDate < today) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'This voucher has expired' 
+      });
     }
 
-    const validStatuses = ['placed', 'preparing', 'delivering', 'delivered', 'cancelled'];
-    if (!validStatuses.includes(delivery_status)) {
-      return res.status(400).json({ success: false, message: 'Invalid delivery status' });
+    let discount = 0;
+    if (voucher.discount_type === 'percentage') {
+      discount = (parseFloat(order_total) * parseFloat(voucher.discount_value)) / 100;
+    } else if (voucher.discount_type === 'fixed') {
+      discount = parseFloat(voucher.discount_value);
+    } else if (voucher.discount_type === 'shipping') {
+      discount = 30;
     }
 
-    const [result] = await db.query(
-      'UPDATE orders SET delivery_status = ? WHERE order_id = ?',
-      [delivery_status, order_id]
-    );
+    discount = Math.min(discount, parseFloat(order_total));
 
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ success: false, message: 'Order not found' });
-    }
-
-    broadcastOrderUpdate(order_id, { 
-      delivery_status: delivery_status,
-      timestamp: new Date().toISOString()
+    res.json({ 
+      success: true, 
+      voucher: {
+        id: voucher.id,
+        code: voucher.code,
+        discount_type: voucher.discount_type,
+        discount_value: voucher.discount_value,
+        calculated_discount: discount.toFixed(2),
+        expires_at: voucher.expires_at
+      }
     });
 
-    console.log(`✅ Delivery status updated: ${order_id} -> ${delivery_status}`);
-    res.json({ success: true, message: 'Delivery status updated' });
+  } catch (error) {
+    console.error('❌ Validate voucher error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to validate voucher'
+    });
+  }
+});
+
+// Get user's own vouchers
+app.get('/api/user/vouchers', verifyToken, async (req, res) => {
+  try {
+    const [vouchers] = await db.query(
+      `SELECT 
+        id, code, discount_type, discount_value, 
+        expires_at, is_used, used_at,
+        CASE 
+          WHEN expires_at < CURDATE() THEN TRUE 
+          ELSE FALSE 
+        END as is_expired
+       FROM vouchers 
+       WHERE user_id = ? AND is_used = FALSE
+       ORDER BY expires_at ASC`,
+      [req.user.userId]
+    );
+
+    res.json({ 
+      success: true, 
+      vouchers 
+    });
 
   } catch (error) {
-    console.error('Update delivery status error:', error);
-    res.status(500).json({ success: false, message: 'Failed to update delivery status' });
+    console.error('❌ Get user vouchers error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to fetch vouchers',
+      vouchers: []
+    });
+  }
+});
+
+// Combined overview: recent orders + available vouchers for the logged-in user
+app.get('/api/user/overview', verifyToken, async (req, res) => {
+  try {
+    // Recent orders (limit 3)
+    const [orders] = await db.query(
+      `SELECT * FROM orders 
+       WHERE user_id = ? 
+       ORDER BY created_at DESC 
+       LIMIT 3`,
+      [req.user.userId]
+    );
+
+    const recentOrders = orders.map(order => {
+      try {
+        return {
+          ...order,
+          items: typeof order.items === 'string' ? JSON.parse(order.items) : order.items
+        };
+      } catch (_e) {
+        return { ...order, items: [] };
+      }
+    });
+
+    // Available vouchers (not used)
+    const [vouchers] = await db.query(
+      `SELECT 
+        id, code, discount_type, discount_value, 
+        expires_at, is_used, used_at,
+        CASE WHEN expires_at < CURDATE() THEN TRUE ELSE FALSE END as is_expired
+       FROM vouchers 
+       WHERE user_id = ? AND is_used = FALSE
+       ORDER BY expires_at ASC`,
+      [req.user.userId]
+    );
+
+    res.json({ success: true, orders: recentOrders, vouchers });
+  } catch (error) {
+    console.error('❌ Get user overview error:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch overview', orders: [], vouchers: [] });
   }
 });
 
@@ -1233,12 +1462,72 @@ app.patch('/api/admin/update-delivery-status', verifyToken, verifyAdmin, async (
       timestamp: new Date().toISOString()
     });
 
-    console.log(`✅ Admin updated delivery status: ${order_id} -> ${delivery_status}`);
     res.json({ success: true, message: 'Delivery status updated' });
 
   } catch (error) {
     console.error('Admin update delivery status error:', error);
     res.status(500).json({ success: false, message: 'Failed to update delivery status' });
+  }
+});
+
+// Update order delivery status (Admin) - REST endpoint
+app.post('/api/admin/orders/:orderId/status', verifyToken, verifyAdmin, async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const { delivery_status } = req.body;
+
+    if (!delivery_status) {
+      return res.status(400).json({ success: false, message: 'Missing delivery_status' });
+    }
+
+    const validStatuses = ['placed', 'preparing', 'delivering', 'delivered', 'cancelled'];
+    if (!validStatuses.includes(delivery_status)) {
+      return res.status(400).json({ success: false, message: 'Invalid delivery status' });
+    }
+
+    // Update order status
+    const [result] = await db.query(
+      'UPDATE orders SET delivery_status = ? WHERE order_id = ?',
+      [delivery_status, orderId]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: 'Order not found' });
+    }
+
+    // Get user_id for Socket.IO emission
+    const [orders] = await db.query('SELECT user_id FROM orders WHERE order_id = ?', [orderId]);
+    const userId = orders.length > 0 ? orders[0].user_id : null;
+
+    // Emit order-status-changed to user room
+    if (userId) {
+      io.to(`user-${userId}`).emit('order-status-changed', {
+        orderId,
+        status: delivery_status,
+        delivery_status: delivery_status,
+        timestamp: new Date().toISOString()
+      });
+      console.log(`[SOCKET][USER_${userId}] order-status-changed event triggered for order ${orderId}`);
+    }
+
+    // Also emit to order room
+    io.to(`order-${orderId}`).emit('order-status-changed', {
+      orderId,
+      status: delivery_status,
+      delivery_status: delivery_status,
+      timestamp: new Date().toISOString()
+    });
+
+    res.json({ 
+      success: true, 
+      message: 'Order status updated',
+      orderId,
+      delivery_status
+    });
+
+  } catch (error) {
+    console.error('Update order status error:', error);
+    res.status(500).json({ success: false, message: 'Failed to update order status' });
   }
 });
 
@@ -1248,8 +1537,6 @@ app.patch('/api/admin/update-delivery-status', verifyToken, verifyAdmin, async (
 app.post('/api/create-payment-intent', verifyToken, async (req, res) => {
   try {
     const { amount, currency, customer, card } = req.body;
-
-    console.log('💳 Creating PayMongo payment intent...');
 
     const cleanCardNumber = card.number.replace(/\s/g, '').replace(/\D/g, '');
     
@@ -1282,7 +1569,6 @@ app.post('/api/create-payment-intent', verifyToken, async (req, res) => {
     );
 
     const pmId = pmResp.data.data.id;
-    console.log('✅ Payment method created');
 
     const piResult = await payMongoRequest('/payment_intents', 'POST', {
       data: {
@@ -1305,7 +1591,6 @@ app.post('/api/create-payment-intent', verifyToken, async (req, res) => {
     }
 
     const piId = piResult.data.data.id;
-    console.log('✅ Payment intent created:', piId);
 
     const attachResult = await payMongoRequest(`/payment_intents/${piId}/attach`, 'POST', {
       data: {
@@ -1319,8 +1604,6 @@ app.post('/api/create-payment-intent', verifyToken, async (req, res) => {
     if (!attachResult.success) {
       return res.status(400).json({ success: false, message: 'Failed to attach payment method', error: attachResult.error });
     }
-
-    console.log('✅ Payment method attached');
 
     const status = attachResult.data.data.attributes.status;
 
@@ -1366,8 +1649,6 @@ app.post('/api/paymongo/create-gcash-payment', verifyToken, async (req, res) => 
   try {
     const { amount, currency, customer } = req.body;
 
-    console.log('📱 Creating GCash payment source...');
-
     if (!amount || !customer) {
       return res.status(400).json({ success: false, message: 'Missing required payment data' });
     }
@@ -1397,8 +1678,6 @@ app.post('/api/paymongo/create-gcash-payment', verifyToken, async (req, res) => 
     const checkoutUrl = result.data.data.attributes.redirect.checkout_url;
     const sourceId = result.data.data.id;
 
-    console.log('✅ GCash source created:', sourceId);
-
     res.json({
       success: true,
       source_id: sourceId,
@@ -1415,7 +1694,7 @@ app.post('/api/paymongo/create-gcash-payment', verifyToken, async (req, res) => 
 // PayMongo webhook
 app.post('/api/paymongo/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
   try {
-    const event = JSON.parse(req.body);
+    const event = JSON.parse(req.body.toString());
     console.log('🔔 PayMongo Webhook received:', event.type);
 
     if (event.type === 'payment.paid') {
@@ -1467,7 +1746,6 @@ app.get('/api/admin/menu', verifyToken, verifyAdmin, async (req, res) => {
        ORDER BY created_at DESC`
     );
     
-    console.log(`✅ Admin fetched ${rows.length} menu items`);
     res.json({ success: true, items: rows });
   } catch (error) {
     console.error('❌ Get admin menu error:', error);
@@ -1522,8 +1800,6 @@ app.post('/api/admin/menu', verifyToken, verifyAdmin, async (req, res) => {
       ]
     );
 
-    console.log(`✅ Menu item created: ${name} (ID: ${result.insertId})`);
-
     io.emit('menu-updated', { 
       action: 'created', 
       itemId: result.insertId,
@@ -1557,120 +1833,43 @@ app.post('/api/admin/menu', verifyToken, verifyAdmin, async (req, res) => {
 app.patch('/api/admin/menu/:id', verifyToken, verifyAdmin, async (req, res) => {
   try {
     const { id } = req.params;
-    const { 
-      name, 
-      description, 
-      price, 
-      image_url, 
-      category, 
-      badge,
-      is_featured, 
-      is_active 
-    } = req.body;
-
-    const hasUpdates = [name, description, price, image_url, category, badge, is_featured, is_active]
-      .some(field => field !== undefined);
-
-    if (!hasUpdates) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'No fields provided for update' 
-      });
-    }
-
-    const [existing] = await db.query(
-      'SELECT id, name FROM menu_items WHERE id = ?',
-      [id]
-    );
-
-    if (existing.length === 0) {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'Menu item not found' 
-      });
-    }
-
     const updates = [];
     const values = [];
 
-    if (name !== undefined) {
-      if (!name || name.trim().length === 0) {
-        return res.status(400).json({ 
-          success: false, 
-          message: 'Name cannot be empty' 
-        });
+    const allowedFields = ['name', 'description', 'price', 'image_url', 'category', 'badge', 'is_featured', 'is_active'];
+    
+    for (const field of allowedFields) {
+      if (req.body[field] !== undefined) {
+        if (field === 'name') {
+          updates.push('name = ?', 'slug = ?');
+          values.push(req.body[field].trim());
+          const slug = req.body[field].toLowerCase()
+            .replace(/[^\w\s-]/g, '')
+            .replace(/\s+/g, '-')
+            .replace(/-+/g, '-')
+            .trim();
+          values.push(slug);
+        } else if (field === 'price') {
+          updates.push('price = ?');
+          values.push(parseFloat(req.body[field]));
+        } else if (field === 'is_featured' || field === 'is_active') {
+          updates.push(`${field} = ?`);
+          values.push(req.body[field] ? 1 : 0);
+        } else {
+          updates.push(`${field} = ?`);
+          values.push(req.body[field] || null);
+        }
       }
-
-      updates.push('name = ?');
-      values.push(name.trim());
-      
-      const slug = name.toLowerCase()
-        .replace(/[^\w\s-]/g, '')
-        .replace(/\s+/g, '-')
-        .replace(/-+/g, '-')
-        .trim();
-      updates.push('slug = ?');
-      values.push(slug);
     }
 
-    if (description !== undefined) {
-      updates.push('description = ?');
-      values.push(description ? description.trim() : null);
-    }
-
-    if (price !== undefined) {
-      const parsedPrice = parseFloat(price);
-      if (isNaN(parsedPrice) || parsedPrice < 0) {
-        return res.status(400).json({ 
-          success: false, 
-          message: 'Price must be a valid positive number' 
-        });
-      }
-      updates.push('price = ?');
-      values.push(parsedPrice);
-    }
-
-    if (image_url !== undefined) {
-      updates.push('image_url = ?');
-      values.push(image_url || null);
-    }
-
-    if (category !== undefined) {
-      const validCategories = ['main', 'breakfast', 'special', 'dessert', 'drink'];
-      if (category && !validCategories.includes(category)) {
-        return res.status(400).json({ 
-          success: false, 
-          message: `Invalid category. Must be one of: ${validCategories.join(', ')}` 
-        });
-      }
-      updates.push('category = ?');
-      values.push(category || 'main');
-    }
-
-    if (badge !== undefined) {
-      updates.push('badge = ?');
-      values.push(badge ? badge.trim() : null);
-    }
-
-    if (is_featured !== undefined) {
-      updates.push('is_featured = ?');
-      values.push(is_featured ? 1 : 0);
-    }
-
-    if (is_active !== undefined) {
-      updates.push('is_active = ?');
-      values.push(is_active ? 1 : 0);
-    }
-
-    updates.push('updated_at = NOW()');
-
-    if (updates.length === 1) {
+    if (updates.length === 0) {
       return res.status(400).json({ 
         success: false, 
         message: 'No valid fields to update' 
       });
     }
 
+    updates.push('updated_at = NOW()');
     values.push(id);
 
     const [result] = await db.query(
@@ -1681,17 +1880,14 @@ app.patch('/api/admin/menu/:id', verifyToken, verifyAdmin, async (req, res) => {
     if (result.affectedRows === 0) {
       return res.status(404).json({ 
         success: false, 
-        message: 'Menu item not found or no changes made' 
+        message: 'Menu item not found' 
       });
     }
-
-    console.log(`✅ Menu item updated: ID ${id} (${result.changedRows} changes)`);
 
     io.emit('menu-updated', { 
       action: 'updated', 
       itemId: id,
-      updates: req.body,
-      timestamp: new Date().toISOString()
+      updates: req.body
     });
 
     res.json({ 
@@ -1702,14 +1898,6 @@ app.patch('/api/admin/menu/:id', verifyToken, verifyAdmin, async (req, res) => {
 
   } catch (error) {
     console.error('❌ Update menu item error:', error);
-    
-    if (error.code === 'ER_DUP_ENTRY') {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'An item with this name already exists' 
-      });
-    }
-    
     res.status(500).json({ 
       success: false, 
       message: 'Failed to update menu item'
@@ -1736,24 +1924,19 @@ app.delete('/api/admin/menu/:id', verifyToken, verifyAdmin, async (req, res) => 
 
     const item = existing[0];
 
-    // Delete image file if exists
     if (item.image_url) {
       const imagePath = path.join(__dirname, 'public', item.image_url);
       if (fs.existsSync(imagePath)) {
         fs.unlinkSync(imagePath);
-        console.log('🗑️ Deleted image file:', imagePath);
       }
     }
 
-    const [result] = await db.query('DELETE FROM menu_items WHERE id = ?', [id]);
-
-    console.log(`✅ Menu item deleted: ${item.name} (ID: ${id})`);
+    await db.query('DELETE FROM menu_items WHERE id = ?', [id]);
 
     io.emit('menu-updated', { 
       action: 'deleted', 
       itemId: id,
-      itemName: item.name,
-      timestamp: new Date().toISOString()
+      itemName: item.name
     });
 
     res.json({ 
@@ -1785,8 +1968,6 @@ app.post('/api/admin/menu/upload-image',
       }
 
       const imageUrl = `/assets/images/menu/${req.file.filename}`;
-      
-      console.log('✅ Image uploaded successfully:', imageUrl);
 
       res.json({ 
         success: true, 
@@ -1805,108 +1986,6 @@ app.post('/api/admin/menu/upload-image',
   }
 );
 
-// ==================== ANALYTICS ROUTES (Admin) ====================
-
-// Get dashboard stats
-app.get('/api/admin/dashboard-stats', verifyToken, verifyAdmin, async (req, res) => {
-  try {
-    const [totalOrders] = await db.query(
-      'SELECT COUNT(*) as count FROM orders'
-    );
-
-    const [totalRevenue] = await db.query(
-      'SELECT COALESCE(SUM(total), 0) as revenue FROM orders WHERE payment_status = "paid"'
-    );
-
-    const [activeOrders] = await db.query(
-      `SELECT COUNT(*) as count FROM orders 
-       WHERE delivery_status IN ('placed', 'preparing', 'delivering')`
-    );
-
-    const [totalCustomers] = await db.query(
-      'SELECT COUNT(*) as count FROM users WHERE role = "customer"'
-    );
-
-    const [recentOrders] = await db.query(
-      `SELECT order_id, customer_name, total, payment_status, delivery_status, created_at 
-       FROM orders 
-       ORDER BY created_at DESC 
-       LIMIT 10`
-    );
-
-    const [ordersByStatus] = await db.query(
-      `SELECT delivery_status, COUNT(*) as count 
-       FROM orders 
-       GROUP BY delivery_status`
-    );
-
-    res.json({
-      success: true,
-      stats: {
-        totalOrders: totalOrders[0].count,
-        totalRevenue: parseFloat(totalRevenue[0].revenue),
-        activeOrders: activeOrders[0].count,
-        totalCustomers: totalCustomers[0].count
-      },
-      recentOrders: recentOrders,
-      ordersByStatus: ordersByStatus
-    });
-
-  } catch (error) {
-    console.error('❌ Get dashboard stats error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Failed to fetch dashboard stats' 
-    });
-  }
-});
-
-// Get sales analytics
-app.get('/api/admin/sales-analytics', verifyToken, verifyAdmin, async (req, res) => {
-  try {
-    const { period } = req.query; // 'week', 'month', 'year'
-
-    let dateFilter = '';
-    switch (period) {
-      case 'week':
-        dateFilter = 'DATE(created_at) >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)';
-        break;
-      case 'month':
-        dateFilter = 'DATE(created_at) >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)';
-        break;
-      case 'year':
-        dateFilter = 'DATE(created_at) >= DATE_SUB(CURDATE(), INTERVAL 365 DAY)';
-        break;
-      default:
-        dateFilter = '1=1';
-    }
-
-    const [salesData] = await db.query(
-      `SELECT 
-        DATE(created_at) as date,
-        COUNT(*) as orders,
-        SUM(total) as revenue
-       FROM orders 
-       WHERE ${dateFilter} AND payment_status = 'paid'
-       GROUP BY DATE(created_at)
-       ORDER BY date DESC`
-    );
-
-    res.json({
-      success: true,
-      period: period || 'all',
-      data: salesData
-    });
-
-  } catch (error) {
-    console.error('❌ Get sales analytics error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Failed to fetch sales analytics' 
-    });
-  }
-});
-
 // ==================== USER MANAGEMENT ROUTES (Admin) ====================
 
 // Get all users
@@ -1921,8 +2000,6 @@ app.get('/api/admin/users', verifyToken, verifyAdmin, async (req, res) => {
        ORDER BY created_at DESC`
     );
 
-    console.log(`✅ Admin fetched ${users.length} users`);
-
     res.json({ success: true, users });
   } catch (error) {
     console.error('❌ Get users error:', error);
@@ -1933,13 +2010,11 @@ app.get('/api/admin/users', verifyToken, verifyAdmin, async (req, res) => {
   }
 });
 
-// ADD this new route for updating users (handles both role and is_active)
+// Update user (Admin)
 app.patch('/api/admin/users/:id', verifyToken, verifyAdmin, async (req, res) => {
   try {
     const { id } = req.params;
     const { role, is_active } = req.body;
-
-    console.log('📝 Updating user:', id, { role, is_active });
 
     const updates = [];
     const values = [];
@@ -1981,8 +2056,6 @@ app.patch('/api/admin/users/:id', verifyToken, verifyAdmin, async (req, res) => 
       });
     }
 
-    console.log(`✅ User ${id} updated successfully`);
-
     res.json({ 
       success: true, 
       message: 'User updated successfully' 
@@ -1993,47 +2066,6 @@ app.patch('/api/admin/users/:id', verifyToken, verifyAdmin, async (req, res) => 
     res.status(500).json({ 
       success: false, 
       message: 'Failed to update user' 
-    });
-  }
-});
-
-// Update user role
-app.patch('/api/admin/users/:id/role', verifyToken, verifyAdmin, async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { role } = req.body;
-
-    if (!['customer', 'admin'].includes(role)) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Invalid role. Must be customer or admin.' 
-      });
-    }
-
-    const [result] = await db.query(
-      'UPDATE users SET role = ? WHERE id = ?',
-      [role, id]
-    );
-
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'User not found' 
-      });
-    }
-
-    console.log(`✅ User role updated: ID ${id} -> ${role}`);
-
-    res.json({ 
-      success: true, 
-      message: 'User role updated successfully' 
-    });
-
-  } catch (error) {
-    console.error('❌ Update user role error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Failed to update user role' 
     });
   }
 });
@@ -2059,8 +2091,6 @@ app.delete('/api/admin/users/:id', verifyToken, verifyAdmin, async (req, res) =>
       });
     }
 
-    console.log(`✅ User deleted: ID ${id}`);
-
     res.json({ 
       success: true, 
       message: 'User deleted successfully' 
@@ -2075,143 +2105,12 @@ app.delete('/api/admin/users/:id', verifyToken, verifyAdmin, async (req, res) =>
   }
 });
 
-// ==================== RESERVATION ROUTES ====================
-
-// Create reservation
-app.post('/api/reservations', verifyToken, async (req, res) => {
-  try {
-    const { name, email, phone, date, time, guests, message } = req.body;
-
-    if (!name || !email || !phone || !date || !time || !guests) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'All required fields must be provided' 
-      });
-    }
-
-    const [result] = await db.query(
-      `INSERT INTO reservations 
-       (user_id, name, email, phone, date, time, guests, message, status, created_at) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', NOW())`,
-      [req.user.userId, name, email, phone, date, time, guests, message || null]
-    );
-
-    console.log(`✅ Reservation created: ID ${result.insertId}`);
-
-    io.to('admin-room').emit('new-reservation', {
-      id: result.insertId,
-      name,
-      email,
-      date,
-      time,
-      guests,
-      status: 'pending'
-    });
-
-    res.json({ 
-      success: true, 
-      message: 'Reservation created successfully',
-      reservationId: result.insertId 
-    });
-
-  } catch (error) {
-    console.error('❌ Create reservation error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Failed to create reservation' 
-    });
-  }
-});
-
-// Get user reservations
-app.get('/api/reservations', verifyToken, async (req, res) => {
-  try {
-    const [reservations] = await db.query(
-      `SELECT * FROM reservations 
-       WHERE user_id = ? 
-       ORDER BY date DESC, time DESC`,
-      [req.user.userId]
-    );
-
-    res.json({ success: true, reservations });
-  } catch (error) {
-    console.error('❌ Get reservations error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Failed to fetch reservations' 
-    });
-  }
-});
-
-// Get all reservations (Admin)
-app.get('/api/admin/reservations', verifyToken, verifyAdmin, async (req, res) => {
-  try {
-    const [reservations] = await db.query(
-      `SELECT * FROM reservations 
-       ORDER BY date DESC, time DESC 
-       LIMIT 500`
-    );
-
-    res.json({ success: true, reservations });
-  } catch (error) {
-    console.error('❌ Get admin reservations error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Failed to fetch reservations' 
-    });
-  }
-});
-
-// Update reservation status (Admin)
-app.patch('/api/admin/reservations/:id/status', verifyToken, verifyAdmin, async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { status } = req.body;
-
-    const validStatuses = ['pending', 'confirmed', 'cancelled', 'completed'];
-    if (!validStatuses.includes(status)) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Invalid status' 
-      });
-    }
-
-    const [result] = await db.query(
-      'UPDATE reservations SET status = ? WHERE id = ?',
-      [status, id]
-    );
-
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'Reservation not found' 
-      });
-    }
-
-    console.log(`✅ Reservation status updated: ID ${id} -> ${status}`);
-
-    res.json({ 
-      success: true, 
-      message: 'Reservation status updated successfully' 
-    });
-
-  } catch (error) {
-    console.error('❌ Update reservation status error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Failed to update reservation status' 
-    });
-  }
-});
-
-// ==================== VOUCHER ROUTES ====================
+// ==================== VOUCHER ROUTES (Admin) ====================
 
 // Create voucher (Admin)
 app.post('/api/admin/vouchers', verifyToken, verifyAdmin, async (req, res) => {
   try {
     const { user_id, code, discount_type, discount_value, expires_at } = req.body;
-
-    console.log('📝 Creating voucher:', { user_id, code, discount_type, discount_value, expires_at });
 
     if (!user_id || !code || !discount_type || !discount_value || !expires_at) {
       return res.status(400).json({ 
@@ -2220,7 +2119,6 @@ app.post('/api/admin/vouchers', verifyToken, verifyAdmin, async (req, res) => {
       });
     }
 
-    // Validate discount type
     if (!['percentage', 'fixed'].includes(discount_type)) {
       return res.status(400).json({ 
         success: false, 
@@ -2228,7 +2126,6 @@ app.post('/api/admin/vouchers', verifyToken, verifyAdmin, async (req, res) => {
       });
     }
 
-    // Validate discount value
     const value = parseFloat(discount_value);
     if (isNaN(value) || value <= 0) {
       return res.status(400).json({ 
@@ -2244,23 +2141,32 @@ app.post('/api/admin/vouchers', verifyToken, verifyAdmin, async (req, res) => {
       });
     }
 
-    // Check if user exists
-    const [userCheck] = await db.query('SELECT id FROM users WHERE id = ?', [user_id]);
-    if (userCheck.length === 0) {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'User not found' 
-      });
-    }
-
-    // Insert voucher
     const [result] = await db.query(
       `INSERT INTO vouchers (user_id, code, discount_type, discount_value, expires_at, created_at) 
        VALUES (?, ?, ?, ?, ?, NOW())`,
       [user_id, code.toUpperCase(), discount_type, value, expires_at]
     );
 
-    console.log(`✅ Voucher created: ${code} for user ${user_id} (ID: ${result.insertId})`);
+    // Get user email for Socket.IO emission
+    const [users] = await db.query('SELECT email FROM users WHERE id = ?', [user_id]);
+    const userEmail = users.length > 0 ? users[0].email : null;
+
+    // Emit voucher-updated event to the specific user's room
+    if (user_id) {
+      io.to(`user-${user_id}`).emit('voucher-updated', {
+        user_id: user_id,
+        user_email: userEmail,
+        voucher: {
+          id: result.insertId,
+          code: code.toUpperCase(),
+          discount_type: discount_type,
+          discount_value: value,
+          expires_at: expires_at
+        },
+        action: 'created'
+      });
+      console.log(`[SOCKET][USER_${user_id}] voucher-updated event triggered (created)`);
+    }
 
     res.json({ 
       success: true, 
@@ -2277,18 +2183,10 @@ app.post('/api/admin/vouchers', verifyToken, verifyAdmin, async (req, res) => {
         message: 'Voucher code already exists' 
       });
     }
-
-    if (error.code === 'ER_NO_SUCH_TABLE') {
-      return res.status(500).json({ 
-        success: false, 
-        message: 'Vouchers table does not exist. Please run the database migration.' 
-      });
-    }
     
     res.status(500).json({ 
       success: false, 
-      message: 'Failed to create voucher',
-      error: error.message 
+      message: 'Failed to create voucher'
     });
   }
 });
@@ -2319,8 +2217,6 @@ app.get('/api/admin/vouchers', verifyToken, verifyAdmin, async (req, res) => {
       [user_id]
     );
 
-    console.log(`✅ Fetched ${vouchers.length} vouchers for user ${user_id}`);
-
     res.json({ 
       success: true, 
       vouchers 
@@ -2328,182 +2224,10 @@ app.get('/api/admin/vouchers', verifyToken, verifyAdmin, async (req, res) => {
 
   } catch (error) {
     console.error('❌ Get vouchers error:', error);
-    
-    if (error.code === 'ER_NO_SUCH_TABLE') {
-      return res.status(500).json({ 
-        success: false, 
-        message: 'Vouchers table does not exist',
-        vouchers: []
-      });
-    }
-    
     res.status(500).json({ 
       success: false, 
       message: 'Failed to fetch vouchers',
       vouchers: []
-    });
-  }
-});
-
-// Get user's own vouchers
-app.get('/api/user/vouchers', verifyToken, async (req, res) => {
-  try {
-    console.log('🎟️ Fetching vouchers for user:', req.user.userId);
-
-    const [vouchers] = await db.query(
-      `SELECT 
-        id, code, discount_type, discount_value, 
-        expires_at, is_used, used_at,
-        CASE 
-          WHEN expires_at < CURDATE() THEN TRUE 
-          ELSE FALSE 
-        END as is_expired
-       FROM vouchers 
-       WHERE user_id = ? AND is_used = FALSE
-       ORDER BY expires_at ASC`,
-      [req.user.userId]
-    );
-
-    console.log(`✅ User ${req.user.userId} has ${vouchers.length} available vouchers`);
-
-    res.json({ 
-      success: true, 
-      vouchers 
-    });
-
-  } catch (error) {
-    console.error('❌ Get user vouchers error:', error);
-    
-    if (error.code === 'ER_NO_SUCH_TABLE') {
-      return res.json({ 
-        success: true, 
-        vouchers: [],
-        message: 'Vouchers feature not yet available'
-      });
-    }
-    
-    res.status(500).json({ 
-      success: false, 
-      message: 'Failed to fetch vouchers',
-      vouchers: []
-    });
-  }
-});
-
-// Validate voucher (used by cart)
-app.post('/api/user/vouchers/validate', verifyToken, async (req, res) => {
-  try {
-    const { code, order_total } = req.body;
-
-    console.log('🔍 Validating voucher:', code, 'for order:', order_total);
-
-    if (!code) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Voucher code is required' 
-      });
-    }
-
-    const [vouchers] = await db.query(
-      `SELECT * FROM vouchers 
-       WHERE code = ? AND user_id = ? AND is_used = FALSE`,
-      [code.toUpperCase(), req.user.userId]
-    );
-
-    if (vouchers.length === 0) {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'Invalid or already used voucher code' 
-      });
-    }
-
-    const voucher = vouchers[0];
-
-    // Check expiration
-    const expiryDate = new Date(voucher.expires_at);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    if (expiryDate < today) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'This voucher has expired' 
-      });
-    }
-
-    // Calculate discount
-    let discount = 0;
-    if (voucher.discount_type === 'percentage') {
-      discount = (parseFloat(order_total) * parseFloat(voucher.discount_value)) / 100;
-    } else {
-      discount = parseFloat(voucher.discount_value);
-    }
-
-    // Ensure discount doesn't exceed order total
-    discount = Math.min(discount, parseFloat(order_total));
-
-    console.log('✅ Voucher valid. Discount:', discount);
-
-    res.json({ 
-      success: true, 
-      voucher: {
-        id: voucher.id,
-        code: voucher.code,
-        discount_type: voucher.discount_type,
-        discount_value: voucher.discount_value,
-        calculated_discount: discount.toFixed(2)
-      }
-    });
-
-  } catch (error) {
-    console.error('❌ Validate voucher error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Failed to validate voucher' 
-    });
-  }
-});
-
-// Mark voucher as used (called after successful order)
-app.post('/api/user/vouchers/use', verifyToken, async (req, res) => {
-  try {
-    const { code } = req.body;
-
-    console.log('✓ Marking voucher as used:', code);
-
-    if (!code) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Voucher code is required' 
-      });
-    }
-
-    const [result] = await db.query(
-      `UPDATE vouchers 
-       SET is_used = TRUE, used_at = NOW() 
-       WHERE code = ? AND user_id = ? AND is_used = FALSE`,
-      [code.toUpperCase(), req.user.userId]
-    );
-
-    if (result.affectedRows === 0) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Voucher not found or already used' 
-      });
-    }
-
-    console.log(`✅ Voucher ${code} marked as used for user ${req.user.userId}`);
-
-    res.json({ 
-      success: true, 
-      message: 'Voucher applied successfully' 
-    });
-
-  } catch (error) {
-    console.error('❌ Use voucher error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Failed to use voucher' 
     });
   }
 });
@@ -2512,6 +2236,20 @@ app.post('/api/user/vouchers/use', verifyToken, async (req, res) => {
 app.delete('/api/admin/vouchers/:id', verifyToken, verifyAdmin, async (req, res) => {
   try {
     const { id } = req.params;
+
+    // Get voucher info before deleting
+    const [vouchers] = await db.query('SELECT user_id FROM vouchers WHERE id = ?', [id]);
+    
+    if (vouchers.length === 0) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Voucher not found' 
+      });
+    }
+
+    const user_id = vouchers[0].user_id;
+    const [users] = await db.query('SELECT email FROM users WHERE id = ?', [user_id]);
+    const userEmail = users.length > 0 ? users[0].email : null;
 
     const [result] = await db.query('DELETE FROM vouchers WHERE id = ?', [id]);
 
@@ -2522,7 +2260,16 @@ app.delete('/api/admin/vouchers/:id', verifyToken, verifyAdmin, async (req, res)
       });
     }
 
-    console.log(`✅ Voucher deleted: ID ${id}`);
+    // Emit voucher-updated event for deletion to the specific user's room
+    if (user_id) {
+      io.to(`user-${user_id}`).emit('voucher-updated', {
+        user_id: user_id,
+        user_email: userEmail,
+        voucher: { id: parseInt(id) },
+        action: 'deleted'
+      });
+      console.log(`[SOCKET][USER_${user_id}] voucher-updated event triggered (deleted)`);
+    }
 
     res.json({ 
       success: true, 
@@ -2538,81 +2285,17 @@ app.delete('/api/admin/vouchers/:id', verifyToken, verifyAdmin, async (req, res)
   }
 });
 
-
-// ==================== CONTACT/FEEDBACK ROUTES ====================
-
-// Submit contact form
-app.post('/api/contact', async (req, res) => {
-  try {
-    const { name, email, subject, message } = req.body;
-
-    if (!name || !email || !message) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Name, email, and message are required' 
-      });
-    }
-
-    const [result] = await db.query(
-      `INSERT INTO contact_messages (name, email, subject, message, created_at) 
-       VALUES (?, ?, ?, ?, NOW())`,
-      [name, email, subject || 'General Inquiry', message]
-    );
-
-    console.log(`✅ Contact message received from: ${email}`);
-
-    io.to('admin-room').emit('new-contact-message', {
-      id: result.insertId,
-      name,
-      email,
-      subject,
-      created_at: new Date().toISOString()
-    });
-
-    res.json({ 
-      success: true, 
-      message: 'Your message has been sent successfully' 
-    });
-
-  } catch (error) {
-    console.error('❌ Contact form error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Failed to send message' 
-    });
-  }
-});
-
-// Get contact messages (Admin)
-app.get('/api/admin/contact-messages', verifyToken, verifyAdmin, async (req, res) => {
-  try {
-    const [messages] = await db.query(
-      `SELECT * FROM contact_messages 
-       ORDER BY created_at DESC 
-       LIMIT 200`
-    );
-
-    res.json({ success: true, messages });
-  } catch (error) {
-    console.error('❌ Get contact messages error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Failed to fetch messages' 
-    });
-  }
-});
-
 // ==================== RATE LIMITING ====================
 
 const apiLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
+  windowMs: 15 * 60 * 1000,
+  max: 100,
   message: 'Too many requests from this IP, please try again later.'
 });
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 5, // 5 attempts per 15 minutes
+  max: 5,
   message: 'Too many login attempts, please try again later.'
 });
 
@@ -2669,7 +2352,6 @@ server.listen(PORT, () => {
   console.log(`📧 Email: ${process.env.MAIL_USER ? '✅ Configured' : '❌ Not configured'}`);
   console.log(`🔐 JWT: ${JWT_SECRET ? '✅ Configured' : '⚠️  Using default (change this!)'}`);
   console.log(`🗄️  Database: ${process.env.DB_NAME || 'kusina_db'}`);
-  console.log('✅ Voucher routes and user management routes loaded successfully');
   console.log('========================================\n');
 });
 

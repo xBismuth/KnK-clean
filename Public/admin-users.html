@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>User Management - Kusina ni Katya</title>
 <script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
 <style>
@@ -80,7 +81,6 @@
   }
   
   .badge-admin { background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); color: #92400e; }
-  .badge-staff { background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); color: #1e40af; }
   .badge-customer { background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%); color: #065f46; }
   .badge-active { background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%); color: #065f46; }
   .badge-inactive { background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%); color: #991b1b; }
@@ -170,9 +170,14 @@
     display: inline-block;
     width: 48px;
     height: 24px;
+    cursor: pointer;
   }
   
   .toggle-switch input { opacity: 0; width: 0; height: 0; }
+  .toggle-switch input:disabled + .toggle-slider {
+    opacity: 0.6;
+    cursor: wait;
+  }
   
   .toggle-slider {
     position: absolute;
@@ -218,26 +223,20 @@
     box-shadow: 0 4px 12px rgba(205, 164, 94, 0.3);
   }
   
-  #toast {
-    position: fixed;
-    right: 24px;
-    bottom: 24px;
-    background: #1f2937;
-    color: white;
-    padding: 12px 20px;
-    border-radius: 12px;
-    font-size: 14px;
-    font-weight: 500;
-    z-index: 1100;
-    display: none;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
-    animation: slideIn 0.3s ease-out;
+  @keyframes slideInRight {
+    from { opacity: 0; transform: translateX(20px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+  
+  .animate-slide-in {
+    animation: slideInRight 0.3s ease-out;
   }
 </style>
 </head>
 
 <body>
 
+<!-- HEADER -->
 <header class="bg-white border-b sticky top-0 z-50 backdrop-blur-md bg-white/80">
   <nav class="max-w-7xl mx-auto px-6">
     <div class="flex justify-between items-center h-16">
@@ -260,6 +259,7 @@
   </nav>
 </header>
 
+<!-- MAIN CONTENT -->
 <main class="max-w-7xl mx-auto px-6 py-8">
 
   <div class="flex justify-between items-center mb-8">
@@ -267,8 +267,15 @@
       <h2 class="text-3xl font-bold text-gray-900">Users</h2>
       <p class="text-sm text-gray-500 mt-1">Manage users and vouchers</p>
     </div>
+    <button onclick="loadUsers()" class="btn btn-primary flex items-center gap-2">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+      </svg>
+      Refresh
+    </button>
   </div>
 
+  <!-- FILTERS -->
   <div class="mb-6 flex gap-3 flex-wrap">
     <button onclick="filterUsers('all', this)" class="filter-btn active">All</button>
     <button onclick="filterUsers('admin', this)" class="filter-btn">Admins</button>
@@ -276,12 +283,14 @@
     <button onclick="filterUsers('inactive', this)" class="filter-btn">Inactive</button>
   </div>
 
+  <!-- SEARCH -->
   <div class="mb-6">
     <input type="text" id="search-input" placeholder="Search users by name or email..." 
            onkeyup="searchUsers()" 
            class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-sm focus:border-[#cda45e] focus:outline-none transition shadow-sm">
   </div>
 
+  <!-- USERS GRID -->
   <div id="users-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
     <div class="col-span-full text-center py-12 text-gray-400">
       <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-[#cda45e] mb-4"></div>
@@ -291,11 +300,13 @@
 
 </main>
 
-<!-- Voucher Modal -->
+<!-- VOUCHER MODAL -->
 <div id="voucher-modal" class="modal-overlay hidden" onclick="closeVoucherModal(event)">
   <div class="modal-content" onclick="event.stopPropagation()">
-    <h3 class="text-xl font-bold mb-4">Add Voucher</h3>
-    <p class="text-xs text-gray-600 mb-6 bg-[#cda45e]/10 p-3 rounded-lg">User: <span id="voucher-user-name" class="font-bold text-[#cda45e]"></span></p>
+    <h3 class="text-xl font-bold mb-4">Assign Voucher</h3>
+    <p class="text-xs text-gray-600 mb-6 bg-[#cda45e]/10 p-3 rounded-lg">
+      User: <span id="voucher-user-name" class="font-bold text-[#cda45e]"></span>
+    </p>
     
     <form id="voucher-form" onsubmit="saveVoucher(event)">
       <input type="hidden" id="voucher-user-id">
@@ -325,23 +336,26 @@
 
       <div class="flex gap-3 mt-6">
         <button type="button" onclick="closeVoucherModal()" class="flex-1 btn btn-secondary">Cancel</button>
-        <button type="submit" class="flex-1 btn btn-primary">Create</button>
+        <button type="submit" class="flex-1 btn btn-primary" id="voucher-submit-btn">Create Voucher</button>
       </div>
     </form>
   </div>
 </div>
 
-<!-- View Vouchers Modal -->
+<!-- VIEW VOUCHERS MODAL -->
 <div id="view-vouchers-modal" class="modal-overlay hidden" onclick="closeViewVouchersModal(event)">
   <div class="modal-content" onclick="event.stopPropagation()">
-    <h3 class="text-xl font-bold mb-4">Vouchers</h3>
-    <p class="text-xs text-gray-600 mb-6 bg-[#cda45e]/10 p-3 rounded-lg">User: <span id="view-vouchers-user-name" class="font-bold text-[#cda45e]"></span></p>
+    <h3 class="text-xl font-bold mb-4">User Vouchers</h3>
+    <p class="text-xs text-gray-600 mb-6 bg-[#cda45e]/10 p-3 rounded-lg">
+      User: <span id="view-vouchers-user-name" class="font-bold text-[#cda45e]"></span>
+    </p>
+    <input type="hidden" id="view-vouchers-user-id">
     <div id="vouchers-list" class="mb-6"></div>
     <button onclick="closeViewVouchersModal()" class="w-full btn btn-secondary">Close</button>
   </div>
 </div>
 
-<!-- Delete Modal -->
+<!-- DELETE USER MODAL -->
 <div id="delete-modal" class="modal-overlay hidden" onclick="closeDeleteModal(event)">
   <div class="modal-content" style="max-width: 420px;" onclick="event.stopPropagation()">
     <h3 class="text-xl font-bold mb-3 text-red-600">Delete User?</h3>
@@ -354,241 +368,540 @@
   </div>
 </div>
 
-<div id="toast"></div>
+<!-- TOAST CONTAINER -->
+<div id="toast-container" class="fixed bottom-6 right-6 z-50 flex flex-col gap-2"></div>
 
 <script>
-  
+// ==================== GLOBAL STATE ====================
+const API_URL = '/api';
 let token = null;
 let allUsers = [];
 let currentFilter = 'all';
+let socket = null;
 
-document.addEventListener('DOMContentLoaded', async () => {
-  token = localStorage.getItem('adminToken');
+console.log('🚀 Admin Users Management page loading...');
+
+// ==================== AUTH CHECK ====================
+
+/**
+ * Check if user is authenticated admin
+ */
+function checkAuth() {
+  token = localStorage.getItem('adminToken') || sessionStorage.getItem('adminToken');
+  
   if (!token) {
-    window.location.href = 'login.html';
-    return;
+    console.log('❌ No admin token found');
+    showToast('Please login as admin', 'error');
+    setTimeout(() => {
+      window.location.href = 'login.html';
+    }, 1500);
+    return false;
   }
   
-  await loadUserInfo();
+  console.log('✅ Admin token found');
+  return true;
+}
+
+// ==================== API FETCH HELPER ====================
+
+/**
+ * Generic API fetch with admin authentication
+ * @param {string} endpoint - API endpoint
+ * @param {object} options - Fetch options
+ * @returns {Promise<object>} Response data
+ */
+async function apiFetch(endpoint, options = {}) {
+  if (!token) {
+    throw new Error('No authentication token');
+  }
+  
+  const defaultOptions = {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+      ...options.headers
+    }
+  };
+  
+  const config = { ...defaultOptions, ...options };
+  
+  console.log(`📡 API Call: ${options.method || 'GET'} ${API_URL}${endpoint}`);
+  
+  const response = await fetch(`${API_URL}${endpoint}`, config);
+  
+  // Handle auth errors
+  if (response.status === 401 || response.status === 403) {
+    console.log('⚠️ Admin token expired or invalid');
+    showToast('Session expired. Please login again.', 'error');
+    setTimeout(() => {
+      localStorage.removeItem('adminToken');
+      sessionStorage.removeItem('adminToken');
+      window.location.href = 'login.html';
+    }, 2000);
+    throw new Error('Authentication failed');
+  }
+  
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error(`❌ API Error ${response.status}:`, errorText);
+    throw new Error(`HTTP ${response.status}: ${errorText}`);
+  }
+  
+  const data = await response.json();
+  console.log(`✅ API Response from ${endpoint}:`, data);
+  
+  return data;
+}
+
+// ==================== TOAST NOTIFICATIONS ====================
+
+/**
+ * Show toast notification
+ * @param {string} message - Toast message
+ * @param {string} type - 'success', 'error', or 'info'
+ */
+function showToast(message, type = 'success') {
+  const container = document.getElementById('toast-container');
+  if (!container) return;
+  
+  const bgColor = type === 'success' ? 'bg-green-500' : type === 'error' ? 'bg-red-500' : 'bg-blue-500';
+  const icon = type === 'success' 
+    ? '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>'
+    : '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>';
+  
+  const toastId = 'toast-' + Date.now();
+  const toastHTML = `
+    <div id="${toastId}" class="${bgColor} text-white rounded-xl shadow-2xl p-3 flex items-center gap-2 min-w-[280px] animate-slide-in">
+      ${icon}
+      <p class="font-medium text-sm">${escapeHtml(message)}</p>
+    </div>
+  `;
+  
+  container.insertAdjacentHTML('beforeend', toastHTML);
+  
+  // Auto remove after 3 seconds
+  setTimeout(() => {
+    const toast = document.getElementById(toastId);
+    if (toast) {
+      toast.style.opacity = '0';
+      toast.style.transform = 'translateX(20px)';
+      toast.style.transition = 'all 0.3s ease';
+      setTimeout(() => toast.remove(), 300);
+    }
+  }, 3000);
+}
+
+// ==================== HELPER FUNCTIONS ====================
+
+/**
+ * Escape HTML to prevent XSS
+ */
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text || '';
+  return div.innerHTML;
+}
+
+/**
+ * Escape JS strings for inline attributes
+ */
+function escapeJsString(text) {
+  if (!text) return '';
+  return String(text)
+    .replace(/\\/g, '\\\\')
+    .replace(/'/g, "\\'")
+    .replace(/"/g, '\\"')
+    .replace(/\n/g, '\\n')
+    .replace(/\r/g, '\\r');
+}
+
+// ==================== INITIALIZATION ====================
+
+document.addEventListener('DOMContentLoaded', async () => {
+  console.log('🔄 Initializing admin users panel...');
+  
+  // Check authentication
+  if (!checkAuth()) return;
+  
+  // Load admin info
+  await loadAdminInfo();
+  
+  // Load all users
   await loadUsers();
   
+  // Initialize Socket.IO
+  initializeSocket();
+  
+  // Set minimum date for voucher expiry
   const today = new Date().toISOString().split('T')[0];
   const expiryInput = document.getElementById('voucher-expires');
   if (expiryInput) {
     expiryInput.min = today;
   }
+  
+  console.log('✅ Admin users panel initialized');
 });
 
-async function loadUserInfo() {
+// ==================== SOCKET.IO ====================
+
+/**
+ * Initialize Socket.IO connection for admin
+ */
+function initializeSocket() {
+  // Prevent duplicate connections
+  if (socket && socket.connected) {
+    console.log('⚠️ Socket already connected');
+    return;
+  }
+  
+  if (typeof io === 'undefined') {
+    console.log('⚠️ Socket.IO not available');
+    return;
+  }
+  
+  if (!token) {
+    console.log('⚠️ No auth token for Socket.IO');
+    return;
+  }
+  
+  console.log('🔌 Connecting admin Socket.IO...');
+  
+  // Create socket connection
+  socket = io(window.location.origin, {
+    transports: ['websocket', 'polling'],
+    auth: { token: token },
+    reconnection: true,
+    reconnectionAttempts: Infinity,
+    reconnectionDelay: 1000
+  });
+  
+  // Connection successful
+  socket.on('connect', () => {
+    console.log('✅ Socket.IO connected for admin:', socket.id);
+    // Join admin room
+    socket.emit('admin-connect');
+    console.log('📢 Joined admin room');
+  });
+  
+  // Disconnection
+  socket.on('disconnect', (reason) => {
+    console.log('❌ Socket.IO disconnected:', reason);
+  });
+  
+  // Connection error
+  socket.on('connect_error', (error) => {
+    console.error('❌ Socket.IO connection error:', error);
+  });
+  
+  // Listen for new orders (optional)
+  socket.on('new-order', (data) => {
+    console.log('📦 New order received:', data);
+    showToast(`New order #${data.order_id} from ${data.customer_name}`, 'info');
+  });
+  
+  // Listen for voucher updates (optional monitoring)
+  socket.on('voucher-updated', (data) => {
+    console.log('🎟️ Voucher updated:', data);
+  });
+  
+  // Listen for order status changes (optional monitoring)
+  socket.on('order-status-changed', (data) => {
+    console.log('📦 Order status changed:', data);
+  });
+  
+  console.log('✅ Socket.IO initialized with event listeners');
+}
+
+// ==================== LOAD ADMIN INFO ====================
+
+/**
+ * Load current admin user info
+ */
+async function loadAdminInfo() {
   try {
-    const res = await fetch('/auth/me', { 
-      headers: { 'Authorization': `Bearer ${token}` } 
-    });
+    console.log('👤 Fetching admin user info...');
+    const data = await apiFetch('/auth/me');
     
-    if (!res.ok) {
-      localStorage.removeItem('adminToken');
-      window.location.href = 'login.html';
-      return;
-    }
-    
-    const data = await res.json();
     if (data.success && data.user) {
-      document.getElementById('user-name').textContent = data.user.name || 'Admin';
+      const adminName = data.user.name || 'Admin';
+      document.getElementById('user-name').textContent = adminName;
+      console.log('✅ Admin user info loaded:', adminName);
     }
   } catch(e) {
-    console.error('User load error:', e);
+    console.error('❌ Failed to load admin info:', e);
   }
 }
 
+// ==================== LOAD USERS ====================
+
+/**
+ * Fetch all users from API
+ */
 async function loadUsers() {
+  const grid = document.getElementById('users-grid');
+  
   try {
-    const res = await fetch('/api/admin/users', {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
+    console.log('📋 Fetching all users...');
     
-    if (!res.ok) throw new Error('Failed to load users');
+    // Show loading state
+    if (grid) {
+      grid.innerHTML = `
+        <div class="col-span-full text-center py-12 text-gray-400">
+          <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-[#cda45e] mb-4"></div>
+          <p>Loading users...</p>
+        </div>
+      `;
+    }
     
-    const data = await res.json();
-    allUsers = data.users || [];
-    console.log('✅ Loaded', allUsers.length, 'users');
+    // Fetch users from API
+    const data = await apiFetch('/admin/users');
+    
+    // Store users globally
+    allUsers = Array.isArray(data.users) ? data.users : [];
+    console.log(`✅ Loaded ${allUsers.length} users`);
+    
+    // Render users
     renderUsers();
     
   } catch(e) {
-    console.error('Load users error:', e);
+    console.error('❌ Load users error:', e);
     showToast('Failed to load users', 'error');
+    
+    // Show error state
+    if (grid) {
+      grid.innerHTML = `
+        <div class="col-span-full text-center py-12">
+          <p class="text-red-500 mb-4">❌ Error loading users</p>
+          <button onclick="loadUsers()" class="btn btn-primary">Retry</button>
+        </div>
+      `;
+    }
   }
 }
 
+// ==================== RENDER USERS ====================
+
+/**
+ * Render users grid with filters applied
+ */
 function renderUsers() {
   const grid = document.getElementById('users-grid');
   if (!grid) return;
   
+  console.log(`🎨 Rendering users with filter: ${currentFilter}`);
+  
+  // Get search value
+  const searchVal = document.getElementById('search-input')?.value.toLowerCase() || '';
+  
+  // Filter users
   let filtered = allUsers.filter(user => {
-    if (currentFilter === 'all') return true;
-    if (currentFilter === 'inactive') return !user.is_active;
-    return user.role === currentFilter;
+    // Apply role/status filter
+    let matchesFilter = true;
+    if (currentFilter === 'all') {
+      matchesFilter = true;
+    } else if (currentFilter === 'inactive') {
+      matchesFilter = !user.is_active;
+    } else {
+      matchesFilter = user.role === currentFilter;
+    }
+    
+    // Apply search filter
+    if (searchVal && matchesFilter) {
+      const nameMatch = (user.name || '').toLowerCase().includes(searchVal);
+      const emailMatch = (user.email || '').toLowerCase().includes(searchVal);
+      return nameMatch || emailMatch;
+    }
+    
+    return matchesFilter;
   });
   
+  // Show empty state if no users
   if (filtered.length === 0) {
-    grid.innerHTML = '<div class="col-span-full text-center py-12 text-gray-400">No users found</div>';
+    grid.innerHTML = `
+      <div class="col-span-full text-center py-12 text-gray-400">
+        <svg class="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+        </svg>
+        <p class="text-lg">No users found</p>
+      </div>
+    `;
     return;
   }
   
+  // Clear grid
   grid.innerHTML = '';
   
+  // Render each user card
   filtered.forEach(user => {
     const card = document.createElement('div');
     card.className = 'card';
-    const joinDate = user.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A';
-    const initial = (user.name || user.email).charAt(0).toUpperCase();
     
+    // Format join date
+    const joinDate = user.created_at 
+      ? new Date(user.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+      : 'N/A';
+    
+    // Get user initial
+    const initial = (user.name || user.email || 'U').charAt(0).toUpperCase();
+    
+    // Build card HTML
     card.innerHTML = `
       <div class="flex items-start gap-4 mb-4">
         <div class="user-avatar">${initial}</div>
         <div class="flex-1 min-w-0">
           <h3 class="text-lg font-bold truncate text-gray-900">${escapeHtml(user.name || 'Unknown')}</h3>
-          <p class="text-xs text-gray-600 truncate">${escapeHtml(user.email)}</p>
+          <p class="text-xs text-gray-600 truncate">${escapeHtml(user.email || 'No email')}</p>
           ${user.phone ? `<p class="text-xs text-gray-500 mt-1">${escapeHtml(user.phone)}</p>` : ''}
         </div>
       </div>
       
       <div class="flex gap-2 mb-4 flex-wrap">
-        <span class="badge badge-${user.role}">${user.role}</span>
-        <span class="badge ${user.is_active ? 'badge-active' : 'badge-inactive'}">${user.is_active ? 'Active' : 'Inactive'}</span>
+        <span class="badge badge-${user.role || 'customer'}">${(user.role || 'customer').toUpperCase()}</span>
+        <span class="badge ${user.is_active !== false ? 'badge-active' : 'badge-inactive'}">
+          ${user.is_active !== false ? 'Active' : 'Inactive'}
+        </span>
       </div>
       
-      <div class="text-xs text-gray-500 mb-4 pb-4 border-b">Joined: ${joinDate}</div>
+      <div class="text-xs text-gray-500 mb-4 pb-4 border-b">
+        <span class="font-medium">Joined:</span> ${joinDate}
+      </div>
       
       <div class="flex items-center justify-between mb-4 p-3 bg-gray-50 rounded-lg">
         <span class="text-xs font-semibold text-gray-700">Active Status</span>
-        <label class="toggle-switch" onclick="event.stopPropagation()">
-          <input type="checkbox" ${user.is_active ? 'checked' : ''} onchange="toggleUserActive(${user.id}, this.checked)">
+        <label class="toggle-switch" onclick="event.stopPropagation()" id="toggle-${user.id}">
+          <input type="checkbox" 
+                 ${user.is_active !== false ? 'checked' : ''} 
+                 onchange="toggleUserActive(${user.id}, this.checked)" 
+                 id="toggle-input-${user.id}">
           <span class="toggle-slider"></span>
         </label>
       </div>
       
       <div class="grid grid-cols-2 gap-2">
-        <button onclick="openVoucherModal(${user.id}, '${escapeHtml(user.name || user.email)}')" class="btn btn-primary text-xs">Add Voucher</button>
-        <button onclick="viewUserVouchers(${user.id}, '${escapeHtml(user.name || user.email)}')" class="btn btn-secondary text-xs">View Vouchers</button>
-        ${user.role !== 'admin' ? `<button onclick="openDeleteModal(${user.id}, '${escapeHtml(user.name || user.email)}')" class="btn btn-danger text-xs col-span-2">Delete User</button>` : ''}
+        <button onclick="openVoucherModal(${user.id}, '${escapeJsString(user.name || user.email || 'User')}')" 
+                class="btn btn-primary text-xs">
+          Assign Voucher
+        </button>
+        <button onclick="viewUserVouchers(${user.id}, '${escapeJsString(user.name || user.email || 'User')}')" 
+                class="btn btn-secondary text-xs">
+          View Vouchers
+        </button>
+        ${user.role !== 'admin' ? `
+        <button onclick="openDeleteModal(${user.id}, '${escapeJsString(user.name || user.email || 'User')}')" 
+                class="btn btn-danger text-xs col-span-2">
+          Delete User
+        </button>` : ''}
       </div>
     `;
+    
     grid.appendChild(card);
   });
+  
+  console.log(`✅ Rendered ${filtered.length} users`);
 }
 
+// ==================== USER ACTIONS ====================
+
+/**
+ * Toggle user active status
+ * @param {number} userId - User ID
+ * @param {boolean} isActive - New active status
+ */
 async function toggleUserActive(userId, isActive) {
+  const toggleInput = document.getElementById(`toggle-input-${userId}`);
+  const originalState = !isActive;
+  
+  // Disable toggle while updating
+  if (toggleInput) toggleInput.disabled = true;
+  
+  // Optimistically update UI
+  const user = allUsers.find(u => u.id === userId);
+  if (user) user.is_active = isActive;
+  
   try {
-    console.log('🔄 Toggling user active status:', userId, isActive);
+    console.log(`🔄 Toggling user ${userId} active status to ${isActive}`);
     
-    const res = await fetch(`/api/admin/users/${userId}`, {
+    // Send API request
+    const data = await apiFetch(`/admin/users/${userId}`, {
       method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
       body: JSON.stringify({ is_active: isActive })
     });
     
-    const data = await res.json();
-    
     if (data.success) {
       showToast(`User ${isActive ? 'activated' : 'deactivated'}`, 'success');
-      await loadUsers();
+      renderUsers();
     } else {
+      // Revert on failure
+      if (user) user.is_active = originalState;
       showToast(data.message || 'Failed to update', 'error');
-      await loadUsers();
+      renderUsers();
     }
   } catch(e) {
-    console.error('Toggle active error:', e);
+    console.error('❌ Toggle active error:', e);
+    // Revert on error
+    if (user) user.is_active = originalState;
     showToast('Error updating status', 'error');
-    await loadUsers();
-  }
-}
-
-function filterUsers(filter, btn) {
-  currentFilter = filter;
-  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  renderUsers();
-}
-
-function searchUsers() {
-  const val = document.getElementById('search-input').value.toLowerCase();
-  
-  if (!val) {
     renderUsers();
-    return;
+  } finally {
+    // Re-enable toggle
+    if (toggleInput) toggleInput.disabled = false;
   }
-  
-  const grid = document.getElementById('users-grid');
-  const filtered = allUsers.filter(u => 
-    (u.name || '').toLowerCase().includes(val) || 
-    (u.email || '').toLowerCase().includes(val)
-  );
-  
-  if (filtered.length === 0) {
-    grid.innerHTML = '<div class="col-span-full text-center py-12 text-gray-400">No users found</div>';
-    return;
-  }
-  
-  grid.innerHTML = '';
-  filtered.forEach(user => {
-    const card = document.createElement('div');
-    card.className = 'card';
-    const initial = (user.name || user.email).charAt(0).toUpperCase();
-    
-    card.innerHTML = `
-      <div class="flex items-start gap-4 mb-4">
-        <div class="user-avatar">${initial}</div>
-        <div class="flex-1 min-w-0">
-          <h3 class="text-lg font-bold truncate">${escapeHtml(user.name || 'Unknown')}</h3>
-          <p class="text-xs text-gray-600 truncate">${escapeHtml(user.email)}</p>
-        </div>
-      </div>
-      <div class="flex gap-2 mb-3"><span class="badge badge-${user.role}">${user.role}</span></div>
-      <div class="grid grid-cols-2 gap-2">
-        <button onclick="openVoucherModal(${user.id}, '${escapeHtml(user.name)}')" class="btn btn-primary text-xs">Voucher</button>
-        <button onclick="viewUserVouchers(${user.id}, '${escapeHtml(user.name)}')" class="btn btn-secondary text-xs">View</button>
-      </div>
-    `;
-    grid.appendChild(card);
-  });
 }
 
-// Open voucher modal
+// ==================== VOUCHER MANAGEMENT ====================
+
+/**
+ * Open voucher assignment modal
+ * @param {number} userId - User ID
+ * @param {string} userName - User name
+ */
 function openVoucherModal(userId, userName) {
+  console.log(`🎟️ Opening voucher modal for user ${userId}: ${userName}`);
+  
+  // Set user info in modal
   document.getElementById('voucher-user-id').value = userId;
   document.getElementById('voucher-user-name').textContent = userName;
+  
+  // Reset form
   document.getElementById('voucher-form').reset();
   
-  // Set minimum date to today
+  // Set minimum date for expiry
   const today = new Date().toISOString().split('T')[0];
   document.getElementById('voucher-expires').min = today;
   
+  // Show modal
   document.getElementById('voucher-modal').classList.remove('hidden');
 }
 
-// Save voucher - FIXED to use backend API
+/**
+ * Close voucher modal
+ * @param {Event} event - Click event (optional)
+ */
+function closeVoucherModal(event) {
+  if (!event || event.target === event.currentTarget) {
+    document.getElementById('voucher-modal').classList.add('hidden');
+  }
+}
+
+/**
+ * Save new voucher (assign to user)
+ * @param {Event} event - Form submit event
+ */
 async function saveVoucher(event) {
   event.preventDefault();
   
-  const userId = document.getElementById('voucher-user-id').value;
+  // Get form values
+  const userId = parseInt(document.getElementById('voucher-user-id').value);
   const code = document.getElementById('voucher-code').value.trim().toUpperCase();
   const type = document.getElementById('voucher-type').value;
   const value = parseFloat(document.getElementById('voucher-value').value);
   const expiresAt = document.getElementById('voucher-expires').value;
   
-  console.log('📝 Creating voucher:', { userId, code, type, value, expiresAt });
+  console.log('🎟️ Creating voucher:', { userId, code, type, value, expiresAt });
   
-  // Validation
+  // Validate
   if (!code || !value || !expiresAt) {
     showToast('All fields are required', 'error');
-    return;
-  }
-  
-  if (code.length < 3) {
-    showToast('Voucher code must be at least 3 characters', 'error');
     return;
   }
   
@@ -602,15 +915,18 @@ async function saveVoucher(event) {
     return;
   }
   
+  // Disable submit button
+  const submitBtn = document.getElementById('voucher-submit-btn');
+  const originalText = submitBtn.textContent;
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Creating...';
+  
   try {
-    const res = await fetch('http://localhost:3000/api/admin/vouchers', {
+    // Send API request
+    const data = await apiFetch('/admin/vouchers', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
       body: JSON.stringify({
-        user_id: parseInt(userId),
+        user_id: userId,
         code: code,
         discount_type: type,
         discount_value: value,
@@ -618,121 +934,153 @@ async function saveVoucher(event) {
       })
     });
     
-    const data = await res.json();
-    
     if (data.success) {
-      showToast('✅ Voucher created successfully! 🎟️', 'success');
+      showToast('🎟️ Voucher assigned successfully!', 'success');
       closeVoucherModal();
       
-      // Refresh the user list to show updated voucher count
-      setTimeout(() => {
-        loadUsers();
-      }, 500);
+      console.log(`✅ Voucher created for user ${userId}, server will emit to user room`);
+      
+      // Note: Socket.IO emission happens on server side automatically
+      // The user's profile.html will receive 'voucher-updated' event
     } else {
       showToast(data.message || 'Failed to create voucher', 'error');
     }
   } catch(e) {
     console.error('❌ Create voucher error:', e);
-    showToast('Error creating voucher: ' + e.message, 'error');
+    showToast('Error creating voucher', 'error');
+  } finally {
+    // Re-enable submit button
+    submitBtn.disabled = false;
+    submitBtn.textContent = originalText;
   }
 }
 
-// View user vouchers - FIXED to use backend API
+/**
+ * View user's vouchers
+ * @param {number} userId - User ID
+ * @param {string} userName - User name
+ */
 async function viewUserVouchers(userId, userName) {
+  console.log(`🎟️ Viewing vouchers for user ${userId}: ${userName}`);
+  
+  // Set user info in modal
   document.getElementById('view-vouchers-user-name').textContent = userName;
+  document.getElementById('view-vouchers-user-id').value = userId;
+  
+  // Show loading state
   const list = document.getElementById('vouchers-list');
   list.innerHTML = '<p class="text-center text-gray-400 py-4">Loading...</p>';
   
+  // Show modal
   document.getElementById('view-vouchers-modal').classList.remove('hidden');
   
   try {
-    console.log('📡 Fetching vouchers for user:', userId);
-    
-    const res = await fetch(`http://localhost:3000/api/admin/vouchers?user_id=${userId}`, {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-    
-    if (!res.ok) {
-      throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-    }
-    
-    const data = await res.json();
+    // Fetch vouchers
+    const data = await apiFetch(`/admin/vouchers?user_id=${userId}`);
     
     console.log('📦 Vouchers response:', data);
     
-    if (data.success && data.vouchers && data.vouchers.length > 0) {
-      list.innerHTML = '';
-      data.vouchers.forEach(v => {
-        const isExpired = new Date(v.expires_at) < new Date();
-        const div = document.createElement('div');
-        div.className = 'border-l-4 border-[#cda45e] bg-gradient-to-r from-[#cda45e]/5 to-transparent p-4 mb-3 rounded-lg';
-        div.innerHTML = `
-          <div class="flex justify-between items-start mb-2">
-            <div class="font-mono font-bold text-base text-[#cda45e]">${v.code}</div>
-            <div class="flex gap-2">
-              <span class="badge ${v.is_used ? 'badge-inactive' : isExpired ? 'badge-inactive' : 'badge-active'}">
-                ${v.is_used ? 'Used' : isExpired ? 'Expired' : 'Active'}
-              </span>
-              <button onclick="deleteVoucher(${v.id}, '${v.code}')" class="text-red-500 hover:text-red-700 text-xs font-bold">
-                Delete
-              </button>
-            </div>
-          </div>
-          <div class="text-sm text-gray-700 mb-1">
-            <strong>Discount:</strong> ${v.discount_type === 'percentage' ? `${v.discount_value}%` : `₱${v.discount_value}`}
-          </div>
-          <div class="text-xs text-gray-500">
-            <strong>Expires:</strong> ${new Date(v.expires_at).toLocaleDateString()}
-          </div>
-          ${v.is_used && v.used_at ? `
-          <div class="text-xs text-gray-500 mt-1">
-            <strong>Used:</strong> ${new Date(v.used_at).toLocaleString()}
-          </div>
-          ` : ''}
-        `;
-        list.appendChild(div);
-      });
-    } else {
+    if (!data.success) {
+      list.innerHTML = `<p class="text-center text-red-500 py-4">${escapeHtml(data.message || 'Failed to load vouchers')}</p>`;
+      return;
+    }
+    
+    const vouchers = data.vouchers || [];
+    
+    if (vouchers.length === 0) {
       list.innerHTML = `
         <div class="text-center py-8">
           <div class="text-4xl mb-2">🎟️</div>
-          <p class="text-gray-400">No vouchers</p>
+          <p class="text-gray-400">No vouchers assigned yet</p>
         </div>
       `;
+      return;
     }
+    
+    // Render vouchers
+    list.innerHTML = '';
+    vouchers.forEach(v => {
+      const isExpired = new Date(v.expires_at) < new Date();
+      const div = document.createElement('div');
+      div.className = 'border-l-4 border-[#cda45e] bg-gradient-to-r from-[#cda45e]/5 to-transparent p-4 mb-3 rounded-lg';
+      
+      div.innerHTML = `
+        <div class="flex justify-between items-start mb-2">
+          <div class="font-mono font-bold text-base text-[#cda45e]">${escapeHtml(v.code)}</div>
+          <div class="flex gap-2">
+            <span class="badge ${v.is_used ? 'badge-inactive' : isExpired ? 'badge-inactive' : 'badge-active'}">
+              ${v.is_used ? 'Used' : isExpired ? 'Expired' : 'Active'}
+            </span>
+            <button onclick="deleteVoucher(${v.id}, '${escapeJsString(v.code)}')" 
+                    class="text-red-500 hover:text-red-700 text-xs font-bold">
+              Delete
+            </button>
+          </div>
+        </div>
+        <div class="text-sm text-gray-700 mb-1">
+          <strong>Discount:</strong> ${v.discount_type === 'percentage' ? `${v.discount_value}%` : `₱${v.discount_value}`}
+        </div>
+        <div class="text-xs text-gray-500">
+          <strong>Expires:</strong> ${new Date(v.expires_at).toLocaleDateString()}
+        </div>
+        ${v.is_used && v.used_at ? `
+        <div class="text-xs text-gray-500 mt-1">
+          <strong>Used:</strong> ${new Date(v.used_at).toLocaleString()}
+        </div>
+        ` : ''}
+      `;
+      
+      list.appendChild(div);
+    });
+    
   } catch(e) {
     console.error('❌ Load vouchers error:', e);
     list.innerHTML = '<p class="text-center text-red-500 py-4">Failed to load vouchers</p>';
   }
 }
 
-// Delete voucher - FIXED to use backend API
+/**
+ * Close view vouchers modal
+ * @param {Event} event - Click event (optional)
+ */
+function closeViewVouchersModal(event) {
+  if (!event || event.target === event.currentTarget) {
+    document.getElementById('view-vouchers-modal').classList.add('hidden');
+  }
+}
+
+/**
+ * Delete a voucher
+ * @param {number} voucherId - Voucher ID
+ * @param {string} voucherCode - Voucher code
+ */
 async function deleteVoucher(voucherId, voucherCode) {
   if (!confirm(`Delete voucher "${voucherCode}"? This cannot be undone.`)) return;
   
   try {
-    const res = await fetch(`http://localhost:3000/api/admin/vouchers/${voucherId}`, {
-      method: 'DELETE',
-      headers: { 'Authorization': `Bearer ${token}` }
+    console.log(`🗑️ Deleting voucher ${voucherId}: ${voucherCode}`);
+    
+    // Send API request
+    const data = await apiFetch(`/admin/vouchers/${voucherId}`, {
+      method: 'DELETE'
     });
     
-    const data = await res.json();
-    
     if (data.success) {
-      showToast('✅ Voucher deleted', 'success');
+      showToast('Voucher deleted', 'success');
       
       // Refresh vouchers list
-      const userId = document.getElementById('voucher-user-id').value || 
-                     document.querySelector('[onclick^="viewUserVouchers"]')?.onclick.toString().match(/\d+/)?.[0];
+      const userId = parseInt(document.getElementById('view-vouchers-user-id').value);
+      const userName = document.getElementById('view-vouchers-user-name').textContent;
       
-      if (userId) {
-        const userName = document.getElementById('view-vouchers-user-name').textContent;
-        viewUserVouchers(userId, userName);
+      if (userId && userName) {
+        await viewUserVouchers(userId, userName);
       } else {
         closeViewVouchersModal();
       }
+      
+      console.log(`✅ Voucher deleted, server will emit to user room`);
     } else {
-      showToast(data.message || 'Failed to delete voucher', 'error');
+      showToast(data.message || 'Failed to delete', 'error');
     }
   } catch(e) {
     console.error('❌ Delete voucher error:', e);
@@ -740,130 +1088,132 @@ async function deleteVoucher(voucherId, voucherCode) {
   }
 }
 
-// Close voucher modals
-function closeVoucherModal(e) {
-  if (!e || e.target === e.currentTarget) {
-    document.getElementById('voucher-modal').classList.add('hidden');
-  }
-}
+// ==================== USER DELETION ====================
 
-function closeViewVouchersModal(e) {
-  if (!e || e.target === e.currentTarget) {
-    document.getElementById('view-vouchers-modal').classList.add('hidden');
-  }
-}
-
-// ==================== USER MANAGEMENT FUNCTIONS ====================
-
-// Toggle user active status - FIXED
-async function toggleUserActive(userId, isActive) {
-  try {
-    console.log('🔄 Toggling user active status:', userId, isActive);
-    
-    const res = await fetch(`http://localhost:3000/api/admin/users/${userId}`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify({ is_active: isActive })
-    });
-    
-    const data = await res.json();
-    
-    if (data.success) {
-      showToast(`✅ User ${isActive ? 'activated' : 'deactivated'}`, 'success');
-      await loadUsers();
-    } else {
-      showToast(data.message || 'Failed to update', 'error');
-      await loadUsers(); // Reload to reset toggle
-    }
-  } catch(e) {
-    console.error('❌ Toggle active error:', e);
-    showToast('Error updating status', 'error');
-    await loadUsers(); // Reload to reset toggle
-  }
-}
-
-// Delete user - FIXED
-async function confirmDelete() {
-  const id = document.getElementById('delete-user-id').value;
+/**
+ * Open delete user confirmation modal
+ * @param {number} userId - User ID
+ * @param {string} userName - User name
+ */
+function openDeleteModal(userId, userName) {
+  console.log(`🗑️ Opening delete modal for user ${userId}: ${userName}`);
   
-  try {
-    const res = await fetch(`http://localhost:3000/api/admin/users/${id}`, {
-      method: 'DELETE',
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-    
-    const data = await res.json();
-    
-    if (data.success) {
-      showToast('✅ User deleted', 'success');
-      closeDeleteModal();
-      await loadUsers();
-    } else {
-      showToast(data.message || 'Failed to delete', 'error');
-    }
-  } catch(e) {
-    console.error('❌ Delete error:', e);
-    showToast('Error deleting user', 'error');
-  }
+  // Set user info in modal
+  document.getElementById('delete-user-id').value = userId;
+  document.getElementById('delete-user-name').textContent = userName;
+  
+  // Show modal
+  document.getElementById('delete-modal').classList.remove('hidden');
 }
 
-function closeVoucherModal(e) {
-  if (!e || e.target === e.currentTarget) {
-    document.getElementById('voucher-modal').classList.add('hidden');
-  }
-}
-
-function closeViewVouchersModal(e) {
-  if (!e || e.target === e.currentTarget) {
-    document.getElementById('view-vouchers-modal').classList.add('hidden');
-  }
-}
-
-function closeDeleteModal(e) {
-  if (!e || e.target === e.currentTarget) {
+/**
+ * Close delete modal
+ * @param {Event} event - Click event (optional)
+ */
+function closeDeleteModal(event) {
+  if (!event || event.target === event.currentTarget) {
     document.getElementById('delete-modal').classList.add('hidden');
   }
 }
 
+/**
+ * Confirm and delete user
+ */
+async function confirmDelete() {
+  const userId = parseInt(document.getElementById('delete-user-id').value);
+  
+  try {
+    console.log(`🗑️ Deleting user ${userId}...`);
+    
+    // Send API request
+    const data = await apiFetch(`/admin/users/${userId}`, {
+      method: 'DELETE'
+    });
+    
+    if (data.success) {
+      showToast('User deleted successfully', 'success');
+      closeDeleteModal();
+      
+      // Reload users
+      await loadUsers();
+    } else {
+      showToast(data.message || 'Failed to delete user', 'error');
+    }
+  } catch(e) {
+    console.error('❌ Delete user error:', e);
+    showToast('Error deleting user', 'error');
+  }
+}
+
+// ==================== FILTERING & SEARCH ====================
+
+/**
+ * Filter users by role or status
+ * @param {string} filter - Filter type ('all', 'admin', 'customer', 'inactive')
+ * @param {HTMLElement} btn - Filter button element
+ */
+function filterUsers(filter, btn) {
+  console.log(`🔍 Filtering users by: ${filter}`);
+  
+  // Update current filter
+  currentFilter = filter;
+  
+  // Update button states
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  
+  // Re-render users
+  renderUsers();
+}
+
+/**
+ * Search users by name or email
+ */
+function searchUsers() {
+  console.log('🔍 Searching users...');
+  renderUsers();
+}
+
+// ==================== UTILITIES ====================
+
+/**
+ * Logout admin
+ */
 function logout() {
-  if (confirm('Logout?')) {
+  if (confirm('Are you sure you want to logout?')) {
+    console.log('🚪 Logging out admin...');
+    
+    // Clear tokens
     localStorage.removeItem('adminToken');
-    window.location.href = 'login.html';
+    sessionStorage.removeItem('adminToken');
+    localStorage.removeItem('currentUser');
+    
+    // Disconnect socket
+    if (socket && socket.connected) {
+      socket.disconnect();
+    }
+    
+    showToast('Logged out successfully', 'success');
+    
+    // Redirect to login
+    setTimeout(() => {
+      window.location.href = 'login.html';
+    }, 1000);
   }
 }
 
-function showToast(msg, type = 'info') {
-  const toast = document.getElementById('toast');
-  if (!toast) return;
-  
-  toast.textContent = msg;
-  
-  if (type === 'success') {
-    toast.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
-  } else if (type === 'error') {
-    toast.style.background = 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)';
-  } else {
-    toast.style.background = '#1f2937';
+// ==================== WINDOW CLEANUP ====================
+
+/**
+ * Cleanup on page unload
+ */
+window.addEventListener('beforeunload', () => {
+  if (socket && socket.connected) {
+    socket.disconnect();
   }
-  
-  toast.style.display = 'block';
-  
-  clearTimeout(toast.hideTimeout);
-  toast.hideTimeout = setTimeout(() => { 
-    toast.style.display = 'none'; 
-  }, 3000);
-}
+});
 
-function escapeHtml(text) {
-  const div = document.createElement('div');
-  div.textContent = text || '';
-  return div.innerHTML;
-}
-
-console.log('✅ Admin Users page loaded');
+console.log('✅ Admin Users Management page script loaded successfully');
 </script>
 
 </body>

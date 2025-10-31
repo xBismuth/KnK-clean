@@ -277,7 +277,7 @@ body {
   <a href="orders.html" class="text-dark-light hover:text-accent font-medium transition-colors duration-300 text-[15px]">
     Orders
   </a>
-  <a href="index.html#contact" class="text-dark-light hover:text-accent font-medium transition-colors duration-300 text-[15px]">
+  <a href="#contact" class="text-dark-light hover:text-accent font-medium transition-colors duration-300 text-[15px]">
     Contact
   </a>
   
@@ -323,13 +323,13 @@ body {
     <!-- Mobile Menu -->
     <div id="mobile-menu" class="hidden lg:hidden pb-6 animate-slide-up">
       <div class="flex flex-col space-y-3">
-        <a href="index.html" class="text-dark-light hover:text-accent font-medium py-2 transition-colors duration-300">Home</a>
-        <a href="menu.html" class="text-dark-light hover:text-accent font-medium py-2 transition-colors duration-300">Menu</a>
-        <a href="orders.html" class="text-dark-light hover:text-accent font-medium py-2 transition-colors duration-300">Orders</a>
+        <a href="index.html" class="text-dark-light hover:text-accent font-medium py-2 transition-colors duration-300"> Home</a>
+        <a href="menu.html" class="text-dark-light hover:text-accent font-medium py-2 transition-colors duration-300"> Menu</a>
+        <a href="orders.html" class="text-dark-light hover:text-accent font-medium py-2 transition-colors duration-300"> Orders</a>
         <button onclick="goToCart()" class="text-left text-dark-light hover:text-accent font-medium py-2 transition-colors duration-300">
           🛒 View Cart (<span id="mobile-cart-count">0</span>)
         </button>
-        <a href="index.html#contact" class="text-dark-light hover:text-accent font-medium py-2 transition-colors duration-300">Contact</a>
+        <a href="#contact" class="text-dark-light hover:text-accent font-medium py-2 transition-colors duration-300"> Contact</a>
         
         <!-- Auth Buttons for Mobile - Hidden when logged in -->
         <div id="mobile-auth-buttons" class="flex flex-col space-y-3 pt-3 border-t border-gray-200">
@@ -342,17 +342,17 @@ body {
         </div>
 
         <!-- User Profile for Mobile - Shown when logged in -->
-        <div id="mobile-user-profile" class="hidden flex-col space-y-3 pt-3 border-t border-gray-200">
-          <a href="profile.html" class="flex items-center space-x-3 px-4 py-2 bg-accent/10 rounded-full hover:bg-accent/20 transition-all duration-300">
-            <div class="w-10 h-10 bg-accent rounded-full flex items-center justify-center">
-              <span id="mobile-user-initial" class="text-white font-bold">U</span>
-            </div>
-            <span id="mobile-user-name" class="text-dark font-semibold">User</span>
-          </a>
-          <button onclick="logout()" class="px-6 py-2.5 bg-red-500 text-white font-semibold rounded-full hover:bg-red-600 hover:shadow-lg hover:scale-105 transition-all duration-300 text-center">
-            Logout
-          </button>
-        </div>
+<div id="mobile-user-profile" class="hidden flex-col space-y-3 pt-3 border-t border-gray-200">
+  <a href="profile.html" class="flex items-center space-x-3 px-4 py-2 bg-accent/10 rounded-full hover:bg-accent/20 transition-all duration-300">
+    <div class="w-10 h-10 bg-accent rounded-full flex items-center justify-center">
+      <span id="mobile-user-initial" class="text-white font-bold">U</span>
+    </div>
+    <span id="mobile-user-name" class="text-dark font-semibold">User</span>
+  </a>
+  <button onclick="logout()" class="px-6 py-2.5 bg-red-500 text-white font-semibold rounded-full hover:bg-red-600 hover:shadow-lg hover:scale-105 transition-all duration-300 text-center">
+    Logout
+  </button>
+</div>
       </div>
     </div>
   </nav>
@@ -850,10 +850,19 @@ function escapeJs(str) {
 // ==================== CART MANAGEMENT ====================
 function getCartKey() {
   try {
-    const user = JSON.parse(localStorage.getItem('currentUser') || 'null');
-    return user && user.email ? `kusinaCart_${user.email}` : 'kusinaCart_guest';
+    const userStr = localStorage.getItem('currentUser');
+    if (!userStr || userStr === 'null' || userStr === 'undefined') {
+      return 'kusinaCart_guest';
+    }
+    
+    const user = JSON.parse(userStr);
+    if (user && user.email) {
+      return `kusinaCart_${user.email}`;
+    }
+    
+    return 'kusinaCart_guest';
   } catch (e) {
-    console.error('Error getting cart key:', e);
+    console.error('Error in getCartKey:', e);
     return 'kusinaCart_guest';
   }
 }
@@ -1102,49 +1111,57 @@ function proceedToCheckout() {
 function checkAuthStatus() {
   try {
     const currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
-    
+
     const authButtons = document.getElementById('auth-buttons');
     const userProfile = document.getElementById('user-profile');
     const mobileAuthButtons = document.getElementById('mobile-auth-buttons');
     const mobileUserProfile = document.getElementById('mobile-user-profile');
-    
+
     if (currentUser && currentUser.email) {
-      // Desktop
+      // Desktop UI toggle
       if (authButtons) authButtons.classList.add('hidden');
       if (userProfile) {
         userProfile.classList.remove('hidden');
         userProfile.classList.add('flex');
       }
-      
-      // Mobile
+
+      // Mobile UI toggle
       if (mobileAuthButtons) mobileAuthButtons.classList.add('hidden');
       if (mobileUserProfile) {
         mobileUserProfile.classList.remove('hidden');
         mobileUserProfile.classList.add('flex');
       }
-      
-      // Set user info
-      const firstName = (currentUser.name || currentUser.email).split(' ')[0];
-      const initial = firstName.charAt(0).toUpperCase();
-      
+
+      // Use full name when available; fall back to email username
+      let fullName = '';
+      if (currentUser.name && currentUser.name.trim().length > 0) {
+        fullName = currentUser.name.trim();
+      } else if (currentUser.email) {
+        fullName = currentUser.email.split('@')[0];
+      } else {
+        fullName = 'User';
+      }
+
+      // First initial for avatar
+      const initial = fullName.charAt(0).toUpperCase();
+
+      // DOM nodes
       const userName = document.getElementById('user-name');
       const userInitial = document.getElementById('user-initial');
       const mobileUserName = document.getElementById('mobile-user-name');
       const mobileUserInitial = document.getElementById('mobile-user-initial');
-      
-      if (userName) userName.textContent = firstName;
+
+      if (userName) userName.textContent = fullName;
       if (userInitial) userInitial.textContent = initial;
-      if (mobileUserName) mobileUserName.textContent = firstName;
+      if (mobileUserName) mobileUserName.textContent = fullName;
       if (mobileUserInitial) mobileUserInitial.textContent = initial;
     } else {
-      // Desktop
+      // not logged in - restore auth buttons
       if (authButtons) authButtons.classList.remove('hidden');
       if (userProfile) {
         userProfile.classList.add('hidden');
         userProfile.classList.remove('flex');
       }
-      
-      // Mobile
       if (mobileAuthButtons) mobileAuthButtons.classList.remove('hidden');
       if (mobileUserProfile) {
         mobileUserProfile.classList.add('hidden');
@@ -1155,6 +1172,7 @@ function checkAuthStatus() {
     console.error('Error checking auth status:', e);
   }
 }
+
 
 function logout() {
   if (confirm('Are you sure you want to log out?')) {

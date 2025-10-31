@@ -5,10 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>My Profile - Kusina ni Katya</title>
 
-<!-- Tailwind CSS CDN -->
 <script src="https://cdn.tailwindcss.com"></script>
-
-<!-- Google Font -->
+<script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
 <script>
@@ -27,25 +25,6 @@
         fontFamily: {
           poppins: ['Poppins', 'sans-serif'],
         },
-        animation: {
-          'fade-in': 'fadeIn 0.6s ease-out',
-          'slide-up': 'slideUp 0.5s ease-out',
-          'scale-in': 'scaleIn 0.4s ease-out',
-        },
-        keyframes: {
-          fadeIn: {
-            '0%': { opacity: '0' },
-            '100%': { opacity: '1' },
-          },
-          slideUp: {
-            '0%': { transform: 'translateY(30px)', opacity: '0' },
-            '100%': { transform: 'translateY(0)', opacity: '1' },
-          },
-          scaleIn: {
-            '0%': { transform: 'scale(0.9)', opacity: '0' },
-            '100%': { transform: 'scale(1)', opacity: '1' },
-          },
-        },
       },
     },
   }
@@ -56,112 +35,89 @@
     font-family: 'Quiapo';
     src: url('assets/fonts/Quiapo_Free.ttf') format('opentype');
   }
-
-  body {
-    font-family: 'Poppins', sans-serif;
-  }
-
-  .font-quiapo {
-    font-family: 'Quiapo', 'Poppins', sans-serif;
-  }
-
-  .glass-effect {
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-  }
-
+  body { font-family: 'Poppins', sans-serif; }
+  .font-quiapo { font-family: 'Quiapo', 'Poppins', sans-serif; }
+  .glass-effect { backdrop-filter: blur(10px); }
   .pattern-bg {
     background-color: #fef3f3;
     background-image: 
       radial-gradient(circle at 25% 25%, rgba(205, 164, 94, 0.03) 0%, transparent 50%),
       radial-gradient(circle at 75% 75%, rgba(205, 164, 94, 0.03) 0%, transparent 50%);
   }
-
-  .voucher-card {
-    transition: all 0.3s ease;
+  .voucher-card { transition: all 0.3s ease; }
+  .voucher-card:hover { transform: translateY(-5px); }
+  .order-card { transition: all 0.3s ease; }
+  .order-card:hover { transform: translateX(5px); }
+  @keyframes slideUp {
+    from { transform: translateY(30px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
   }
-
-  .voucher-card:hover {
-    transform: translateY(-5px);
-  }
-
-  .order-card {
-    transition: all 0.3s ease;
-  }
-
-  .order-card:hover {
-    transform: translateX(5px);
-  }
+  .animate-slide-up { animation: slideUp 0.5s ease-out; }
 </style>
 </head>
 
 <body class="bg-light-bg pattern-bg text-dark overflow-x-hidden">
 
-<!-- HEADER / NAVIGATION -->
+<!-- HEADER -->
 <header class="sticky top-0 z-50 glass-effect bg-white/80 shadow-md transition-all duration-300">
   <nav class="max-w-full mx-auto px-6 lg:px-12">
     <div class="flex justify-between items-center h-20">
-      <!-- Logo -->
-      <div class="flex items-center space-x-3 animate-fade-in flex-shrink-0">
+      <div class="flex items-center space-x-3 flex-shrink-0">
         <a href="index.html" class="flex items-center space-x-3">
-          <img 
-            src="assets/images/logo1.png" 
-            alt="Kusina ni Katya Logo" 
-            class="w-14 h-14 object-contain rounded-full shadow-lg"
-          />
+          <img src="assets/images/logo1.png" alt="Logo" class="w-14 h-14 object-contain rounded-full shadow-lg" />
         </a>
         <div class="hidden sm:block">
           <h1 class="font-quiapo text-2xl font-bold text-accent tracking-widest">Kusina ni Katya</h1>
           <p class="text-xs text-gray-600">Authentic Filipino Cuisine</p>
         </div>
       </div>
-
-      <!-- Desktop Navigation -->
-      <div class="hidden lg:flex items-center space-x-6">
-        <a href="index.html" class="text-dark-light hover:text-accent font-medium transition-colors duration-300 text-[15px]">Home</a>
-        <a href="menu.html" class="text-dark-light hover:text-accent font-medium transition-colors duration-300 text-[15px]">Menu</a>
-        <a href="orders.html" class="text-dark-light hover:text-accent font-medium transition-colors duration-300 text-[15px]">Orders</a>
+      
+      <div class="hidden lg:flex items-center space-x-3">
+        <a href="index.html" class="text-dark-light hover:text-accent font-medium transition-colors text-[15px]">Home</a>
+        <a href="menu.html" class="text-dark-light hover:text-accent font-medium transition-colors text-[15px]">Menu</a>
+        <a href="orders.html" class="text-dark-light hover:text-accent font-medium transition-colors text-[15px]">Orders</a>
+        <a href="cart.html" class="px-4 py-2 bg-gradient-to-r from-accent to-accent-dark text-white font-semibold rounded-full hover:shadow-lg hover:scale-105 transition-all text-[13px]">
+          🛒 View Cart (<span id="cart-count">0</span>)
+        </a>
+        
+        <div id="auth-buttons" class="hidden items-center gap-2">
+          <a href="login.html" class="px-5 py-2.5 bg-white border-2 border-accent text-accent font-semibold rounded-full hover:bg-accent hover:text-white transition-all text-[13px]">Log In</a>
+          <a href="signup.html" class="px-5 py-2.5 bg-gradient-to-r from-accent to-accent-dark text-white font-semibold rounded-full hover:shadow-lg transition-all text-[13px]">Sign Up</a>
+        </div>
         
         <div id="user-profile" class="flex items-center gap-2">
-          <a href="profile.html" class="flex items-center space-x-2 px-3 py-2 bg-accent/10 rounded-full hover:bg-accent/20 transition-all duration-300 cursor-pointer">
-            <div class="w-8 h-8 bg-accent rounded-full flex items-center justify-center overflow-hidden">
-              <img id="nav-profile-image" class="w-full h-full object-cover hidden" alt="Profile">
+          <a href="profile.html" class="flex items-center space-x-2 px-3 py-2 bg-accent/10 rounded-full hover:bg-accent/20 transition-all cursor-pointer">
+            <div class="w-8 h-8 bg-accent rounded-full flex items-center justify-center">
               <span id="user-initial" class="text-white font-bold text-xs">U</span>
             </div>
             <span id="user-name" class="text-dark font-semibold text-[13px]">User</span>
           </a>
-          <button onclick="logout()" class="px-5 py-2.5 bg-red-500 text-white font-semibold rounded-full hover:bg-red-600 hover:shadow-lg hover:scale-105 transition-all duration-300 text-[13px]">
-            Logout
-          </button>
+          <button onclick="logout()" class="px-5 py-2.5 bg-red-500 text-white font-semibold rounded-full hover:bg-red-600 transition-all text-[13px]">Logout</button>
         </div>
       </div>
-
-      <!-- Mobile Menu Button -->
-      <button onclick="toggleMobileMenu()" class="lg:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors duration-300">
+      
+      <button onclick="toggleMobileMenu()" class="lg:hidden p-2 rounded-lg hover:bg-gray-100">
         <svg class="w-6 h-6 text-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
         </svg>
       </button>
     </div>
-
-    <!-- Mobile Menu -->
-    <div id="mobile-menu" class="hidden lg:hidden pb-6 animate-slide-up">
+    
+    <div id="mobile-menu" class="hidden lg:hidden pb-6">
       <div class="flex flex-col space-y-3">
-        <a href="index.html" class="text-dark-light hover:text-accent font-medium py-2 transition-colors duration-300">Home</a>
-        <a href="menu.html" class="text-dark-light hover:text-accent font-medium py-2 transition-colors duration-300">Menu</a>
-        <a href="orders.html" class="text-dark-light hover:text-accent font-medium py-2 transition-colors duration-300">Orders</a>
+        <a href="index.html" class="text-dark-light hover:text-accent font-medium py-2">Home</a>
+        <a href="menu.html" class="text-dark-light hover:text-accent font-medium py-2">Menu</a>
+        <a href="orders.html" class="text-dark-light hover:text-accent font-medium py-2">Orders</a>
+        <a href="cart.html" class="text-dark-light hover:text-accent font-medium py-2">🛒 Cart (<span id="mobile-cart-count">0</span>)</a>
         
-        <div id="mobile-user-profile" class="hidden flex-col space-y-3 pt-3 border-t border-gray-200">
-          <a href="profile.html" class="flex items-center space-x-3 px-4 py-2 bg-accent/10 rounded-full hover:bg-accent/20 transition-all duration-300">
-            <div class="w-10 h-10 bg-accent rounded-full flex items-center justify-center overflow-hidden">
-              <img id="mobile-nav-profile-image" class="w-full h-full object-cover hidden" alt="Profile">
+        <div id="mobile-user-profile" class="flex flex-col space-y-3 pt-3 border-t border-gray-200">
+          <a href="profile.html" class="flex items-center space-x-3 px-4 py-2 bg-accent/10 rounded-full">
+            <div class="w-10 h-10 bg-accent rounded-full flex items-center justify-center">
               <span id="mobile-user-initial" class="text-white font-bold">U</span>
             </div>
             <span id="mobile-user-name" class="text-dark font-semibold">User</span>
           </a>
-          <button onclick="logout()" class="px-6 py-2.5 bg-red-500 text-white font-semibold rounded-full hover:bg-red-600 hover:shadow-lg hover:scale-105 transition-all duration-300 text-center">
-            Logout
-          </button>
+          <button onclick="logout()" class="px-6 py-2.5 bg-red-500 text-white font-semibold rounded-full text-center">Logout</button>
         </div>
       </div>
     </div>
@@ -171,7 +127,7 @@
 <!-- PROFILE HERO SECTION -->
 <section class="relative py-12 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-accent/10 to-accent-light/10">
   <div class="max-w-7xl mx-auto">
-    <div class="flex items-center gap-6 animate-fade-in">
+    <div class="flex items-center gap-6">
       <div>
         <h1 class="font-quiapo text-5xl font-bold text-dark mb-2">
           Welcome back, <span id="profile-name" class="text-accent">User</span>
@@ -199,7 +155,6 @@
             Personal Info
           </h2>
           
-          <!-- Profile Image Preview -->
           <div class="flex justify-center mb-6">
             <div class="relative group">
               <div class="w-32 h-32 bg-gradient-to-br from-accent to-accent-dark rounded-full flex items-center justify-center shadow-lg overflow-hidden">
@@ -228,7 +183,7 @@
             
             <div>
               <label class="text-sm text-gray-500 font-medium">Phone</label>
-              <p id="info-phone" class="text-lg font-semibold text-dark">+63 912 345 6789</p>
+              <p id="info-phone" class="text-lg font-semibold text-dark">Not set</p>
             </div>
             
             <div>
@@ -284,7 +239,9 @@
           </div>
           
           <div id="orders-container" class="space-y-4">
-            <!-- Orders will be inserted here -->
+            <div class="flex justify-center items-center py-8">
+              <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-accent"></div>
+            </div>
           </div>
         </div>
 
@@ -300,7 +257,10 @@
           </div>
           
           <div id="vouchers-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            <!-- Vouchers will be inserted here -->
+            <div class="col-span-full bg-white rounded-xl p-8 text-center">
+              <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-accent mb-4"></div>
+              <p class="text-gray-500 text-lg">Loading vouchers...</p>
+            </div>
           </div>
         </div>
 
@@ -321,94 +281,786 @@
 </footer>
 
 <script>
-// Real orders will be fetched from API
-let userOrders = [];
+// ==================== GLOBAL STATE ====================
+const API_URL = '/api';
+let currentUser = null;
+let socket = null;
+let allOrders = [];
+let allVouchers = [];
 
-const sampleVouchers = [
-  {
-    id: 'WELCOME20',
-    discount: '20%',
-    title: 'Welcome Discount',
-    description: 'Get 20% off your next order',
-    minSpend: 200,
-    expiry: 'Dec 31, 2025',
-    color: 'from-blue-500 to-blue-600',
-    type: 'percentage',
-    value: 20
-  },
-  {
-    id: 'FREESHIP',
-    discount: 'FREE',
-    title: 'Free Delivery',
-    description: 'Free delivery on orders',
-    minSpend: 500,
-    expiry: 'Nov 30, 2025',
-    color: 'from-green-500 to-green-600',
-    type: 'shipping',
-    value: 0
-  },
-  {
-    id: 'LOYAL50',
-    discount: '₱50',
-    title: 'Loyalty Reward',
-    description: '₱50 off for loyal customers',
-    minSpend: 300,
-    expiry: 'Dec 15, 2025',
-    color: 'from-purple-500 to-purple-600',
-    type: 'fixed',
-    value: 50
-  },
-  {
-    id: 'ADOBO10',
-    discount: '10%',
-    title: 'Adobo Special',
-    description: '10% off on Adobo dishes',
-    minSpend: 150,
-    expiry: 'Nov 15, 2025',
-    color: 'from-orange-500 to-orange-600',
-    type: 'percentage',
-    value: 10
+console.log('🚀 Profile page script loading...');
+
+// ==================== AUTH & TOKEN MANAGEMENT ====================
+
+/**
+ * Get authentication token from storage
+ * Priority: sessionStorage > localStorage
+ */
+function getAuthToken() {
+  return sessionStorage.getItem('authToken') || localStorage.getItem('authToken') || null;
+}
+
+/**
+ * Get current user from localStorage
+ */
+function getCurrentUser() {
+  try {
+    const userStr = localStorage.getItem('currentUser');
+    if (!userStr || userStr === 'null' || userStr === 'undefined') {
+      return null;
+    }
+    const user = JSON.parse(userStr);
+    if (!user || !user.email) {
+      console.warn('⚠️ Invalid user object');
+      return null;
+    }
+    return user;
+  } catch (e) {
+    console.error('❌ Error parsing user data:', e);
+    return null;
   }
-];
+}
 
-// Load user profile
-async function loadProfile() {
-  const user = JSON.parse(localStorage.getItem('currentUser') || 'null');
+/**
+ * Check authentication and redirect if needed
+ */
+function checkAuth() {
+  const token = getAuthToken();
+  const user = getCurrentUser();
   
-  if (!user || !user.email) {
-    window.location.href = 'login.html';
+  if (!token || !user || !user.email) {
+    console.log('❌ Not authenticated, redirecting to login');
+    showToast('Please login to view your profile', 'error');
+    setTimeout(() => {
+      window.location.href = 'login.html';
+    }, 1500);
+    return false;
+  }
+  
+  console.log('✅ User authenticated:', user.email);
+  return true;
+}
+
+// ==================== API FETCH HELPER ====================
+
+/**
+ * Generic API fetch with authentication
+ * @param {string} endpoint - API endpoint (e.g., '/user/overview')
+ * @param {object} options - Fetch options
+ * @returns {Promise<object>} - Response data
+ */
+async function apiFetch(endpoint, options = {}) {
+  const token = getAuthToken();
+  
+  if (!token) {
+    throw new Error('No authentication token');
+  }
+  
+  const defaultOptions = {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+      ...options.headers
+    }
+  };
+  
+  const config = { ...defaultOptions, ...options };
+  
+  console.log(`📡 API Call: ${options.method || 'GET'} ${API_URL}${endpoint}`);
+  
+  const response = await fetch(`${API_URL}${endpoint}`, config);
+  
+  // Handle authentication errors
+  if (response.status === 401 || response.status === 403) {
+    console.log('⚠️ Token expired or invalid');
+    showToast('Session expired. Please login again.', 'error');
+    setTimeout(() => {
+      localStorage.removeItem('currentUser');
+      sessionStorage.removeItem('authToken');
+      localStorage.removeItem('authToken');
+      window.location.href = 'login.html';
+    }, 2000);
+    throw new Error('Authentication failed');
+  }
+  
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error(`❌ API Error ${response.status}:`, errorText);
+    throw new Error(`HTTP ${response.status}: ${errorText}`);
+  }
+  
+  const data = await response.json();
+  console.log(`✅ API Response from ${endpoint}:`, data);
+  
+  return data;
+}
+
+// ==================== TOAST NOTIFICATIONS ====================
+
+function showToast(message, type = 'success') {
+  const existingToast = document.getElementById('toast-notification');
+  if (existingToast) existingToast.remove();
+  
+  const bgColor = type === 'success' ? 'bg-green-500' : type === 'error' ? 'bg-red-500' : 'bg-blue-500';
+  const icon = type === 'success' 
+    ? '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>'
+    : '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>';
+  
+  const toastHTML = `
+    <div id="toast-notification" class="fixed top-24 right-6 z-50 animate-slide-up">
+      <div class="${bgColor} text-white rounded-xl shadow-2xl p-4 flex items-center gap-3 min-w-[300px]">
+        ${icon}
+        <p class="font-medium">${escapeHtml(message)}</p>
+      </div>
+    </div>
+  `;
+  
+  document.body.insertAdjacentHTML('beforeend', toastHTML);
+  
+  setTimeout(() => {
+    const toast = document.getElementById('toast-notification');
+    if (toast) {
+      toast.style.opacity = '0';
+      toast.style.transform = 'translateY(-20px)';
+      toast.style.transition = 'all 0.3s ease';
+      setTimeout(() => toast.remove(), 300);
+    }
+  }, 3000);
+}
+
+// ==================== HTML ESCAPING ====================
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text || '';
+  return div.innerHTML;
+}
+
+// ==================== FETCH USER INFO ====================
+
+async function fetchUserInfo() {
+  try {
+    console.log('👤 Fetching user info from /auth/me...');
+    const data = await apiFetch('/auth/me');
+    
+    if (data.success && data.user) {
+      console.log('✅ User info fetched:', data.user);
+      return data.user;
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('❌ Error fetching user info:', error);
+    return null;
+  }
+}
+
+// ==================== LOAD PROFILE ====================
+
+async function loadProfile() {
+  console.log('🔄 Loading profile...');
+  
+  if (!checkAuth()) return;
+  
+  currentUser = getCurrentUser();
+  
+  // Fetch complete user info from server
+  const serverUser = await fetchUserInfo();
+  if (serverUser) {
+    currentUser = { ...currentUser, ...serverUser };
+    localStorage.setItem('currentUser', JSON.stringify(currentUser));
+    console.log('✅ User data synced with server:', currentUser);
+  }
+  
+  // Update UI with user info
+  updateUserUI();
+  
+  // Load cart count
+  loadCartCount();
+  
+  // Load orders and vouchers
+  console.log('📦 Loading orders and vouchers...');
+  await Promise.all([
+    loadOrdersAndVouchers(),
+    updateStats()
+  ]);
+  
+  // Initialize Socket.IO
+  console.log('🔌 Initializing Socket.IO...');
+  initializeSocket();
+  
+  console.log('✅ Profile loaded successfully!');
+}
+
+// ==================== UPDATE USER UI ====================
+
+function updateUserUI() {
+  if (!currentUser) return;
+  
+  const userName = currentUser.name || currentUser.email.split('@')[0];
+  const userInitial = userName.charAt(0).toUpperCase();
+  
+  // Update all user name/initial elements
+  const updates = {
+    'user-name': userName,
+    'mobile-user-name': userName,
+    'user-initial': userInitial,
+    'mobile-user-initial': userInitial,
+    'profile-name': userName,
+    'profile-initial-card': userInitial,
+    'info-name': currentUser.name || 'Not Set',
+    'info-email': currentUser.email || 'Not Set',
+    'info-phone': currentUser.phone || 'Not set'
+  };
+  
+  Object.entries(updates).forEach(([id, value]) => {
+    const elem = document.getElementById(id);
+    if (elem) elem.textContent = value;
+  });
+  
+  // Member since date
+  if (currentUser.created_at) {
+    const date = new Date(currentUser.created_at);
+    const memberSince = date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    const elem = document.getElementById('info-member-since');
+    if (elem) elem.textContent = memberSince;
+  }
+  
+  // Profile image
+  const savedImage = localStorage.getItem('profileImage');
+  if (savedImage) {
+    updateProfileImages(savedImage);
+  } else if (currentUser.picture) {
+    updateProfileImages(currentUser.picture);
+  }
+  
+  // Show user profile, hide auth buttons
+  const userProfile = document.getElementById('user-profile');
+  const authButtons = document.getElementById('auth-buttons');
+  if (userProfile) userProfile.classList.remove('hidden');
+  if (authButtons) authButtons.classList.add('hidden');
+}
+
+// ==================== LOAD ORDERS AND VOUCHERS ====================
+
+async function loadOrdersAndVouchers() {
+  try {
+    console.log('📦 Fetching overview data...');
+    
+    // Try to fetch from overview endpoint first
+    const data = await apiFetch('/user/overview');
+    
+    allOrders = Array.isArray(data.orders) ? data.orders : [];
+    allVouchers = Array.isArray(data.vouchers) ? data.vouchers : [];
+    
+    console.log(`✅ Loaded ${allOrders.length} orders and ${allVouchers.length} vouchers`);
+    
+    renderOrders(allOrders);
+    renderVouchers(allVouchers);
+    updateStats();
+    
+  } catch (error) {
+    console.error('❌ Error loading overview:', error);
+    
+    // Fallback: try individual endpoints
+    console.log('🔄 Trying individual endpoints...');
+    
+    try {
+      const ordersData = await apiFetch('/orders');
+      allOrders = Array.isArray(ordersData) ? ordersData : [];
+      renderOrders(allOrders);
+    } catch (e) {
+      console.error('❌ Failed to load orders:', e);
+      renderOrders([]);
+    }
+    
+    try {
+      const vouchersData = await apiFetch('/user/vouchers');
+      allVouchers = Array.isArray(vouchersData.vouchers) ? vouchersData.vouchers : [];
+      renderVouchers(allVouchers);
+    } catch (e) {
+      console.error('❌ Failed to load vouchers:', e);
+      renderVouchers([]);
+    }
+    
+    updateStats();
+  }
+}
+
+// ==================== RENDER ORDERS ====================
+
+function renderOrders(orders) {
+  const container = document.getElementById('orders-container');
+  if (!container) return;
+  
+  console.log(`🎨 Rendering ${orders.length} orders...`);
+  
+  if (orders.length === 0) {
+    container.innerHTML = `
+      <div class="bg-white rounded-xl p-8 text-center">
+        <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
+        </svg>
+        <p class="text-gray-500 text-lg">No orders yet</p>
+        <a href="menu.html" class="inline-block mt-4 px-6 py-3 bg-accent text-white font-semibold rounded-xl hover:bg-accent-dark transition-all">Start Ordering</a>
+      </div>
+    `;
     return;
   }
   
-  const userName = user.name || user.email.split('@')[0];
-  const userInitial = userName.charAt(0).toUpperCase();
+  // Show max 3 recent orders
+  const recentOrders = orders.slice(0, 3);
   
-  document.getElementById('user-name').textContent = userName;
-  document.getElementById('mobile-user-name').textContent = userName;
-  document.getElementById('user-initial').textContent = userInitial;
-  document.getElementById('mobile-user-initial').textContent = userInitial;
-  document.getElementById('profile-name').textContent = userName;
-  document.getElementById('profile-initial-card').textContent = userInitial;
-  document.getElementById('info-name').textContent = user.name || 'Not Set';
-  document.getElementById('info-email').textContent = user.email;
-  document.getElementById('info-phone').textContent = user.phone || '+63 912 345 6789';
+  container.innerHTML = recentOrders.map(order => {
+    let formattedDate = 'N/A';
+    let formattedTime = '';
+    
+    try {
+      if (order.created_at) {
+        const orderDate = new Date(order.created_at);
+        if (!isNaN(orderDate.getTime())) {
+          formattedDate = orderDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+          formattedTime = orderDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+        }
+      }
+    } catch (e) {
+      console.error('Error formatting date:', e);
+    }
+    
+    let itemsList = [];
+    try {
+      itemsList = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
+    } catch (e) {
+      itemsList = [];
+    }
+    
+    const itemsDisplay = (itemsList || []).map(item => {
+      const quantity = item.quantity || 1;
+      const name = item.name || 'Unknown Item';
+      return `${quantity}x ${name}`;
+    }).join(', ') || 'No items';
+    
+    const deliveryStatus = order.delivery_status || 'pending';
+    const paymentStatus = (order.payment_status || 'pending').toString().toLowerCase();
+    
+    let displayStatus = 'Pending';
+    let statusColor = 'bg-yellow-100 text-yellow-700';
+    
+    if (deliveryStatus === 'delivered') {
+      displayStatus = 'Delivered';
+      statusColor = 'bg-green-100 text-green-700';
+    } else if (deliveryStatus === 'preparing') {
+      displayStatus = 'Preparing';
+      statusColor = 'bg-blue-100 text-blue-700';
+    } else if (deliveryStatus === 'delivering') {
+      displayStatus = 'On the Way';
+      statusColor = 'bg-purple-100 text-purple-700';
+    } else if (paymentStatus === 'paid') {
+      displayStatus = 'Paid';
+      statusColor = 'bg-green-100 text-green-700';
+    } else if (paymentStatus === 'failed') {
+      displayStatus = 'Failed';
+      statusColor = 'bg-red-100 text-red-700';
+    }
+    
+    const orderId = order.order_id || 'N/A';
+    const orderTotal = parseFloat(order.total || 0);
+    const timeDisplay = formattedTime ? ` at ${formattedTime}` : '';
+    
+    return `
+      <div class="bg-white rounded-xl p-6 shadow-md order-card">
+        <div class="flex justify-between items-start mb-3">
+          <div>
+            <h3 class="text-lg font-bold text-dark">Order #${escapeHtml(orderId)}</h3>
+            <p class="text-sm text-gray-500">${formattedDate}${timeDisplay}</p>
+          </div>
+          <span class="px-3 py-1 ${statusColor} rounded-full text-xs font-semibold">${displayStatus}</span>
+        </div>
+        <div class="mb-3">
+          <p class="text-gray-600 text-sm font-medium">Items: ${escapeHtml(itemsDisplay)}</p>
+        </div>
+        <div class="flex justify-between items-center pt-3 border-t border-gray-100">
+          <span class="text-lg font-bold text-accent">₱${orderTotal.toFixed(2)}</span>
+          <button onclick="viewOrderDetails('${escapeHtml(orderId)}')" class="text-accent hover:text-accent-dark font-semibold text-sm">View Details</button>
+        </div>
+      </div>
+    `;
+  }).join('');
   
-  if (user.createdAt) {
-    const date = new Date(user.createdAt);
-    const memberSince = date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-    document.getElementById('info-member-since').textContent = memberSince;
-  }
-  
-  if (user.profileImage) {
-    updateProfileImages(user.profileImage);
-  }
-  
-  await loadOrderHistory();
-  loadVouchers();
-  updateStats();
+  console.log('✅ Orders rendered');
 }
 
-// Upload profile image
+// ==================== RENDER VOUCHERS ====================
+
+function renderVouchers(vouchers) {
+  const container = document.getElementById('vouchers-container');
+  const count = document.getElementById('voucher-count');
+  
+  console.log(`🎨 Rendering ${vouchers.length} vouchers...`);
+  
+  if (count) count.textContent = String(vouchers.length);
+  
+  if (!container) return;
+  
+  if (vouchers.length === 0) {
+    container.innerHTML = `
+      <div class="col-span-full bg-white rounded-xl p-8 text-center">
+        <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"></path>
+        </svg>
+        <p class="text-gray-500 text-lg">No vouchers available</p>
+      </div>
+    `;
+    return;
+  }
+  
+  container.innerHTML = vouchers.map(v => {
+    const isExpired = v.is_expired || new Date(v.expires_at) < new Date();
+    const isUsed = v.is_used;
+    
+    let colorClass = 'from-green-500 to-green-600';
+    if (isUsed) colorClass = 'from-gray-400 to-gray-500 opacity-60';
+    else if (isExpired) colorClass = 'from-red-400 to-red-500 opacity-60';
+    
+    let statusBadge = 'Active';
+    let statusColor = 'bg-green-500/50';
+    if (isUsed) {
+      statusBadge = 'Used';
+      statusColor = 'bg-gray-500/50';
+    } else if (isExpired) {
+      statusBadge = 'Expired';
+      statusColor = 'bg-red-500/50';
+    }
+    
+    const expiryDate = new Date(v.expires_at);
+    const today = new Date();
+    const daysLeft = Math.ceil((expiryDate - today) / (1000 * 60 * 60 * 24));
+    
+    return `
+      <div class="voucher-card bg-gradient-to-br ${colorClass} rounded-xl p-4 text-white shadow-lg">
+        <div class="mb-3">
+          <div class="text-3xl font-bold mb-1">
+            ${v.discount_type === 'percentage' ? v.discount_value + '%' : '₱' + v.discount_value}
+          </div>
+          <div class="text-sm opacity-90">${v.discount_type === 'percentage' ? 'Percentage Off' : 'Fixed Discount'}</div>
+        </div>
+        
+        <div class="mb-3">
+          <code class="text-sm font-mono bg-white/20 px-2 py-1 rounded">${escapeHtml(v.code)}</code>
+        </div>
+        
+        <div class="flex justify-between items-center pt-3 border-t border-white/20">
+          <div class="text-xs">
+            <span>Exp: ${new Date(v.expires_at).toLocaleDateString()}</span>
+            ${!isExpired && !isUsed && daysLeft <= 7 ? `<br><span class="text-yellow-300">⚠️ ${daysLeft} days left</span>` : ''}
+          </div>
+          <span class="text-xs font-semibold ${statusColor} px-2 py-1 rounded">
+            ${statusBadge}
+          </span>
+        </div>
+        
+        ${!isUsed && !isExpired ? `
+        <button onclick="useVoucher('${escapeHtml(v.code)}', '${v.discount_type}', ${v.discount_value})" 
+                class="mt-3 w-full px-3 py-2 bg-white/20 hover:bg-white/30 rounded-lg text-xs font-semibold transition-all duration-300">
+          Use Now →
+        </button>` : ''}
+      </div>
+    `;
+  }).join('');
+  
+  console.log('✅ Vouchers rendered');
+}
+
+// ==================== UPDATE STATS ====================
+
+function updateStats() {
+  const statOrdersEl = document.getElementById('stat-orders');
+  if (statOrdersEl) {
+    statOrdersEl.textContent = allOrders.length;
+  }
+  
+  const statSpentEl = document.getElementById('stat-spent');
+  if (statSpentEl) {
+    const totalSpent = allOrders.reduce((sum, order) => sum + parseFloat(order.total || 0), 0);
+    statSpentEl.textContent = `₱${totalSpent.toFixed(2)}`;
+  }
+  
+  const statVouchersEl = document.getElementById('stat-vouchers');
+  if (statVouchersEl) {
+    statVouchersEl.textContent = allVouchers.length;
+  }
+  
+  console.log('📊 Stats updated');
+}
+
+// ==================== SOCKET.IO INITIALIZATION ====================
+
+function initializeSocket() {
+  // Prevent duplicate connections
+  if (socket && socket.connected) {
+    console.log('⚠️ Socket already connected, skipping initialization');
+    return;
+  }
+  
+  if (typeof io === 'undefined') {
+    console.log('⚠️ Socket.IO not available');
+    return;
+  }
+  
+  const token = getAuthToken();
+  if (!token) {
+    console.log('⚠️ No auth token for Socket.IO');
+    return;
+  }
+  
+  if (!currentUser || !currentUser.id) {
+    console.log('⚠️ No current user ID for Socket.IO');
+    return;
+  }
+  
+  console.log('🔌 Connecting Socket.IO...');
+  
+  socket = io(window.location.origin, {
+    transports: ['websocket', 'polling'],
+    auth: { token: token },
+    reconnection: true,
+    reconnectionAttempts: Infinity,
+    reconnectionDelay: 1000
+  });
+  
+  socket.on('connect', () => {
+    console.log('✅ Socket.IO connected:', socket.id);
+    
+    const userId = currentUser.id;
+    if (userId) {
+      console.log(`🔌 Joining user room: user-${userId}`);
+      socket.emit('join-user', { userId: userId });
+    }
+  });
+  
+  socket.on('disconnect', (reason) => {
+    console.log('❌ Socket.IO disconnected:', reason);
+  });
+  
+  socket.on('connect_error', (error) => {
+    console.error('❌ Socket.IO connection error:', error);
+  });
+  
+  // Listen for voucher updates
+  socket.on('voucher-updated', async (data) => {
+    console.log('🎟️ Voucher update received:', data);
+    
+    // Verify this is for current user
+    if (data.user_id && currentUser && currentUser.id) {
+      const userId = typeof data.user_id === 'string' ? parseInt(data.user_id) : data.user_id;
+      const currentUserId = typeof currentUser.id === 'string' ? parseInt(currentUser.id) : currentUser.id;
+      
+      if (userId !== currentUserId) {
+        console.log('⚠️ Voucher update for different user, ignoring');
+        return;
+      }
+    }
+    
+    console.log('🔄 Refreshing vouchers...');
+    await loadOrdersAndVouchers();
+    
+    if (data.action === 'created') {
+      showToast('🎟️ New voucher assigned!', 'success');
+    } else if (data.action === 'deleted') {
+      showToast('🎟️ Voucher removed', 'success');
+    } else {
+      showToast('🎟️ Voucher updated', 'success');
+    }
+  });
+  
+  // Listen for order status changes
+  socket.on('order-status-changed', async (data) => {
+    console.log('📦 Order status changed:', data);
+    
+    console.log('🔄 Refreshing orders...');
+    await loadOrdersAndVouchers();
+    
+    const statusMessages = {
+      'placed': '📦 Order placed',
+      'preparing': '👨‍🍳 Order being prepared',
+      'delivering': '🚚 Order out for delivery',
+      'delivered': '✅ Order delivered!',
+      'cancelled': '❌ Order cancelled'
+    };
+    const message = statusMessages[data.status || data.delivery_status] || '📦 Order status updated';
+    showToast(message, 'success');
+  });
+  
+  // Listen for order updates
+  socket.on('order-updated', async (data) => {
+    console.log('📦 Order update received:', data);
+    
+    // Verify this is for current user
+    if (data.user_id && currentUser && currentUser.id) {
+      const userId = typeof data.user_id === 'string' ? parseInt(data.user_id) : data.user_id;
+      const currentUserId = typeof currentUser.id === 'string' ? parseInt(currentUser.id) : currentUser.id;
+      
+      if (userId !== currentUserId) {
+        console.log('⚠️ Order update for different user, ignoring');
+        return;
+      }
+    }
+    
+    console.log('🔄 Refreshing orders...');
+    await loadOrdersAndVouchers();
+    
+    if (data.action === 'created') {
+      showToast('📦 New order placed!', 'success');
+    }
+  });
+  
+  console.log('✅ Socket.IO initialized with event listeners');
+}
+
+// ==================== ORDER DETAILS MODAL ====================
+
+function viewOrderDetails(orderId) {
+  const order = allOrders.find(o => o.order_id === orderId);
+  if (!order) {
+    showToast('Order not found', 'error');
+    return;
+  }
+  
+  let itemsList = [];
+  try {
+    itemsList = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
+  } catch (e) {
+    itemsList = [];
+  }
+  
+  let orderDate = 'N/A';
+  try {
+    if (order.created_at) {
+      const date = new Date(order.created_at);
+      if (!isNaN(date.getTime())) {
+        orderDate = date.toLocaleDateString('en-US', { 
+          month: 'long', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit'
+        });
+      }
+    }
+  } catch (e) {
+    console.error('Error formatting date:', e);
+  }
+  
+  const itemsHTML = itemsList.map(item => {
+    const quantity = parseFloat(item.quantity || 1);
+    const price = parseFloat(item.price || 0);
+    const name = item.name || 'Unknown Item';
+    return `
+    <div class="flex justify-between items-center py-2 border-b border-gray-100">
+      <div>
+        <p class="font-semibold text-dark">${escapeHtml(name)}</p>
+        <p class="text-sm text-gray-500">Qty: ${quantity} × ₱${price.toFixed(2)}</p>
+      </div>
+      <p class="font-semibold text-accent">₱${(quantity * price).toFixed(2)}</p>
+    </div>
+  `;
+  }).join('');
+  
+  const modalHTML = `
+    <div id="order-details-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onclick="closeOrderModal(event)">
+      <div class="bg-white rounded-3xl p-8 max-w-2xl w-full mx-4 shadow-2xl max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
+        <div class="flex justify-between items-center mb-6">
+          <h3 class="text-2xl font-bold text-dark">Order Details</h3>
+          <button onclick="closeOrderModal()" class="text-gray-500 hover:text-accent">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+        </div>
+        <div class="mb-6 p-4 bg-accent/10 rounded-lg">
+          <div class="flex justify-between items-center mb-2">
+            <p class="text-sm text-gray-600">Order ID</p>
+            <p class="font-bold text-dark">#${escapeHtml(order.order_id)}</p>
+          </div>
+          <div class="flex justify-between items-center mb-2">
+            <p class="text-sm text-gray-600">Date</p>
+            <p class="font-semibold text-dark">${orderDate}</p>
+          </div>
+          <div class="flex justify-between items-center">
+            <p class="text-sm text-gray-600">Status</p>
+            <span class="px-3 py-1 ${order.payment_status === 'paid' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'} rounded-full text-xs font-semibold">
+              ${order.payment_status ? (order.payment_status.charAt(0).toUpperCase() + order.payment_status.slice(1)) : 'Pending'}
+            </span>
+          </div>
+        </div>
+        <div class="mb-6">
+          <h4 class="font-bold text-dark mb-4">Items</h4>
+          <div class="space-y-2">${itemsHTML}</div>
+        </div>
+        <div class="border-t border-gray-200 pt-4 space-y-2">
+          <div class="flex justify-between text-sm">
+            <span class="text-gray-600">Subtotal:</span>
+            <span class="font-semibold">₱${(parseFloat(order.subtotal || 0)).toFixed(2)}</span>
+          </div>
+          <div class="flex justify-between text-sm">
+            <span class="text-gray-600">Delivery Fee:</span>
+            <span class="font-semibold">₱${(parseFloat(order.delivery_fee || 0)).toFixed(2)}</span>
+          </div>
+          <div class="flex justify-between text-sm">
+            <span class="text-gray-600">Tax (12%):</span>
+            <span class="font-semibold">₱${(parseFloat(order.tax || 0)).toFixed(2)}</span>
+          </div>
+          <div class="flex justify-between text-lg font-bold pt-2 border-t border-gray-200">
+            <span>Total:</span>
+            <span class="text-accent">₱${(parseFloat(order.total || 0)).toFixed(2)}</span>
+          </div>
+        </div>
+        <button onclick="closeOrderModal()" class="w-full mt-6 px-6 py-3 bg-accent text-white font-semibold rounded-xl hover:bg-accent-dark">Close</button>
+      </div>
+    </div>
+  `;
+  
+  document.body.insertAdjacentHTML('beforeend', modalHTML);
+}
+
+function closeOrderModal(event) {
+  if (event && event.target !== event.currentTarget) return;
+  const modal = document.getElementById('order-details-modal');
+  if (modal) modal.remove();
+}
+
+// ==================== VOUCHER USAGE ====================
+
+function useVoucher(code, discountType, discountValue) {
+  console.log('🎟️ Using voucher:', code);
+  
+  const token = getAuthToken();
+  if (!token) {
+    showToast('⚠️ Please login to use vouchers', 'error');
+    setTimeout(() => {
+      window.location.href = 'login.html';
+    }, 1500);
+    return;
+  }
+  
+  const voucher = {
+    id: code,
+    code: code,
+    discount_type: discountType,
+    discount_value: parseFloat(discountValue),
+    type: discountType,
+    value: parseFloat(discountValue)
+  };
+  
+  if (confirm(`Apply voucher "${code}" to your next order?\n\nDiscount: ${discountType === 'percentage' ? discountValue + '%' : '₱' + discountValue}`)) {
+    localStorage.setItem('selectedVoucher', JSON.stringify(voucher));
+    console.log('✅ Voucher saved to localStorage');
+    showToast('Voucher selected! Redirecting to menu...', 'success');
+    
+    setTimeout(() => {
+      window.location.href = 'menu.html';
+    }, 1500);
+  }
+}
+
+// ==================== PROFILE IMAGE ====================
+
 function uploadProfileImage() {
   const input = document.createElement('input');
   input.type = 'file';
@@ -416,7 +1068,6 @@ function uploadProfileImage() {
   
   input.onchange = function(e) {
     const file = e.target.files[0];
-    
     if (!file) return;
     
     if (file.size > 5 * 1024 * 1024) {
@@ -430,639 +1081,107 @@ function uploadProfileImage() {
     }
     
     const reader = new FileReader();
-    
     reader.onload = function(event) {
       const imageDataUrl = event.target.result;
-      
-      const user = JSON.parse(localStorage.getItem('currentUser') || '{}');
-      user.profileImage = imageDataUrl;
-      localStorage.setItem('currentUser', JSON.stringify(user));
-      
+      localStorage.setItem('profileImage', imageDataUrl);
       updateProfileImages(imageDataUrl);
-      
-      showToast('Profile picture updated successfully!', 'success');
+      showToast('Profile picture updated!', 'success');
     };
-    
-    reader.onerror = function() {
-      showToast('Error reading file. Please try again.', 'error');
-    };
-    
     reader.readAsDataURL(file);
   };
   
   input.click();
 }
 
-// Update all profile image elements
 function updateProfileImages(imageUrl) {
-  const user = JSON.parse(localStorage.getItem('currentUser') || '{}');
-  const userName = user.name || user.email?.split('@')[0] || 'User';
-  const userInitial = userName.charAt(0).toUpperCase();
+  const img = document.getElementById('profile-image-card');
+  const initial = document.getElementById('profile-initial-card');
   
-  const imageElements = [
-    'profile-image-card',
-    'nav-profile-image',
-    'mobile-nav-profile-image'
-  ];
-  
-  const initialElements = [
-    'profile-initial-card',
-    'user-initial',
-    'mobile-user-initial'
-  ];
-  
-  if (imageUrl) {
-    imageElements.forEach(id => {
-      const elem = document.getElementById(id);
-      if (elem) {
-        elem.src = imageUrl;
-        elem.classList.remove('hidden');
-      }
-    });
-    
-    initialElements.forEach(id => {
-      const elem = document.getElementById(id);
-      if (elem) {
-        elem.classList.add('hidden');
-      }
-    });
-  } else {
-    imageElements.forEach(id => {
-      const elem = document.getElementById(id);
-      if (elem) {
-        elem.classList.add('hidden');
-      }
-    });
-    
-    initialElements.forEach(id => {
-      const elem = document.getElementById(id);
-      if (elem) {
-        elem.textContent = userInitial;
-        elem.classList.remove('hidden');
-      }
-    });
+  if (imageUrl && img) {
+    img.src = imageUrl;
+    img.classList.remove('hidden');
+    if (initial) initial.classList.add('hidden');
   }
 }
 
-// Load order history from backend
-async function loadOrderHistory() {
-  const ordersContainer = document.getElementById('orders-container');
-  const token = sessionStorage.getItem('authToken');
-  
-  if (!token) {
-    ordersContainer.innerHTML = `
-      <div class="bg-white rounded-xl p-8 text-center">
-        <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
-        </svg>
-        <p class="text-gray-500 text-lg">Please login to view your orders</p>
-        <a href="login.html" class="inline-block mt-4 px-6 py-3 bg-accent text-white font-semibold rounded-xl hover:bg-accent-dark transition-all duration-300">
-          Login
-        </a>
-      </div>
-    `;
-    return;
-  }
-  
-  try {
-    ordersContainer.innerHTML = `
-      <div class="flex justify-center items-center py-8">
-        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-accent"></div>
-      </div>
-    `;
+// ==================== UTILITIES ====================
+
+function editProfile() {
+  showToast('Edit profile feature coming soon!', 'success');
+}
+
+function toggleMobileMenu() {
+  const mobileMenu = document.getElementById('mobile-menu');
+  if (!mobileMenu) return;
+  mobileMenu.classList.toggle('hidden');
+}
+
+function logout() {
+  if (confirm('Are you sure you want to logout?')) {
+    console.log('🚪 Logging out...');
     
-    const response = await fetch('http://localhost:3000/api/my-orders', {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
-    });
+    localStorage.removeItem('currentUser');
+    sessionStorage.removeItem('authToken');
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('adminToken');
+    localStorage.removeItem('selectedVoucher');
+    localStorage.removeItem('profileImage');
     
-    if (!response.ok) {
-      throw new Error('Failed to fetch orders');
+    if (currentUser && currentUser.email) {
+      const cartKey = `kusinaCart_${currentUser.email}`;
+      localStorage.removeItem(cartKey);
     }
     
-    const data = await response.json();
-    userOrders = data.orders || [];
-    
-    if (userOrders.length === 0) {
-      ordersContainer.innerHTML = `
-        <div class="bg-white rounded-xl p-8 text-center">
-          <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
-          </svg>
-          <p class="text-gray-500 text-lg">No orders yet</p>
-          <a href="menu.html" class="inline-block mt-4 px-6 py-3 bg-accent text-white font-semibold rounded-xl hover:bg-accent-dark transition-all duration-300">
-            Start Ordering
-          </a>
-        </div>
-      `;
-      return;
+    if (socket && socket.connected) {
+      socket.disconnect();
     }
     
-    // Display only the 3 most recent orders
-    const recentOrders = userOrders.slice(0, 3);
+    showToast('Successfully logged out', 'success');
     
-    ordersContainer.innerHTML = recentOrders.map(order => {
-      const orderDate = new Date(order.created_at).toLocaleDateString('en-US', { 
-        month: 'long', 
-        day: 'numeric', 
-        year: 'numeric' 
-      });
-      
-      // Parse items if it's a JSON string
-      let itemsList = [];
-      try {
-        itemsList = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
-      } catch (e) {
-        itemsList = [];
-      }
-      
-      const itemNames = itemsList.map(item => item.name).join(', ');
-      
-      // Determine status badge color
-      let statusColor = 'bg-yellow-100 text-yellow-700';
-      if (order.payment_status === 'paid') {
-        statusColor = 'bg-green-100 text-green-700';
-      } else if (order.payment_status === 'failed') {
-        statusColor = 'bg-red-100 text-red-700';
-      }
-      
-      const statusText = order.payment_status.charAt(0).toUpperCase() + order.payment_status.slice(1);
-      
-      return `
-        <div class="bg-white rounded-xl p-6 shadow-md order-card">
-          <div class="flex justify-between items-start mb-3">
-            <div>
-              <h3 class="text-lg font-bold text-dark">#${order.order_id}</h3>
-              <p class="text-sm text-gray-500">${orderDate}</p>
-            </div>
-            <span class="px-3 py-1 ${statusColor} rounded-full text-xs font-semibold">
-              ${statusText}
-            </span>
-          </div>
-          
-          <div class="mb-3">
-            <p class="text-gray-600 text-sm">${itemNames || 'No items'}</p>
-          </div>
-          
-          <div class="flex justify-between items-center pt-3 border-t border-gray-100">
-            <span class="text-lg font-bold text-accent">₱${parseFloat(order.total).toFixed(2)}</span>
-            <button onclick="viewOrderDetails('${order.order_id}')" class="text-accent hover:text-accent-dark font-semibold text-sm">View Details</button>
-          </div>
-        </div>
-      `;
-    }).join('');
-    
-  } catch (error) {
-    console.error('Error loading orders:', error);
-    ordersContainer.innerHTML = `
-      <div class="bg-white rounded-xl p-8 text-center">
-        <svg class="w-16 h-16 text-red-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-        </svg>
-        <p class="text-gray-500 text-lg">Failed to load orders</p>
-        <button onclick="loadOrderHistory()" class="inline-block mt-4 px-6 py-3 bg-accent text-white font-semibold rounded-xl hover:bg-accent-dark transition-all duration-300">
-          Retry
-        </button>
-      </div>
-    `;
+    setTimeout(() => {
+      window.location.href = 'login.html';
+    }, 1000);
   }
 }
 
-// View order details function
-function viewOrderDetails(orderId) {
-  const order = userOrders.find(o => o.order_id === orderId);
-  
-  if (!order) {
-    alert('Order not found');
-    return;
-  }
-  
-  let itemsList = [];
+function getCartKey() {
   try {
-    itemsList = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
+    const userStr = localStorage.getItem('currentUser');
+    if (!userStr || userStr === 'null' || userStr === 'undefined') {
+      return 'kusinaCart_guest';
+    }
+    const user = JSON.parse(userStr);
+    return (user && user.email) ? `kusinaCart_${user.email}` : 'kusinaCart_guest';
   } catch (e) {
-    itemsList = [];
-  }
-  
-  const orderDate = new Date(order.created_at).toLocaleDateString('en-US', { 
-    month: 'long', 
-    day: 'numeric', 
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  });
-  
-  const itemsHTML = itemsList.map(item => `
-    <div class="flex justify-between items-center py-2 border-b border-gray-100">
-      <div>
-        <p class="font-semibold text-dark">${item.name}</p>
-        <p class="text-sm text-gray-500">Qty: ${item.quantity} × ₱${parseFloat(item.price).toFixed(2)}</p>
-      </div>
-      <p class="font-semibold text-accent">₱${(item.quantity * item.price).toFixed(2)}</p>
-    </div>
-  `).join('');
-  
-  const modalHTML = `
-    <div id="order-details-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div class="bg-white rounded-3xl p-8 max-w-2xl w-full mx-4 shadow-2xl animate-scale-in max-h-[90vh] overflow-y-auto">
-        <div class="flex justify-between items-center mb-6">
-          <h3 class="text-2xl font-bold text-dark">Order Details</h3>
-          <button onclick="closeOrderModal()" class="text-gray-500 hover:text-accent transition-colors duration-300">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-            </svg>
-          </button>
-        </div>
-        
-        <div class="mb-6 p-4 bg-accent/10 rounded-lg">
-          <div class="flex justify-between items-center mb-2">
-            <p class="text-sm text-gray-600">Order ID</p>
-            <p class="font-bold text-dark">#${order.order_id}</p>
-          </div>
-          <div class="flex justify-between items-center mb-2">
-            <p class="text-sm text-gray-600">Date</p>
-            <p class="font-semibold text-dark">${orderDate}</p>
-          </div>
-          <div class="flex justify-between items-center">
-            <p class="text-sm text-gray-600">Status</p>
-            <span class="px-3 py-1 ${order.payment_status === 'paid' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'} rounded-full text-xs font-semibold">
-              ${order.payment_status.charAt(0).toUpperCase() + order.payment_status.slice(1)}
-            </span>
-          </div>
-        </div>
-        
-        <div class="mb-6">
-          <h4 class="font-bold text-dark mb-4">Items</h4>
-          <div class="space-y-2">
-            ${itemsHTML}
-          </div>
-        </div>
-        
-        <div class="mb-6">
-          <h4 class="font-bold text-dark mb-3">Customer Information</h4>
-          <div class="space-y-2 text-sm">
-            <div class="flex justify-between">
-              <span class="text-gray-600">Name:</span>
-              <span class="font-semibold text-dark">${order.customer_name}</span>
-            </div>
-            <div class="flex justify-between">
-              <span class="text-gray-600">Email:</span>
-              <span class="font-semibold text-dark">${order.customer_email}</span>
-            </div>
-            <div class="flex justify-between">
-              <span class="text-gray-600">Phone:</span>
-              <span class="font-semibold text-dark">${order.customer_phone}</span>
-            </div>
-            <div class="flex justify-between">
-              <span class="text-gray-600">Delivery:</span>
-              <span class="font-semibold text-dark">${order.delivery_option === 'delivery' ? 'Delivery' : 'Pickup'}</span>
-            </div>
-          </div>
-        </div>
-        
-        <div class="border-t border-gray-200 pt-4 space-y-2">
-          <div class="flex justify-between text-sm">
-            <span class="text-gray-600">Subtotal:</span>
-            <span class="font-semibold">₱${parseFloat(order.subtotal).toFixed(2)}</span>
-          </div>
-          <div class="flex justify-between text-sm">
-            <span class="text-gray-600">Delivery Fee:</span>
-            <span class="font-semibold">₱${parseFloat(order.delivery_fee).toFixed(2)}</span>
-          </div>
-          <div class="flex justify-between text-sm">
-            <span class="text-gray-600">Tax (12%):</span>
-            <span class="font-semibold">₱${parseFloat(order.tax).toFixed(2)}</span>
-          </div>
-          ${order.voucher_discount ? `
-          <div class="flex justify-between text-sm text-green-600">
-            <span>Voucher Discount:</span>
-            <span class="font-semibold">-₱${parseFloat(order.voucher_discount).toFixed(2)}</span>
-          </div>
-          ` : ''}
-          <div class="flex justify-between text-lg font-bold pt-2 border-t border-gray-200">
-            <span>Total:</span>
-            <span class="text-accent">₱${parseFloat(order.total).toFixed(2)}</span>
-          </div>
-        </div>
-        
-        <button onclick="closeOrderModal()" class="w-full mt-6 px-6 py-3 bg-accent text-white font-semibold rounded-xl hover:bg-accent-dark transition-all duration-300">
-          Close
-        </button>
-      </div>
-    </div>
-  `;
-  
-  document.body.insertAdjacentHTML('beforeend', modalHTML);
-}
-
-// Close order modal
-function closeOrderModal() {
-  const modal = document.getElementById('order-details-modal');
-  if (modal) {
-    modal.remove();
+    return 'kusinaCart_guest';
   }
 }
 
-// Load vouchers
-function loadVouchers() {
-  const user = JSON.parse(localStorage.getItem('currentUser') || '{}');
-  
-  const usedVouchers = JSON.parse(localStorage.getItem(`usedVouchers_${user.email}`) || '[]');
-  const availableVouchers = sampleVouchers.filter(v => !usedVouchers.includes(v.id));
-  
-  const vouchersContainer = document.getElementById('vouchers-container');
-  const voucherCount = document.getElementById('voucher-count');
-  
-  voucherCount.textContent = availableVouchers.length;
-  
-  if (availableVouchers.length === 0) {
-    vouchersContainer.innerHTML = `
-      <div class="col-span-full bg-white rounded-xl p-8 text-center">
-        <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"></path>
-        </svg>
-        <p class="text-gray-500 text-lg">No vouchers available</p>
-      </div>
-    `;
-    return;
-  }
-  
-  vouchersContainer.innerHTML = availableVouchers.map(voucher => `
-    <div class="voucher-card bg-gradient-to-br ${voucher.color} rounded-xl p-4 text-white shadow-lg">
-      <div class="mb-3">
-        <div class="text-3xl font-bold mb-1">${voucher.discount}</div>
-        <div class="text-sm opacity-90">${voucher.title}</div>
-      </div>
-      
-      <div class="mb-3">
-        <p class="text-xs opacity-80">${voucher.description}</p>
-        <p class="text-xs opacity-80 mt-1">Min spend: ₱${voucher.minSpend}</p>
-      </div>
-      
-      <div class="flex justify-between items-center pt-3 border-t border-white/20">
-        <span class="text-xs">Exp: ${voucher.expiry}</span>
-        <button onclick="useVoucher('${voucher.id}')" class="px-3 py-1 bg-white/20 hover:bg-white/30 rounded-lg text-xs font-semibold transition-all duration-300">
-          Use Now
-        </button>
-      </div>
-      
-      <div class="mt-2 text-center">
-        <code class="text-xs font-mono bg-white/10 px-2 py-1 rounded">${voucher.id}</code>
-      </div>
-    </div>
-  `).join('');
+function loadCartCount() {
+  const cartKey = getCartKey();
+  const saved = localStorage.getItem(cartKey);
+  const cartItems = saved ? JSON.parse(saved) : [];
+  const count = Array.isArray(cartItems) ? cartItems.reduce((sum, item) => sum + (item.quantity || 0), 0) : 0;
+  const desktop = document.getElementById('cart-count');
+  const mobile = document.getElementById('mobile-cart-count');
+  if (desktop) desktop.textContent = count;
+  if (mobile) mobile.textContent = count;
 }
 
-// Use voucher
-function useVoucher(voucherId) {
-  const user = JSON.parse(localStorage.getItem('currentUser') || '{}');
-  
-  if (!user || !user.email) {
-    window.location.href = 'login.html';
-    return;
-  }
-  
-  const usedVouchers = JSON.parse(localStorage.getItem(`usedVouchers_${user.email}`) || '[]');
-  
-  if (usedVouchers.includes(voucherId)) {
-    showToast('You have already used this voucher!', 'error');
-    return;
-  }
-  
-  const voucher = sampleVouchers.find(v => v.id === voucherId);
-  
-  if (confirm(`Apply voucher "${voucher.title}" to your next order?`)) {
-    localStorage.setItem('selectedVoucher', JSON.stringify(voucher));
-    
-    usedVouchers.push(voucherId);
-    localStorage.setItem(`usedVouchers_${user.email}`, JSON.stringify(usedVouchers));
-    
-    showToast('Voucher applied! Redirecting to menu...', 'success');
-    setTimeout(() => {
-      window.location.href = 'menu.html';
-    }, 1500);
-  }
-}
+// ==================== INITIALIZATION ====================
 
-// ==================== FIXED VOUCHER FUNCTIONS FOR PROFILE.HTML ====================
-// REPLACE the voucher functions in profile.html (around lines 400-500)
+window.addEventListener('DOMContentLoaded', () => {
+  console.log('🚀 Profile page initializing...');
+  loadProfile();
+});
 
-// Load REAL vouchers from backend API
-async function loadVouchers() {
-  const token = sessionStorage.getItem('authToken');
-  const container = document.getElementById('vouchers-container');
-  const count = document.getElementById('voucher-count');
-  
-  if (!token) {
-    container.innerHTML = '<p class="col-span-full text-center text-gray-500">Please login to view vouchers</p>';
-    count.textContent = '0';
-    return;
+window.addEventListener('beforeunload', () => {
+  if (socket && socket.connected) {
+    socket.disconnect();
   }
-  
-  try {
-    console.log('📡 Fetching vouchers from API...');
-    
-    const res = await fetch('http://localhost:3000/api/user/vouchers', {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-    
-    if (!res.ok) {
-      throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-    }
-    
-    const data = await res.json();
-    const vouchers = data.vouchers || [];
-    
-    console.log(`✅ Loaded ${vouchers.length} vouchers from database`);
-    
-    // Filter active vouchers
-    const activeVouchers = vouchers.filter(v => {
-      const isExpired = new Date(v.expires_at) < new Date();
-      return !v.is_used && !isExpired;
-    });
-    
-    count.textContent = activeVouchers.length;
-    
-    if (vouchers.length === 0) {
-      container.innerHTML = `
-        <div class="col-span-full bg-white rounded-xl p-8 text-center">
-          <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"></path>
-          </svg>
-          <p class="text-gray-500 text-lg">No vouchers available</p>
-          <p class="text-gray-400 text-sm mt-2">Contact admin to get vouchers</p>
-        </div>
-      `;
-      return;
-    }
-    
-    container.innerHTML = vouchers.map(v => {
-      const isExpired = new Date(v.expires_at) < new Date();
-      const isUsed = v.is_used;
-      const isActive = !isUsed && !isExpired;
-      
-      // Determine color based on status
-      let colorClass = 'from-gray-400 to-gray-500 opacity-60';
-      if (isActive) {
-        if (v.discount_type === 'percentage') {
-          colorClass = 'from-green-500 to-green-600';
-        } else {
-          colorClass = 'from-blue-500 to-blue-600';
-        }
-      }
-      
-      return `
-        <div class="voucher-card bg-gradient-to-br ${colorClass} rounded-xl p-4 text-white shadow-lg">
-          <div class="mb-3">
-            <div class="text-3xl font-bold mb-1">
-              ${v.discount_type === 'percentage' ? v.discount_value + '%' : '₱' + v.discount_value}
-            </div>
-            <div class="text-sm opacity-90">
-              ${v.discount_type === 'percentage' ? 'Percentage Off' : 'Fixed Discount'}
-            </div>
-          </div>
-          
-          <div class="mb-3">
-            <code class="text-sm font-mono bg-white/20 px-2 py-1 rounded">${v.code}</code>
-          </div>
-          
-          <div class="flex justify-between items-center pt-3 border-t border-white/20">
-            <span class="text-xs">Exp: ${new Date(v.expires_at).toLocaleDateString()}</span>
-            <span class="text-xs font-semibold ${isUsed ? 'bg-gray-500/50' : isExpired ? 'bg-red-500/50' : 'bg-green-500/50'} px-2 py-1 rounded">
-              ${isUsed ? 'Used' : isExpired ? 'Expired' : 'Active'}
-            </span>
-          </div>
-          
-          ${isActive ? `
-          <button onclick="useVoucher('${v.code}', '${v.discount_type}', ${v.discount_value})" 
-                  class="mt-3 w-full px-3 py-2 bg-white/20 hover:bg-white/30 rounded-lg text-xs font-semibold transition-all duration-300">
-            Use Now
-          </button>` : ''}
-        </div>
-      `;
-    }).join('');
-    
-  } catch (err) {
-    console.error('❌ Vouchers error:', err);
-    container.innerHTML = `
-      <div class="col-span-full text-center p-8">
-        <p class="text-red-500">Failed to load vouchers</p>
-        <button onclick="loadVouchers()" class="mt-4 px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent-dark">
-          Retry
-        </button>
-      </div>
-    `;
-    count.textContent = '0';
-  }
-}
+});
 
-// Use voucher - redirect to menu with voucher pre-applied
-function useVoucher(code, discountType, discountValue) {
-  const user = JSON.parse(localStorage.getItem('currentUser') || '{}');
-  
-  if (!user || !user.email) {
-    alert('Please log in to use vouchers');
-    window.location.href = 'login.html';
-    return;
-  }
-  
-  // Create voucher object for cart
-  const voucher = {
-    id: code,
-    code: code,
-    discount_type: discountType,
-    discount_value: parseFloat(discountValue),
-    type: discountType,
-    value: parseFloat(discountValue)
-  };
-  
-  if (confirm(`Apply voucher "${code}" to your next order?`)) {
-    // Store voucher for cart to pick up
-    localStorage.setItem('selectedVoucher', JSON.stringify(voucher));
-    
-    console.log('✅ Voucher selected:', voucher);
-    
-    showToast('Voucher selected! Redirecting to menu...', 'success');
-    setTimeout(() => {
-      window.location.href = 'menu.html';
-    }, 1500);
-  }
-}
-
-// Update stats to use real backend voucher count
-async function updateStats() {
-  // Update orders count from real data
-  document.getElementById('stat-orders').textContent = userOrders.length;
-  
-  // Calculate total spent from real orders
-  const totalSpent = userOrders.reduce((sum, order) => sum + parseFloat(order.total || 0), 0);
-  document.getElementById('stat-spent').textContent = `₱${totalSpent.toFixed(2)}`;
-  
-  // Fetch real voucher count
-  const token = sessionStorage.getItem('authToken');
-  if (token) {
-    try {
-      const res = await fetch('http://localhost:3000/api/user/vouchers', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      
-      if (res.ok) {
-        const data = await res.json();
-        const activeVouchers = (data.vouchers || []).filter(v => {
-          const isExpired = new Date(v.expires_at) < new Date();
-          return !v.is_used && !isExpired;
-        });
-        document.getElementById('stat-vouchers').textContent = activeVouchers.length;
-      } else {
-        document.getElementById('stat-vouchers').textContent = '0';
-      }
-    } catch (err) {
-      console.error('Error loading voucher count:', err);
-      document.getElementById('stat-vouchers').textContent = '0';
-    }
-  } else {
-    document.getElementById('stat-vouchers').textContent = '0';
-  }
-}
-
-// Toast notification helper
-function showToast(message, type = 'success') {
-  const existingToast = document.getElementById('profile-toast');
-  if (existingToast) existingToast.remove();
-  
-  const toastHTML = `
-    <div id="profile-toast" class="fixed top-24 right-6 z-50 animate-slide-up">
-      <div class="bg-white rounded-xl shadow-2xl p-4 flex items-center gap-3 min-w-[300px] border-l-4 ${type === 'success' ? 'border-green-500' : 'border-red-500'}">
-        <div class="flex-shrink-0">
-          ${type === 'success' 
-            ? '<svg class="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>'
-            : '<svg class="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>'
-          }
-        </div>
-        <p class="text-dark font-medium">${message}</p>
-      </div>
-    </div>
-  `;
-  
-  document.body.insertAdjacentHTML('beforeend', toastHTML);
-  
-  setTimeout(() => {
-    const toast = document.getElementById('profile-toast');
-    if (toast) {
-      toast.style.opacity = '0';
-      toast.style.transform = 'translateY(-20px)';
-      setTimeout(() => toast.remove(), 300);
-    }
-  }, 3000);
-}
-
-// Initialize on page load
-window.addEventListener('DOMContentLoaded', loadProfile);
-
-
+console.log('✅ Profile.html script loaded successfully');
 </script>
 
 </body>

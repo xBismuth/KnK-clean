@@ -6,6 +6,7 @@
 <title>Dashboard - Kusina ni Katya</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
 <style>
@@ -27,6 +28,49 @@
   .card:hover {
     border-color: #cda45e;
     box-shadow: 0 8px 24px rgba(205, 164, 94, 0.15);
+    transform: translateY(-2px);
+  }
+  
+  .metric-card {
+    background: white;
+    border-radius: 12px;
+    border: 1px solid #e5e7eb;
+    padding: 24px;
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .metric-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(135deg, #cda45e 0%, #b8924e 100%);
+    transform: scaleX(0);
+    transition: transform 0.3s;
+  }
+  
+  .metric-card:hover::before {
+    transform: scaleX(1);
+  }
+  
+  .metric-card:hover {
+    border-color: #cda45e;
+    box-shadow: 0 12px 32px rgba(205, 164, 94, 0.2);
+    transform: translateY(-4px);
+  }
+  
+  .metric-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 12px;
   }
   
   .btn {
@@ -37,6 +81,9 @@
     cursor: pointer;
     transition: all 0.3s;
     border: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
   }
   
   .btn-primary { 
@@ -54,7 +101,20 @@
     color: #374151; 
     border: 1px solid #e5e7eb;
   }
-  .btn-secondary:hover { background: #e5e7eb; }
+  .btn-secondary:hover { 
+    background: #e5e7eb;
+    transform: translateY(-1px);
+  }
+  
+  .btn-success {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+  }
+  .btn-success:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+  }
   
   .badge {
     display: inline-block;
@@ -62,11 +122,18 @@
     border-radius: 16px;
     font-size: 11px;
     font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
   }
   
   .badge-pending { background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); color: #92400e; }
   .badge-paid { background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%); color: #065f46; }
   .badge-failed { background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%); color: #991b1b; }
+  .badge-placed { background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%); color: #3730a3; }
+  .badge-preparing { background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); color: #1e40af; }
+  .badge-delivering { background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); color: #92400e; }
+  .badge-delivered { background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%); color: #065f46; }
+  .badge-cancelled { background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%); color: #991b1b; }
   
   .filter-btn {
     padding: 8px 20px;
@@ -94,14 +161,44 @@
   }
   
   .status-indicator {
-    padding: 4px 12px;
-    border-radius: 6px;
+    padding: 6px 14px;
+    border-radius: 8px;
     font-size: 12px;
-    font-weight: 500;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
   }
   
-  .status-connected { background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%); color: #065f46; }
-  .status-disconnected { background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%); color: #991b1b; }
+  .status-connected { 
+    background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%); 
+    color: #065f46; 
+  }
+  .status-connected::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #10b981;
+    animation: pulse 2s infinite;
+  }
+  
+  .status-disconnected { 
+    background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%); 
+    color: #991b1b; 
+  }
+  .status-disconnected::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #ef4444;
+  }
+  
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
   
   .modal-overlay {
     position: fixed;
@@ -134,103 +231,261 @@
     to { opacity: 1; transform: translateY(0) scale(1); }
   }
   
-  #toast {
+  @keyframes slideInRight {
+    from { opacity: 0; transform: translateX(20px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+  
+  .animate-slide-in {
+    animation: slideInRight 0.3s ease-out;
+  }
+  
+  .skeleton {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: loading 1.5s infinite;
+    border-radius: 4px;
+  }
+  
+  @keyframes loading {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+  
+  /* Toast Container */
+  #toast-container {
     position: fixed;
-    right: 24px;
     bottom: 24px;
+    right: 24px;
+    z-index: 1100;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .toast {
     background: #1f2937;
     color: white;
-    padding: 12px 20px;
+    padding: 14px 20px;
     border-radius: 12px;
     font-size: 14px;
     font-weight: 500;
-    z-index: 1100;
-    display: none;
     box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 280px;
+    animation: slideInRight 0.3s ease-out;
+  }
+  
+  .toast-success {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  }
+  
+  .toast-error {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  }
+  
+  .toast-info {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  }
+  
+  /* Responsive adjustments */
+  @media (max-width: 768px) {
+    .metric-card {
+      padding: 16px;
+    }
+    
+    .status-indicator {
+      font-size: 11px;
+      padding: 4px 10px;
+    }
+    
+    #toast-container {
+      bottom: 16px;
+      right: 16px;
+      left: 16px;
+    }
+    
+    .toast {
+      min-width: auto;
+      width: 100%;
+    }
   }
 </style>
 </head>
 
 <body>
 
-<header class="bg-white border-b sticky top-0 z-50 backdrop-blur-md bg-white/80">
-  <nav class="max-w-7xl mx-auto px-6">
+<!-- HEADER -->
+<header class="bg-white border-b sticky top-0 z-50 backdrop-blur-md bg-white/90">
+  <nav class="max-w-7xl mx-auto px-4 sm:px-6">
     <div class="flex justify-between items-center h-16">
       <div class="flex items-center gap-3">
-        <img src="assets/images/logo1.png" alt="Logo" class="w-12 h-12 rounded-full shadow-lg" />
+        <img src="assets/images/logo1.png" alt="Logo" class="w-12 h-12 rounded-full shadow-lg" onerror="this.style.display='none'" />
         <div>
           <h1 class="text-lg font-bold bg-gradient-to-r from-[#cda45e] to-[#b8924e] bg-clip-text text-transparent">Dashboard</h1>
           <div class="text-xs text-gray-500">Kusina ni Katya</div>
         </div>
       </div>
-      <div class="flex items-center gap-3">
+      
+      <div class="flex items-center gap-2 sm:gap-3 flex-wrap">
         <div id="connection-status" class="status-indicator status-disconnected">
           <span id="connection-text">Connecting</span>
         </div>
-        <a href="admin-menu.html" class="px-4 py-2 text-sm font-medium text-gray-600 hover:text-[#cda45e] rounded-lg hover:bg-gray-50 transition">Menu</a>
-        <a href="admin-users.html" class="px-4 py-2 text-sm font-medium text-gray-600 hover:text-[#cda45e] rounded-lg hover:bg-gray-50 transition">Users</a>
-        <button onclick="location.reload()" class="px-4 py-2 text-sm font-medium text-gray-600 hover:text-[#cda45e] rounded-lg hover:bg-gray-50 transition">Refresh</button>
-        <div class="border-l pl-3 ml-3 flex items-center gap-2">
-          <div class="text-sm font-semibold" id="user-name">Loading</div>
-          <button onclick="logout()" class="px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition">Logout</button>
+        
+        <a href="admin-menu.html" class="hidden sm:inline-flex px-3 py-2 text-sm font-medium text-gray-600 hover:text-[#cda45e] rounded-lg hover:bg-gray-50 transition">Menu</a>
+        <a href="admin-users.html" class="hidden sm:inline-flex px-3 py-2 text-sm font-medium text-gray-600 hover:text-[#cda45e] rounded-lg hover:bg-gray-50 transition">Users</a>
+        
+        <button onclick="refreshDashboard()" class="btn btn-secondary text-xs sm:text-sm">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+          </svg>
+          <span class="hidden sm:inline">Refresh</span>
+        </button>
+        
+        <div class="border-l pl-2 sm:pl-3 ml-2 sm:ml-3 flex items-center gap-2">
+          <div class="text-xs sm:text-sm font-semibold" id="user-name">Loading...</div>
+          <button onclick="logout()" class="px-3 py-2 text-xs sm:text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition">Logout</button>
         </div>
       </div>
     </div>
   </nav>
 </header>
 
-<main class="max-w-7xl mx-auto px-6 py-6">
+<!-- MAIN CONTENT -->
+<main class="max-w-7xl mx-auto px-4 sm:px-6 py-6">
 
-  <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-    <div class="card">
-      <div class="text-xs text-gray-500 mb-1">Total Orders</div>
-      <div class="text-2xl font-semibold" id="total-orders">0</div>
+  <!-- METRICS GRID -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
+    
+    <!-- Total Orders Card -->
+    <div class="metric-card">
+      <div class="metric-icon bg-blue-50">
+        <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
+        </svg>
+      </div>
+      <div class="text-xs text-gray-500 mb-1 font-medium uppercase tracking-wide">Total Orders</div>
+      <div class="text-3xl font-bold text-gray-900" id="total-orders">
+        <span class="skeleton inline-block w-16 h-8"></span>
+      </div>
+      <div class="text-xs text-gray-500 mt-2">All time</div>
     </div>
-    <div class="card">
-      <div class="text-xs text-gray-500 mb-1">Revenue</div>
-      <div class="text-2xl font-semibold text-green-600" id="total-revenue">₱0</div>
+    
+    <!-- Revenue Card -->
+    <div class="metric-card">
+      <div class="metric-icon bg-green-50">
+        <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+      </div>
+      <div class="text-xs text-gray-500 mb-1 font-medium uppercase tracking-wide">Revenue</div>
+      <div class="text-3xl font-bold text-green-600" id="total-revenue">
+        <span class="skeleton inline-block w-24 h-8"></span>
+      </div>
+      <div class="text-xs text-gray-500 mt-2">Paid orders only</div>
     </div>
-    <div class="card">
-      <div class="text-xs text-gray-500 mb-1">Pending</div>
-      <div class="text-2xl font-semibold text-yellow-600" id="pending-orders">0</div>
+    
+    <!-- Pending Orders Card -->
+    <div class="metric-card">
+      <div class="metric-icon bg-yellow-50">
+        <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+      </div>
+      <div class="text-xs text-gray-500 mb-1 font-medium uppercase tracking-wide">Pending Orders</div>
+      <div class="text-3xl font-bold text-yellow-600" id="pending-orders">
+        <span class="skeleton inline-block w-12 h-8"></span>
+      </div>
+      <div class="text-xs text-gray-500 mt-2">Awaiting payment</div>
     </div>
+    
+    <!-- Completed Orders Card -->
+    <div class="metric-card">
+      <div class="metric-icon bg-purple-50">
+        <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+      </div>
+      <div class="text-xs text-gray-500 mb-1 font-medium uppercase tracking-wide">Completed</div>
+      <div class="text-3xl font-bold text-purple-600" id="completed-orders">
+        <span class="skeleton inline-block w-12 h-8"></span>
+      </div>
+      <div class="text-xs text-gray-500 mt-2">Paid orders</div>
+    </div>
+    
+  </div>
+
+  <!-- CHARTS ROW (Optional) -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+    
+    <!-- Orders Chart -->
     <div class="card">
-      <div class="text-xs text-gray-500 mb-1">Completed</div>
-      <div class="text-2xl font-semibold text-blue-600" id="completed-orders">0</div>
+      <h3 class="text-lg font-bold mb-4 text-gray-900">Orders Overview</h3>
+      <div class="h-64">
+        <canvas id="ordersChart"></canvas>
+      </div>
+    </div>
+    
+    <!-- Revenue Chart -->
+    <div class="card">
+      <h3 class="text-lg font-bold mb-4 text-gray-900">Revenue Trend</h3>
+      <div class="h-64">
+        <canvas id="revenueChart"></canvas>
+      </div>
+    </div>
+    
+  </div>
+
+  <!-- FILTERS & SEARCH -->
+  <div class="mb-6 space-y-4">
+    <div class="flex flex-wrap gap-2 sm:gap-3">
+      <button onclick="filterOrders('all', this)" class="filter-btn active">All</button>
+      <button onclick="filterOrders('pending', this)" class="filter-btn">Pending</button>
+      <button onclick="filterOrders('paid', this)" class="filter-btn">Paid</button>
+      <button onclick="filterOrders('failed', this)" class="filter-btn">Failed</button>
+    </div>
+
+    <div class="flex flex-col sm:flex-row gap-3">
+      <input type="text" id="search-input" placeholder="Search by Order ID or Customer..." 
+             onkeyup="searchOrders()" 
+             class="flex-1 px-4 py-3 border-2 border-gray-200 rounded-xl text-sm focus:border-[#cda45e] focus:outline-none transition">
+      <button onclick="exportOrders()" class="btn btn-success">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+        </svg>
+        Export CSV
+      </button>
     </div>
   </div>
 
-  <div class="mb-4 flex gap-2 flex-wrap">
-    <button onclick="filterOrders('all', this)" class="filter-btn active">All</button>
-    <button onclick="filterOrders('pending', this)" class="filter-btn">Pending</button>
-    <button onclick="filterOrders('paid', this)" class="filter-btn">Paid</button>
-    <button onclick="filterOrders('failed', this)" class="filter-btn">Failed</button>
-  </div>
-
-  <div class="mb-4 flex gap-2">
-    <input type="text" id="search-input" placeholder="Search orders..." 
-           onkeyup="searchOrders()" 
-           class="flex-1 px-3 py-2 border-2 border-gray-200 rounded-lg text-sm focus:border-[#cda45e] focus:outline-none transition">
-    <button onclick="exportOrders()" class="btn btn-secondary">Export CSV</button>
-  </div>
-
+  <!-- ORDERS TABLE -->
   <div class="card">
+    <div class="flex justify-between items-center mb-4">
+      <h3 class="text-lg font-bold text-gray-900">Recent Orders</h3>
+      <span class="text-sm text-gray-500">Showing <span id="orders-count">0</span> orders</span>
+    </div>
+    
     <div class="overflow-x-auto">
       <table class="w-full text-sm">
         <thead>
-          <tr class="border-b text-left text-xs text-gray-500">
-            <th class="pb-3 font-medium">Order ID</th>
-            <th class="pb-3 font-medium">Customer</th>
-            <th class="pb-3 font-medium">Total</th>
-            <th class="pb-3 font-medium">Payment</th>
-            <th class="pb-3 font-medium">Delivery</th>
-            <th class="pb-3 font-medium">Date</th>
-            <th class="pb-3 font-medium">Actions</th>
+          <tr class="border-b text-left text-xs text-gray-500 uppercase tracking-wide">
+            <th class="pb-3 font-semibold">Order ID</th>
+            <th class="pb-3 font-semibold">Customer</th>
+            <th class="pb-3 font-semibold">Total</th>
+            <th class="pb-3 font-semibold">Payment</th>
+            <th class="pb-3 font-semibold">Delivery</th>
+            <th class="pb-3 font-semibold">Date</th>
+            <th class="pb-3 font-semibold text-right">Actions</th>
           </tr>
         </thead>
         <tbody id="orders-table-body">
           <tr>
-            <td colspan="7" class="py-12 text-center text-gray-400">Loading...</td>
+            <td colspan="7" class="py-12 text-center text-gray-400">
+              <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-[#cda45e] mb-4"></div>
+              <p>Loading orders...</p>
+            </td>
           </tr>
         </tbody>
       </table>
@@ -239,348 +494,1076 @@
 
 </main>
 
+<!-- PAYMENT STATUS MODAL -->
 <div id="status-modal" class="modal-overlay hidden" onclick="closeStatusModal(event)">
   <div class="modal-content" onclick="event.stopPropagation()">
-    <h3 class="text-lg font-semibold mb-4">Update Payment Status</h3>
-    <p class="text-sm text-gray-600 mb-4">Order: <span id="modal-order-id-display" class="font-mono font-bold"></span></p>
+    <h3 class="text-xl font-bold mb-2 text-gray-900">Update Payment Status</h3>
+    <p class="text-sm text-gray-600 mb-6">Order: <span id="modal-order-id-display" class="font-mono font-bold text-[#cda45e]"></span></p>
     <input type="hidden" id="modal-order-id">
     
     <div class="space-y-2 mb-6">
-      <label class="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
-        <input type="radio" name="status" value="pending" class="mr-3">
-        <span class="text-sm font-medium">Pending</span>
+      <label class="flex items-center p-4 border-2 rounded-xl cursor-pointer hover:bg-gray-50 hover:border-[#cda45e] transition">
+        <input type="radio" name="status" value="pending" class="mr-3 w-4 h-4 text-[#cda45e]">
+        <div class="flex-1">
+          <span class="text-sm font-semibold block">Pending</span>
+          <span class="text-xs text-gray-500">Awaiting payment</span>
+        </div>
       </label>
-      <label class="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
-        <input type="radio" name="status" value="paid" class="mr-3">
-        <span class="text-sm font-medium">Paid</span>
+      <label class="flex items-center p-4 border-2 rounded-xl cursor-pointer hover:bg-gray-50 hover:border-[#cda45e] transition">
+        <input type="radio" name="status" value="paid" class="mr-3 w-4 h-4 text-[#cda45e]">
+        <div class="flex-1">
+          <span class="text-sm font-semibold block">Paid</span>
+          <span class="text-xs text-gray-500">Payment received</span>
+        </div>
       </label>
-      <label class="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
-        <input type="radio" name="status" value="failed" class="mr-3">
-        <span class="text-sm font-medium">Failed</span>
+      <label class="flex items-center p-4 border-2 rounded-xl cursor-pointer hover:bg-gray-50 hover:border-[#cda45e] transition">
+        <input type="radio" name="status" value="failed" class="mr-3 w-4 h-4 text-[#cda45e]">
+        <div class="flex-1">
+          <span class="text-sm font-semibold block">Failed</span>
+          <span class="text-xs text-gray-500">Payment unsuccessful</span>
+        </div>
       </label>
     </div>
     
-    <div class="flex gap-2">
+    <div class="flex gap-3">
       <button onclick="closeStatusModal()" class="flex-1 btn btn-secondary">Cancel</button>
-      <button onclick="updateOrderStatus()" class="flex-1 btn btn-primary">Update</button>
+      <button onclick="updateOrderStatus()" class="flex-1 btn btn-primary">Update Status</button>
     </div>
   </div>
 </div>
 
+<!-- DELIVERY STATUS MODAL -->
 <div id="delivery-status-modal" class="modal-overlay hidden" onclick="closeDeliveryStatusModal(event)">
   <div class="modal-content" onclick="event.stopPropagation()">
-    <h3 class="text-lg font-semibold mb-4">Update Delivery Status</h3>
-    <p class="text-sm text-gray-600 mb-4">Order: <span id="delivery-modal-order-id-display" class="font-mono font-bold"></span></p>
+    <h3 class="text-xl font-bold mb-2 text-gray-900">Update Delivery Status</h3>
+    <p class="text-sm text-gray-600 mb-6">Order: <span id="delivery-modal-order-id-display" class="font-mono font-bold text-[#cda45e]"></span></p>
     <input type="hidden" id="delivery-modal-order-id">
     
     <div class="space-y-2 mb-6">
-      <label class="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
-        <input type="radio" name="delivery-status" value="placed" class="mr-3">
-        <span class="text-sm font-medium">Placed</span>
+      <label class="flex items-center p-4 border-2 rounded-xl cursor-pointer hover:bg-gray-50 hover:border-[#cda45e] transition">
+        <input type="radio" name="delivery-status" value="placed" class="mr-3 w-4 h-4 text-[#cda45e]">
+        <div class="flex-1">
+          <span class="text-sm font-semibold block">📋 Placed</span>
+          <span class="text-xs text-gray-500">Order received</span>
+        </div>
       </label>
-      <label class="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
-        <input type="radio" name="delivery-status" value="preparing" class="mr-3">
-        <span class="text-sm font-medium">Preparing</span>
+      <label class="flex items-center p-4 border-2 rounded-xl cursor-pointer hover:bg-gray-50 hover:border-[#cda45e] transition">
+        <input type="radio" name="delivery-status" value="preparing" class="mr-3 w-4 h-4 text-[#cda45e]">
+        <div class="flex-1">
+          <span class="text-sm font-semibold block">👨‍🍳 Preparing</span>
+          <span class="text-xs text-gray-500">Food being prepared</span>
+        </div>
       </label>
-      <label class="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
-        <input type="radio" name="delivery-status" value="delivering" class="mr-3">
-        <span class="text-sm font-medium">Delivering</span>
+      <label class="flex items-center p-4 border-2 rounded-xl cursor-pointer hover:bg-gray-50 hover:border-[#cda45e] transition">
+        <input type="radio" name="delivery-status" value="delivering" class="mr-3 w-4 h-4 text-[#cda45e]">
+        <div class="flex-1">
+          <span class="text-sm font-semibold block">🚚 Delivering</span>
+          <span class="text-xs text-gray-500">Out for delivery</span>
+        </div>
       </label>
-      <label class="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
-        <input type="radio" name="delivery-status" value="delivered" class="mr-3">
-        <span class="text-sm font-medium">Delivered</span>
+      <label class="flex items-center p-4 border-2 rounded-xl cursor-pointer hover:bg-gray-50 hover:border-[#cda45e] transition">
+        <input type="radio" name="delivery-status" value="delivered" class="mr-3 w-4 h-4 text-[#cda45e]">
+        <div class="flex-1">
+          <span class="text-sm font-semibold block">✅ Delivered</span>
+          <span class="text-xs text-gray-500">Order completed</span>
+        </div>
       </label>
-      <label class="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
-        <input type="radio" name="delivery-status" value="cancelled" class="mr-3">
-        <span class="text-sm font-medium">Cancelled</span>
+      <label class="flex items-center p-4 border-2 rounded-xl cursor-pointer hover:bg-gray-50 hover:border-red-500 transition">
+        <input type="radio" name="delivery-status" value="cancelled" class="mr-3 w-4 h-4 text-red-500">
+        <div class="flex-1">
+          <span class="text-sm font-semibold block text-red-600">❌ Cancelled</span>
+          <span class="text-xs text-gray-500">Order cancelled</span>
+        </div>
       </label>
     </div>
     
-    <div class="flex gap-2">
+    <div class="flex gap-3">
       <button onclick="closeDeliveryStatusModal()" class="flex-1 btn btn-secondary">Cancel</button>
-      <button onclick="updateDeliveryStatus()" class="flex-1 btn btn-primary">Update</button>
+      <button onclick="updateDeliveryStatus()" class="flex-1 btn btn-primary">Update Status</button>
     </div>
   </div>
 </div>
 
-<div id="toast"></div>
+<!-- TOAST CONTAINER -->
+<div id="toast-container"></div>
 
 <script>
-  let token = null;
-  let allOrders = [];
-  let displayedOrders = [];
-  let currentFilter = 'all';
-  let socket = null;
+// ==================== GLOBAL STATE ====================
+const API_URL = '/api';
+let token = null;
+let allOrders = [];
+let displayedOrders = [];
+let currentFilter = 'all';
+let socket = null;
+let ordersChart = null;
+let revenueChart = null;
 
-  document.addEventListener('DOMContentLoaded', async () => {
-    token = localStorage.getItem('adminToken');
-    if (!token) {
+console.log('🚀 Dashboard loading...');
+
+// ==================== AUTH CHECK ====================
+
+/**
+ * Check if admin is authenticated
+ */
+function checkAuth() {
+  token = localStorage.getItem('adminToken') || sessionStorage.getItem('adminToken');
+  
+  if (!token) {
+    console.log('❌ No admin token found');
+    showToast('Please login as admin', 'error');
+    setTimeout(() => {
       window.location.href = 'login.html';
-      return;
-    }
-    
-    await loadUserInfo();
-    await loadOrders();
-    await loadStats();
-    initializeSocket();
-  });
-
-  function initializeSocket() {
-    try {
-      socket = io("http://localhost:3000", { 
-        transports: ["websocket", "polling"], 
-        auth: { token: token }
-      });
-      
-      socket.on('connect', () => updateConnectionStatus(true));
-      socket.on('disconnect', () => updateConnectionStatus(false));
-      socket.on('new-order', () => { loadOrders(); loadStats(); });
-      socket.on('order-status-updated', () => { loadOrders(); loadStats(); });
-    } catch(err) { 
-      updateConnectionStatus(false); 
-    }
+    }, 1500);
+    return false;
   }
+  
+  console.log('✅ Admin token found');
+  return true;
+}
 
-  function updateConnectionStatus(connected) {
-    const indicator = document.getElementById('connection-status');
-    const text = document.getElementById('connection-text');
-    if (connected) {
-      indicator.className = 'status-indicator status-connected';
-      text.textContent = 'Connected';
+// ==================== API FETCH HELPER ====================
+
+/**
+ * Generic API fetch with authentication
+ * @param {string} endpoint - API endpoint
+ * @param {object} options - Fetch options
+ * @returns {Promise<object>} Response data
+ */
+async function apiFetch(endpoint, options = {}) {
+  if (!token) {
+    throw new Error('No authentication token');
+  }
+  
+  const defaultOptions = {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+      ...options.headers
+    }
+  };
+  
+  const config = { ...defaultOptions, ...options };
+  
+  console.log(`📡 API Call: ${options.method || 'GET'} ${API_URL}${endpoint}`);
+  
+  const response = await fetch(`${API_URL}${endpoint}`, config);
+  
+  // Handle auth errors
+  if (response.status === 401 || response.status === 403) {
+    console.log('⚠️ Admin token expired or invalid');
+    showToast('Session expired. Please login again.', 'error');
+    setTimeout(() => {
+      localStorage.removeItem('adminToken');
+      sessionStorage.removeItem('adminToken');
+      window.location.href = 'login.html';
+    }, 2000);
+    throw new Error('Authentication failed');
+  }
+  
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error(`❌ API Error ${response.status}:`, errorText);
+    throw new Error(`HTTP ${response.status}: ${errorText}`);
+  }
+  
+  const data = await response.json();
+  console.log(`✅ API Response from ${endpoint}:`, data);
+  
+  return data;
+}
+
+// ==================== TOAST NOTIFICATIONS ====================
+
+/**
+ * Show toast notification
+ * @param {string} message - Toast message
+ * @param {string} type - 'success', 'error', or 'info'
+ */
+function showToast(message, type = 'success') {
+  const container = document.getElementById('toast-container');
+  if (!container) return;
+  
+  const toastClass = type === 'success' ? 'toast-success' : type === 'error' ? 'toast-error' : 'toast-info';
+  const icon = type === 'success' 
+    ? '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>'
+    : type === 'error'
+    ? '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>'
+    : '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>';
+  
+  const toastId = 'toast-' + Date.now();
+  const toastHTML = `
+    <div id="${toastId}" class="toast ${toastClass}">
+      ${icon}
+      <p>${escapeHtml(message)}</p>
+    </div>
+  `;
+  
+  container.insertAdjacentHTML('beforeend', toastHTML);
+  
+  // Auto remove after 3 seconds
+  setTimeout(() => {
+    const toast = document.getElementById(toastId);
+    if (toast) {
+      toast.style.opacity = '0';
+      toast.style.transform = 'translateX(20px)';
+      toast.style.transition = 'all 0.3s ease';
+      setTimeout(() => toast.remove(), 300);
+    }
+  }, 3000);
+}
+
+// ==================== HELPER FUNCTIONS ====================
+
+/**
+ * Escape HTML to prevent XSS
+ */
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text || '';
+  return div.innerHTML;
+}
+
+/**
+ * Escape HTML for attributes
+ */
+function escapeHtmlAttr(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;');
+}
+
+// ==================== INITIALIZATION ====================
+
+document.addEventListener('DOMContentLoaded', async () => {
+  console.log('🔄 Initializing dashboard...');
+  
+  // Check authentication
+  if (!checkAuth()) return;
+  
+  // Load data in parallel
+  await Promise.all([
+    loadAdminInfo(),
+    loadOrders(),
+    loadStats()
+  ]);
+  
+  // Initialize charts
+  initializeCharts();
+  
+  // Initialize Socket.IO
+  initializeSocket();
+  
+  console.log('✅ Dashboard initialized');
+});
+
+// ==================== SOCKET.IO ====================
+
+/**
+ * Initialize Socket.IO connection for admin
+ */
+function initializeSocket() {
+  // Prevent duplicate connections
+  if (socket && socket.connected) {
+    console.log('⚠️ Socket already connected');
+    return;
+  }
+  
+  if (typeof io === 'undefined') {
+    console.log('⚠️ Socket.IO not available');
+    updateConnectionStatus(false);
+    return;
+  }
+  
+  if (!token) {
+    console.log('⚠️ No auth token for Socket.IO');
+    updateConnectionStatus(false);
+    return;
+  }
+  
+  console.log('🔌 Connecting admin Socket.IO...');
+  
+  try {
+    // Create socket connection
+    socket = io(window.location.origin, {
+      transports: ['websocket', 'polling'],
+      auth: { token: token },
+      reconnection: true,
+      reconnectionAttempts: Infinity,
+      reconnectionDelay: 1000
+    });
+    
+    // Connection successful
+    socket.on('connect', () => {
+      console.log('✅ Socket.IO connected for admin:', socket.id);
+      updateConnectionStatus(true);
+      
+      // Join admin room
+      try {
+        socket.emit('admin-connect');
+        console.log('📢 Joined admin room');
+      } catch (e) {
+        console.error('Error joining admin room:', e);
+      }
+    });
+    
+    // Disconnection
+    socket.on('disconnect', (reason) => {
+      console.log('❌ Socket.IO disconnected:', reason);
+      updateConnectionStatus(false);
+    });
+    
+    // Connection error
+    socket.on('connect_error', (error) => {
+      console.error('❌ Socket.IO connection error:', error);
+      updateConnectionStatus(false);
+    });
+    
+    // Listen for new orders
+    socket.on('new-order', async (data) => {
+      console.log('📦 New order received:', data);
+      showToast(`New order #${data.order_id || 'N/A'} from ${data.customer_name || 'Customer'}`, 'info');
+      
+      // Refresh data
+      await loadOrders();
+      await loadStats();
+      updateCharts();
+    });
+    
+    // Listen for order updates
+    socket.on('order-updated', async (data) => {
+      console.log('🔄 Order updated:', data);
+      
+      // Refresh data
+      await loadOrders();
+      await loadStats();
+      updateCharts();
+    });
+    
+    // Listen for order status changes
+    socket.on('order-status-changed', async (data) => {
+      console.log('📦 Order status changed:', data);
+      
+      // Refresh data
+      await loadOrders();
+      await loadStats();
+      updateCharts();
+    });
+    
+    console.log('✅ Socket.IO initialized with event listeners');
+    
+  } catch (err) {
+    console.error('❌ Socket.IO initialization failed:', err);
+    updateConnectionStatus(false);
+  }
+}
+
+/**
+ * Update connection status indicator
+ * @param {boolean} connected - Connection status
+ */
+function updateConnectionStatus(connected) {
+  const indicator = document.getElementById('connection-status');
+  const text = document.getElementById('connection-text');
+  
+  if (!indicator || !text) return;
+  
+  if (connected) {
+    indicator.className = 'status-indicator status-connected';
+    text.textContent = 'Connected';
+  } else {
+    indicator.className = 'status-indicator status-disconnected';
+    text.textContent = 'Disconnected';
+  }
+}
+
+// ==================== LOAD ADMIN INFO ====================
+
+/**
+ * Load current admin user info
+ */
+async function loadAdminInfo() {
+  try {
+    console.log('👤 Fetching admin user info...');
+    const data = await apiFetch('/auth/me');
+    
+    if (data.success && data.user) {
+      const adminName = data.user.name || 'Admin';
+      document.getElementById('user-name').textContent = adminName;
+      console.log('✅ Admin user info loaded:', adminName);
+    }
+  } catch (e) {
+    console.error('❌ Failed to load admin info:', e);
+    document.getElementById('user-name').textContent = 'Admin';
+  }
+}
+
+// ==================== LOAD ORDERS ====================
+
+/**
+ * Fetch all orders from API
+ */
+async function loadOrders() {
+  try {
+    console.log('📋 Fetching all orders...');
+    
+    // Fetch orders from API
+    const data = await apiFetch('/admin/get-all-orders');
+    
+    // Store orders globally
+    if (!data.success) {
+      console.error('API returned error:', data.message);
+      allOrders = [];
+      displayedOrders = [];
     } else {
-      indicator.className = 'status-indicator status-disconnected';
-      text.textContent = 'Disconnected';
-    }
-  }
-
-  async function loadUserInfo() {
-    try {
-      const res = await fetch('/auth/me', { 
-        headers: { 'Authorization': `Bearer ${token}` } 
-      });
-      
-      if (!res.ok) {
-        localStorage.removeItem('adminToken');
-        window.location.href = 'login.html';
-        return;
-      }
-      
-      const data = await res.json();
-      if (data.success && data.user) {
-        document.getElementById('user-name').textContent = data.user.name || 'Admin';
-      }
-    } catch(e) { 
-      console.error('User load error:', e);
-    }
-  }
-
-  async function loadOrders() {
-    try {
-      const res = await fetch('/api/admin/get-all-orders', { 
-        headers: { 'Authorization': `Bearer ${token}` } 
-      });
-      
-      if (!res.ok) return;
-      
-      const data = await res.json();
-      allOrders = data.orders || [];
+      allOrders = Array.isArray(data.orders) ? data.orders : [];
       displayedOrders = allOrders;
-      renderOrders();
-    } catch(e) { 
-      console.error('Orders error:', e);
+      console.log(`✅ Loaded ${allOrders.length} orders`);
     }
-  }
-
-  function renderOrders() {
-    const tbody = document.getElementById('orders-table-body');
-    if (!tbody) return;
     
-    let filtered = displayedOrders.filter(order => {
-      if (currentFilter === 'all') return true;
-      return order.payment_status === currentFilter;
-    });
-
-    if (filtered.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="7" class="py-12 text-center text-gray-400">No orders</td></tr>';
-      return;
-    }
-
-    tbody.innerHTML = '';
-    filtered.forEach(order => {
-      const tr = document.createElement('tr');
-      tr.className = 'border-b hover:bg-gray-50';
-      tr.innerHTML = `
-        <td class="py-3 font-mono text-xs">${order.order_id}</td>
-        <td class="py-3 text-sm">${order.customer_name || '-'}</td>
-        <td class="py-3 font-semibold">₱${parseFloat(order.total || 0).toFixed(2)}</td>
-        <td class="py-3"><span class="badge badge-${order.payment_status}">${order.payment_status}</span></td>
-        <td class="py-3"><span class="badge" style="background: #e0e7ff; color: #4338ca;">${order.delivery_status || 'placed'}</span></td>
-        <td class="py-3 text-xs text-gray-500">${order.created_at ? new Date(order.created_at).toLocaleDateString() : '-'}</td>
-        <td class="py-3">
-          <div class="flex gap-1">
-            <button onclick="openStatusModal('${order.order_id}','${order.payment_status}')" class="btn btn-secondary text-xs">Payment</button>
-            <button onclick="openDeliveryStatusModal('${order.order_id}','${order.delivery_status || 'placed'}')" class="btn btn-primary text-xs">Delivery</button>
-          </div>
-        </td>
-      `;
-      tbody.appendChild(tr);
-    });
+    // Render orders
+    renderOrders();
+    
+  } catch (e) {
+    console.error('❌ Load orders error:', e);
+    showToast('Failed to load orders', 'error');
+    allOrders = [];
+    displayedOrders = [];
+    renderOrders();
   }
+}
 
-  async function loadStats() {
+// ==================== RENDER ORDERS ====================
+
+/**
+ * Render orders table with filters applied
+ */
+function renderOrders() {
+  const tbody = document.getElementById('orders-table-body');
+  const countEl = document.getElementById('orders-count');
+  
+  if (!tbody) return;
+  
+  console.log(`🎨 Rendering orders with filter: ${currentFilter}`);
+  
+  // Apply filter
+  let filtered = displayedOrders.filter(order => {
+    if (currentFilter === 'all') return true;
+    return order.payment_status === currentFilter;
+  });
+  
+  // Update count
+  if (countEl) countEl.textContent = filtered.length;
+  
+  // Show empty state if no orders
+  if (filtered.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="7" class="py-12 text-center text-gray-400">
+          <svg class="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
+          </svg>
+          <p class="text-lg">No orders found</p>
+        </td>
+      </tr>
+    `;
+    return;
+  }
+  
+  // Clear table
+  tbody.innerHTML = '';
+  
+  // Render each order
+  filtered.forEach(order => {
+    const tr = document.createElement('tr');
+    tr.className = 'border-b hover:bg-gray-50 transition';
+    
+    const orderId = escapeHtmlAttr(order.order_id || '');
+    const customerName = escapeHtml(order.customer_name || '-');
+    const paymentStatus = escapeHtmlAttr(order.payment_status || 'pending');
+    const deliveryStatus = escapeHtmlAttr(order.delivery_status || 'placed');
+    const total = parseFloat(order.total || 0).toFixed(2);
+    const displayOrderId = escapeHtml(order.order_id || '-');
+    
+    const createdAt = order.created_at 
+      ? new Date(order.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+      : '-';
+    
+    tr.innerHTML = `
+      <td class="py-3 font-mono text-xs font-semibold">${displayOrderId}</td>
+      <td class="py-3 text-sm">${customerName}</td>
+      <td class="py-3 font-bold text-gray-900">₱${total}</td>
+      <td class="py-3"><span class="badge badge-${paymentStatus}">${paymentStatus}</span></td>
+      <td class="py-3"><span class="badge badge-${deliveryStatus}">${deliveryStatus}</span></td>
+      <td class="py-3 text-xs text-gray-500">${createdAt}</td>
+      <td class="py-3">
+        <div class="flex justify-end gap-2">
+          <button onclick="openStatusModal('${orderId}','${paymentStatus}')" class="btn btn-secondary text-xs" title="Update payment status">
+            💳
+          </button>
+          <button onclick="openDeliveryStatusModal('${orderId}','${deliveryStatus}')" class="btn btn-primary text-xs" title="Update delivery status">
+            🚚
+          </button>
+        </div>
+      </td>
+    `;
+    
+    tbody.appendChild(tr);
+  });
+  
+  console.log(`✅ Rendered ${filtered.length} orders`);
+}
+
+// ==================== LOAD STATS ====================
+
+/**
+ * Calculate and display dashboard statistics
+ */
+async function loadStats() {
+  try {
+    console.log('📊 Calculating stats...');
+    
+    // Calculate metrics
     const total = allOrders.length;
     const pending = allOrders.filter(o => o.payment_status === 'pending').length;
     const paid = allOrders.filter(o => o.payment_status === 'paid').length;
-    const revenue = allOrders.filter(o => o.payment_status === 'paid').reduce((sum, o) => sum + parseFloat(o.total || 0), 0);
-
+    const revenue = allOrders
+      .filter(o => o.payment_status === 'paid')
+      .reduce((sum, o) => sum + parseFloat(o.total || 0), 0);
+    
+    // Update UI
     document.getElementById('total-orders').textContent = total;
     document.getElementById('pending-orders').textContent = pending;
     document.getElementById('completed-orders').textContent = paid;
     document.getElementById('total-revenue').textContent = `₱${revenue.toFixed(2)}`;
+    
+    console.log('✅ Stats updated:', { total, pending, paid, revenue: revenue.toFixed(2) });
+    
+  } catch (e) {
+    console.error('❌ Calculate stats error:', e);
   }
+}
 
-  function searchOrders() {
-    const val = document.getElementById('search-input').value.toLowerCase();
-    displayedOrders = allOrders.filter(o => 
-      o.order_id.toLowerCase().includes(val) || 
-      (o.customer_name || '').toLowerCase().includes(val)
-    );
-    renderOrders();
-  }
+// ==================== CHARTS ====================
 
-  function filterOrders(status, btn) {
-    currentFilter = status;
-    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    renderOrders();
-  }
-
-  function openStatusModal(id, status) {
-    document.getElementById('status-modal').classList.remove('hidden');
-    document.getElementById('modal-order-id').value = id;
-    document.getElementById('modal-order-id-display').textContent = id;
-    document.querySelectorAll('input[name="status"]').forEach(r => r.checked = r.value === status);
+/**
+ * Initialize Chart.js charts
+ */
+function initializeCharts() {
+  if (typeof Chart === 'undefined') {
+    console.log('⚠️ Chart.js not available');
+    return;
   }
   
-  function closeStatusModal(e) { 
-    if (!e || e.target === e.currentTarget) {
-      document.getElementById('status-modal').classList.add('hidden'); 
+  console.log('📈 Initializing charts...');
+  
+  try {
+    // Orders Chart (Doughnut)
+    const ordersCtx = document.getElementById('ordersChart');
+    if (ordersCtx) {
+      const pending = allOrders.filter(o => o.payment_status === 'pending').length;
+      const paid = allOrders.filter(o => o.payment_status === 'paid').length;
+      const failed = allOrders.filter(o => o.payment_status === 'failed').length;
+      
+      ordersChart = new Chart(ordersCtx, {
+        type: 'doughnut',
+        data: {
+          labels: ['Paid', 'Pending', 'Failed'],
+          datasets: [{
+            data: [paid, pending, failed],
+            backgroundColor: [
+              'rgba(16, 185, 129, 0.8)',
+              'rgba(251, 191, 36, 0.8)',
+              'rgba(239, 68, 68, 0.8)'
+            ],
+            borderColor: [
+              'rgb(16, 185, 129)',
+              'rgb(251, 191, 36)',
+              'rgb(239, 68, 68)'
+            ],
+            borderWidth: 2
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: {
+                padding: 15,
+                font: {
+                  family: 'Poppins',
+                  size: 12
+                }
+              }
+            }
+          }
+        }
+      });
     }
+    
+    // Revenue Chart (Line)
+    const revenueCtx = document.getElementById('revenueChart');
+    if (revenueCtx) {
+      // Calculate daily revenue for last 7 days
+      const last7Days = [];
+      const revenueData = [];
+      
+      for (let i = 6; i >= 0; i--) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        last7Days.push(dateStr);
+        
+        const dayRevenue = allOrders
+          .filter(o => {
+            if (o.payment_status !== 'paid') return false;
+            const orderDate = new Date(o.created_at);
+            return orderDate.toDateString() === date.toDateString();
+          })
+          .reduce((sum, o) => sum + parseFloat(o.total || 0), 0);
+        
+        revenueData.push(dayRevenue);
+      }
+      
+      revenueChart = new Chart(revenueCtx, {
+        type: 'line',
+        data: {
+          labels: last7Days,
+          datasets: [{
+            label: 'Revenue (₱)',
+            data: revenueData,
+            borderColor: 'rgb(205, 164, 94)',
+            backgroundColor: 'rgba(205, 164, 94, 0.1)',
+            borderWidth: 3,
+            fill: true,
+            tension: 0.4
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: true,
+              position: 'bottom',
+              labels: {
+                padding: 15,
+                font: {
+                  family: 'Poppins',
+                  size: 12
+                }
+              }
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                callback: function(value) {
+                  return '₱' + value.toFixed(0);
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+    
+    console.log('✅ Charts initialized');
+    
+  } catch (e) {
+    console.error('❌ Chart initialization error:', e);
   }
+}
 
-  function openDeliveryStatusModal(id, status) {
-    document.getElementById('delivery-status-modal').classList.remove('hidden');
-    document.getElementById('delivery-modal-order-id').value = id;
-    document.getElementById('delivery-modal-order-id-display').textContent = id;
-    document.querySelectorAll('input[name="delivery-status"]').forEach(r => r.checked = r.value === status);
+/**
+ * Update existing charts with new data
+ */
+function updateCharts() {
+  if (typeof Chart === 'undefined') return;
+  
+  console.log('📈 Updating charts...');
+  
+  try {
+    // Update orders chart
+    if (ordersChart) {
+      const pending = allOrders.filter(o => o.payment_status === 'pending').length;
+      const paid = allOrders.filter(o => o.payment_status === 'paid').length;
+      const failed = allOrders.filter(o => o.payment_status === 'failed').length;
+      
+      ordersChart.data.datasets[0].data = [paid, pending, failed];
+      ordersChart.update();
+    }
+    
+    // Update revenue chart
+    if (revenueChart) {
+      const revenueData = [];
+      
+      for (let i = 6; i >= 0; i--) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        
+        const dayRevenue = allOrders
+          .filter(o => {
+            if (o.payment_status !== 'paid') return false;
+            const orderDate = new Date(o.created_at);
+            return orderDate.toDateString() === date.toDateString();
+          })
+          .reduce((sum, o) => sum + parseFloat(o.total || 0), 0);
+        
+        revenueData.push(dayRevenue);
+      }
+      
+      revenueChart.data.datasets[0].data = revenueData;
+      revenueChart.update();
+    }
+    
+    console.log('✅ Charts updated');
+    
+  } catch (e) {
+    console.error('❌ Chart update error:', e);
+  }
+}
+
+// ==================== SEARCH & FILTER ====================
+
+/**
+ * Search orders by ID or customer name
+ */
+function searchOrders() {
+  const searchVal = document.getElementById('search-input')?.value.toLowerCase() || '';
+  
+  console.log(`🔍 Searching orders: "${searchVal}"`);
+  
+  displayedOrders = allOrders.filter(o => {
+    const orderId = (o.order_id || '').toLowerCase();
+    const customerName = (o.customer_name || '').toLowerCase();
+    return orderId.includes(searchVal) || customerName.includes(searchVal);
+  });
+  
+  renderOrders();
+}
+
+/**
+ * Filter orders by payment status
+ * @param {string} status - Filter status ('all', 'pending', 'paid', 'failed')
+ * @param {HTMLElement} btn - Filter button element
+ */
+function filterOrders(status, btn) {
+  console.log(`🔍 Filtering orders by: ${status}`);
+  
+  // Update current filter
+  currentFilter = status;
+  
+  // Update button states
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  
+  // Re-render orders
+  renderOrders();
+}
+
+// ==================== MODALS ====================
+
+/**
+ * Open payment status modal
+ * @param {string} orderId - Order ID
+ * @param {string} currentStatus - Current payment status
+ */
+function openStatusModal(orderId, currentStatus) {
+  console.log(`💳 Opening payment status modal for order: ${orderId}`);
+  
+  const modal = document.getElementById('status-modal');
+  const orderIdInput = document.getElementById('modal-order-id');
+  const orderIdDisplay = document.getElementById('modal-order-id-display');
+  
+  if (!modal || !orderIdInput || !orderIdDisplay) {
+    console.error('Modal elements not found');
+    return;
   }
   
-  function closeDeliveryStatusModal(e) { 
-    if (!e || e.target === e.currentTarget) {
-      document.getElementById('delivery-status-modal').classList.add('hidden'); 
-    }
-  }
+  // Set order info
+  modal.classList.remove('hidden');
+  orderIdInput.value = orderId || '';
+  orderIdDisplay.textContent = orderId || 'N/A';
+  
+  // Set current status radio
+  document.querySelectorAll('input[name="status"]').forEach(radio => {
+    radio.checked = radio.value === (currentStatus || 'pending');
+  });
+}
 
-  async function updateOrderStatus() {
-    const id = document.getElementById('modal-order-id').value;
-    const selected = document.querySelector('input[name="status"]:checked');
-    if (!selected) return;
-    
-    try {
-      const res = await fetch(`/api/admin/update-order-status`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ order_id: id, status: selected.value })
-      });
-      
-      const data = await res.json();
-      if (data.success) { 
-        showToast('Status updated', 'success'); 
-        await loadOrders(); 
-        await loadStats(); 
-        closeStatusModal(); 
-      }
-    } catch(e) { 
-      showToast('Update failed', 'error'); 
-    }
+/**
+ * Close payment status modal
+ * @param {Event} event - Click event (optional)
+ */
+function closeStatusModal(event) {
+  const modal = document.getElementById('status-modal');
+  if (!modal) return;
+  
+  if (!event || event.target === event.currentTarget) {
+    modal.classList.add('hidden');
   }
+}
 
-  async function updateDeliveryStatus() {
-    const id = document.getElementById('delivery-modal-order-id').value;
-    const selected = document.querySelector('input[name="delivery-status"]:checked');
-    if (!selected) return;
-    
-    try {
-      const res = await fetch(`/api/admin/update-delivery-status`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ order_id: id, delivery_status: selected.value })
-      });
-      
-      const data = await res.json();
-      if (data.success) { 
-        showToast('Delivery updated', 'success'); 
-        await loadOrders(); 
-        closeDeliveryStatusModal(); 
-      }
-    } catch(e) { 
-      showToast('Update failed', 'error'); 
-    }
+/**
+ * Open delivery status modal
+ * @param {string} orderId - Order ID
+ * @param {string} currentStatus - Current delivery status
+ */
+function openDeliveryStatusModal(orderId, currentStatus) {
+  console.log(`🚚 Opening delivery status modal for order: ${orderId}`);
+  
+  const modal = document.getElementById('delivery-status-modal');
+  const orderIdInput = document.getElementById('delivery-modal-order-id');
+  const orderIdDisplay = document.getElementById('delivery-modal-order-id-display');
+  
+  if (!modal || !orderIdInput || !orderIdDisplay) {
+    console.error('Delivery modal elements not found');
+    return;
   }
+  
+  // Set order info
+  modal.classList.remove('hidden');
+  orderIdInput.value = orderId || '';
+  orderIdDisplay.textContent = orderId || 'N/A';
+  
+  // Set current status radio
+  document.querySelectorAll('input[name="delivery-status"]').forEach(radio => {
+    radio.checked = radio.value === (currentStatus || 'placed');
+  });
+}
 
-  function logout() {
-    if (confirm('Logout?')) {
-      localStorage.removeItem('adminToken');
-      window.location.href = 'login.html';
-    }
+/**
+ * Close delivery status modal
+ * @param {Event} event - Click event (optional)
+ */
+function closeDeliveryStatusModal(event) {
+  const modal = document.getElementById('delivery-status-modal');
+  if (!modal) return;
+  
+  if (!event || event.target === event.currentTarget) {
+    modal.classList.add('hidden');
   }
+}
 
-  function exportOrders() {
-    if (allOrders.length === 0) return;
-    
-    let csv = 'Order ID,Customer,Total,Payment,Delivery,Date\n';
-    allOrders.forEach(o => {
-      csv += `"${o.order_id}","${o.customer_name}",${o.total},"${o.payment_status}","${o.delivery_status}","${new Date(o.created_at).toLocaleString()}"\n`;
+// ==================== UPDATE ORDER STATUS ====================
+
+/**
+ * Update order payment status
+ */
+async function updateOrderStatus() {
+  const orderId = document.getElementById('modal-order-id')?.value;
+  const selectedRadio = document.querySelector('input[name="status"]:checked');
+  
+  if (!orderId) {
+    showToast('Order ID missing', 'error');
+    return;
+  }
+  
+  if (!selectedRadio) {
+    showToast('Please select a payment status', 'error');
+    return;
+  }
+  
+  const newStatus = selectedRadio.value;
+  
+  console.log(`💳 Updating payment status for order ${orderId} to: ${newStatus}`);
+  
+  try {
+    // Send API request
+    const data = await apiFetch('/admin/update-order-status', {
+      method: 'PATCH',
+      body: JSON.stringify({
+        order_id: orderId,
+        status: newStatus
+      })
     });
     
-    const blob = new Blob([csv], { type: 'text/csv' });
+    if (data.success) {
+      showToast('Payment status updated successfully', 'success');
+      closeStatusModal();
+      
+      // Refresh data
+      await loadOrders();
+      await loadStats();
+      updateCharts();
+    } else {
+      showToast(data.message || 'Failed to update status', 'error');
+    }
+    
+  } catch (e) {
+    console.error('❌ Update payment status error:', e);
+    showToast(e.message || 'Error updating status', 'error');
+  }
+}
+
+/**
+ * Update order delivery status
+ */
+async function updateDeliveryStatus() {
+  const orderId = document.getElementById('delivery-modal-order-id')?.value;
+  const selectedRadio = document.querySelector('input[name="delivery-status"]:checked');
+  
+  if (!orderId) {
+    showToast('Order ID missing', 'error');
+    return;
+  }
+  
+  if (!selectedRadio) {
+    showToast('Please select a delivery status', 'error');
+    return;
+  }
+  
+  const newStatus = selectedRadio.value;
+  
+  console.log(`🚚 Updating delivery status for order ${orderId} to: ${newStatus}`);
+  
+  try {
+    // Send API request
+    const data = await apiFetch('/admin/update-delivery-status', {
+      method: 'PATCH',
+      body: JSON.stringify({
+        order_id: orderId,
+        delivery_status: newStatus
+      })
+    });
+    
+    if (data.success) {
+      showToast('Delivery status updated successfully', 'success');
+      closeDeliveryStatusModal();
+      
+      // Refresh data
+      await loadOrders();
+      await loadStats();
+    } else {
+      showToast(data.message || 'Failed to update status', 'error');
+    }
+    
+  } catch (e) {
+    console.error('❌ Update delivery status error:', e);
+    showToast(e.message || 'Error updating status', 'error');
+  }
+}
+
+// ==================== UTILITIES ====================
+
+/**
+ * Refresh entire dashboard
+ */
+async function refreshDashboard() {
+  console.log('🔄 Refreshing dashboard...');
+  showToast('Refreshing data...', 'info');
+  
+  try {
+    await Promise.all([
+      loadOrders(),
+      loadStats()
+    ]);
+    updateCharts();
+    showToast('Dashboard refreshed', 'success');
+  } catch (e) {
+    console.error('❌ Refresh error:', e);
+    showToast('Failed to refresh', 'error');
+  }
+}
+
+/**
+ * Export orders to CSV
+ */
+function exportOrders() {
+  console.log('📥 Exporting orders to CSV...');
+  
+  if (allOrders.length === 0) {
+    showToast('No orders to export', 'error');
+    return;
+  }
+  
+  try {
+    // Build CSV content
+    let csv = 'Order ID,Customer Name,Customer Email,Total,Payment Status,Delivery Status,Created At\n';
+    
+    allOrders.forEach(order => {
+      const orderId = (order.order_id || '').replace(/"/g, '""');
+      const customerName = (order.customer_name || '').replace(/"/g, '""');
+      const customerEmail = (order.customer_email || '').replace(/"/g, '""');
+      const total = parseFloat(order.total || 0).toFixed(2);
+      const paymentStatus = order.payment_status || 'pending';
+      const deliveryStatus = order.delivery_status || 'placed';
+      const createdAt = order.created_at ? new Date(order.created_at).toLocaleString() : 'N/A';
+      
+      csv += `"${orderId}","${customerName}","${customerEmail}",${total},"${paymentStatus}","${deliveryStatus}","${createdAt}"\n`;
+    });
+    
+    // Create blob and download
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `orders_${Date.now()}.csv`;
+    link.download = `kusina-orders-${Date.now()}.csv`;
     link.click();
     URL.revokeObjectURL(url);
     
-    showToast('Exported', 'success');
+    showToast('Orders exported successfully', 'success');
+    console.log('✅ Orders exported');
+    
+  } catch (e) {
+    console.error('❌ Export error:', e);
+    showToast('Failed to export orders', 'error');
   }
+}
 
-  function showToast(msg, type = 'info') {
-    const toast = document.getElementById('toast');
-    if (!toast) return;
+/**
+ * Logout admin
+ */
+function logout() {
+  if (confirm('Are you sure you want to logout?')) {
+    console.log('🚪 Logging out admin...');
     
-    toast.textContent = msg;
+    // Clear tokens
+    localStorage.removeItem('adminToken');
+    sessionStorage.removeItem('adminToken');
+    localStorage.removeItem('currentUser');
     
-    if (type === 'success') {
-      toast.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
-    } else if (type === 'error') {
-      toast.style.background = 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)';
-    } else {
-      toast.style.background = '#1f2937';
+    // Disconnect socket
+    if (socket && socket.connected) {
+      socket.disconnect();
     }
     
-    toast.style.display = 'block';
+    showToast('Logged out successfully', 'success');
     
-    clearTimeout(toast.hideTimeout);
-    toast.hideTimeout = setTimeout(() => { 
-      toast.style.display = 'none'; 
-    }, 3000);
+    // Redirect to login
+    setTimeout(() => {
+      window.location.href = 'login.html';
+    }, 1000);
   }
+}
+
+// ==================== WINDOW CLEANUP ====================
+
+/**
+ * Cleanup on page unload
+ */
+window.addEventListener('beforeunload', () => {
+  if (socket && socket.connected) {
+    socket.disconnect();
+  }
+  
+  // Destroy charts
+  if (ordersChart) {
+    ordersChart.destroy();
+  }
+  if (revenueChart) {
+    revenueChart.destroy();
+  }
+});
+
+console.log('✅ Dashboard script loaded successfully');
 </script>
 
 </body>

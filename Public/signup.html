@@ -307,8 +307,6 @@ document.getElementById('verification-form').addEventListener('submit', async (e
   }
 
   try {
-    console.log('🔐 Verifying code for:', userEmail);
-    
     const response = await fetch('http://localhost:3000/auth/verify-code', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -320,33 +318,20 @@ document.getElementById('verification-form').addEventListener('submit', async (e
     if (data.success) {
       clearInterval(codeExpiryTimer);
       
-      // Save token and user data - FIXED to use correct storage
-      if (data.user.role === 'admin') {
-        // Admin uses localStorage
-        localStorage.setItem('adminToken', data.token);
-      } else {
-        // Regular users use sessionStorage
-        sessionStorage.setItem('authToken', data.token);
-      }
-      
-      // Save user info
+      // Save token and user data
+      sessionStorage.setItem('authToken', data.token);
       localStorage.setItem('currentUser', JSON.stringify(data.user));
-      
-      console.log('✅ Account created successfully');
-      console.log('👤 User:', data.user);
-      console.log('🔑 Token saved');
       
       showSuccessModal('Welcome!', `Account created successfully! Welcome, ${data.user.name}!`);
       
-      // Redirect based on role
       setTimeout(() => {
-        handleRedirectByRole(data.user.role);
+        window.location.href = data.user.role === 'admin' ? 'dashboard.html' : 'index.html';
       }, 2000);
     } else {
-      showError(data.message || 'Invalid verification code');
+      showError(data.message);
     }
   } catch (error) {
-    console.error('❌ Verification error:', error);
+    console.error('Verification error:', error);
     showError('Verification failed. Please try again.');
   }
 });
@@ -472,43 +457,6 @@ function closeModal() {
   document.getElementById('success-modal').classList.add('hidden');
   document.getElementById('success-modal').classList.remove('flex');
 }
-
-function handleRedirectByRole(role) {
-  console.log('🔄 Redirecting user with role:', role);
-  
-  if (role === 'admin') {
-    console.log('➡️ Admin detected, redirecting to dashboard');
-    window.location.href = 'dashboard.html';
-  } else {
-    console.log('➡️ Customer detected, redirecting to home');
-    window.location.href = 'index.html';
-  }
-}
-
-// Check if already logged in on page load
-window.addEventListener('DOMContentLoaded', function() {
-  console.log('🔍 Checking login status...');
-  
-  // Check if user just logged out
-  const justLoggedOut = sessionStorage.getItem('justLoggedOut');
-  if (justLoggedOut) {
-    sessionStorage.removeItem('justLoggedOut');
-    console.log('🚪 User just logged out, showing login page');
-    return;
-  }
-  
-  // Check for existing tokens
-  const token = sessionStorage.getItem('authToken');
-  const adminToken = localStorage.getItem('adminToken');
-  const user = JSON.parse(localStorage.getItem('currentUser') || '{}');
-  
-  if ((token || adminToken) && user.email) {
-    console.log('✅ User already logged in:', user.email, 'Role:', user.role);
-    handleRedirectByRole(user.role);
-  } else {
-    console.log('❌ No valid session found, showing login form');
-  }
-});
 
 console.log('Signup with verification loaded');
 </script>
