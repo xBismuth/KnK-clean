@@ -1,0 +1,756 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Customer Support - Admin Dashboard - Kusina ni Katya</title>
+
+<!-- Tailwind CSS CDN -->
+<script src="https://cdn.tailwindcss.com"></script>
+
+<!-- Google Font -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          accent: '#cda45e',
+          'accent-light': '#e5b66a',
+          'accent-dark': '#b8924e',
+          dark: '#1a1a1a',
+          'dark-light': '#2d2d2d',
+        },
+        fontFamily: {
+          Inter: ['Inter', 'sans-serif'],
+        },
+      },
+    },
+  }
+</script>
+
+<style>
+@font-face {
+  font-family: 'Quiapo';
+  src: url('assets/fonts/Quiapo_Free.ttf') format('opentype');
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+}
+
+.font-quiapo {
+  font-family: 'Quiapo', 'Inter', sans-serif;
+}
+
+/* Modal animation */
+@keyframes modalFadeIn {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.modal-content {
+  animation: modalFadeIn 0.3s ease-out;
+}
+
+/* Toast notification */
+@keyframes slideInRight {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+.toast {
+  animation: slideInRight 0.3s ease-out;
+}
+
+/* Table hover effect */
+.table-row {
+  transition: all 0.2s ease;
+}
+
+.table-row:hover {
+  background-color: #fef9f3;
+  transform: translateX(4px);
+}
+
+/* Badge styles */
+.badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.badge-pending {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.badge-replied {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cda45e;
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #b8924e;
+}
+</style>
+</head>
+
+<body class="bg-gray-50">
+
+<!-- Toast Notification Container -->
+<div id="toast-container" class="fixed top-4 right-4 z-50 space-y-2"></div>
+
+<!-- HEADER -->
+<header class="bg-white shadow-md sticky top-0 z-40">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex justify-between items-center h-16">
+      <div class="flex items-center space-x-3">
+        <img src="assets/images/logo1.png" alt="Logo" class="w-10 h-10 rounded-full" />
+        <div>
+          <h1 class="font-quiapo text-xl font-bold text-accent">Kusina ni Katya</h1>
+          <p class="text-xs text-gray-600">Admin Customer Support</p>
+        </div>
+      </div>
+      
+      <div class="flex items-center space-x-4">
+        <a href="admin-dashboard.html" class="text-sm text-gray-600 hover:text-accent transition-colors">← Back to Dashboard</a>
+        <button onclick="logout()" class="px-4 py-2 bg-red-500 text-white text-sm rounded-lg hover:bg-red-600 transition-colors">
+          Logout
+        </button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- MAIN CONTENT -->
+<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  
+  <!-- Page Header -->
+  <div class="mb-8">
+    <h2 class="text-3xl font-bold text-dark mb-2">Customer Support Messages</h2>
+    <p class="text-gray-600">View and respond to customer inquiries</p>
+  </div>
+
+  <!-- Stats Cards -->
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+    <div class="bg-white rounded-xl shadow-md p-6">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-gray-600 text-sm font-medium">Total Messages</p>
+          <p id="stat-total" class="text-3xl font-bold text-dark mt-1">0</p>
+        </div>
+        <div class="w-12 h-12 bg-accent/10 rounded-full flex items-center justify-center">
+          <svg class="w-6 h-6 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-md p-6">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-gray-600 text-sm font-medium">Pending</p>
+          <p id="stat-pending" class="text-3xl font-bold text-amber-600 mt-1">0</p>
+        </div>
+        <div class="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center">
+          <svg class="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-md p-6">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-gray-600 text-sm font-medium">Replied</p>
+          <p id="stat-replied" class="text-3xl font-bold text-green-600 mt-1">0</p>
+        </div>
+        <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+          <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters and Search -->
+  <div class="bg-white rounded-xl shadow-md p-6 mb-6">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <!-- Search -->
+      <div class="md:col-span-2">
+        <label class="block text-sm font-medium text-gray-700 mb-2">Search</label>
+        <input 
+          type="text" 
+          id="search-input" 
+          placeholder="Search by name, email, or subject..." 
+          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent focus:border-accent transition-all"
+          onkeyup="filterTickets()"
+        />
+      </div>
+
+      <!-- Status Filter -->
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-2">Status Filter</label>
+        <select 
+          id="status-filter" 
+          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent focus:border-accent transition-all"
+          onchange="filterTickets()"
+        >
+          <option value="All">All Messages</option>
+          <option value="Pending">Pending Only</option>
+          <option value="Replied">Replied Only</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="mt-4 flex items-center justify-between">
+      <button onclick="loadTickets()" class="text-sm text-accent hover:text-accent-dark font-medium flex items-center gap-2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+        </svg>
+        Refresh
+      </button>
+      <p id="results-count" class="text-sm text-gray-600"></p>
+    </div>
+  </div>
+
+  <!-- Messages Table -->
+  <div class="bg-white rounded-xl shadow-md overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full">
+        <thead class="bg-gradient-to-r from-accent to-accent-dark text-white">
+          <tr>
+            <th class="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider">ID</th>
+            <th class="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider">Name</th>
+            <th class="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider">Email</th>
+            <th class="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider">Subject</th>
+            <th class="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider">Status</th>
+            <th class="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider">Date</th>
+            <th class="px-6 py-4 text-center text-xs font-semibold uppercase tracking-wider">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="tickets-tbody" class="divide-y divide-gray-200">
+          <!-- Will be populated by JavaScript -->
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Empty State -->
+    <div id="empty-state" class="hidden text-center py-12">
+      <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
+      </svg>
+      <p class="text-gray-500 text-lg font-medium">No messages found</p>
+      <p class="text-gray-400 text-sm mt-1">Check your filters or try refreshing</p>
+    </div>
+
+    <!-- Loading State -->
+    <div id="loading-state" class="text-center py-12">
+      <svg class="animate-spin h-12 w-12 text-accent mx-auto mb-4" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+      </svg>
+      <p class="text-gray-600">Loading messages...</p>
+    </div>
+  </div>
+</main>
+
+<!-- Reply Modal -->
+<div id="reply-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+  <div class="modal-content bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+    <div class="sticky top-0 bg-gradient-to-r from-accent to-accent-dark text-white px-6 py-4 rounded-t-2xl">
+      <div class="flex items-center justify-between">
+        <h3 class="text-xl font-bold">Reply to Customer</h3>
+        <button onclick="closeReplyModal()" class="text-white hover:text-gray-200 transition-colors">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="p-6 space-y-4">
+      <!-- Customer Info -->
+      <div class="bg-gray-50 rounded-lg p-4">
+        <p class="text-sm text-gray-600 mb-2"><strong>Customer:</strong> <span id="modal-customer-name"></span></p>
+        <p class="text-sm text-gray-600 mb-2"><strong>Email:</strong> <span id="modal-customer-email"></span></p>
+        <p class="text-sm text-gray-600"><strong>Subject:</strong> <span id="modal-subject"></span></p>
+      </div>
+
+      <!-- Original Message -->
+      <div>
+        <label class="block text-sm font-semibold text-gray-700 mb-2">Original Message:</label>
+        <div class="bg-blue-50 border-l-4 border-blue-500 rounded-r-lg p-4">
+          <p id="modal-original-message" class="text-sm text-gray-700 whitespace-pre-wrap"></p>
+        </div>
+      </div>
+
+      <!-- Reply Textarea -->
+      <div>
+        <label class="block text-sm font-semibold text-gray-700 mb-2">Your Reply: <span class="text-red-500">*</span></label>
+        <textarea 
+          id="reply-textarea" 
+          rows="8" 
+          placeholder="Type your reply here..." 
+          class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-accent focus:border-accent transition-all resize-none"
+        ></textarea>
+        <p class="text-xs text-gray-500 mt-1">This will be sent to the customer via email</p>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex gap-3 pt-4">
+        <button 
+          onclick="sendReply()" 
+          id="send-reply-btn"
+          class="flex-1 bg-gradient-to-r from-accent to-accent-dark text-white py-3 rounded-lg font-semibold hover:shadow-lg transition-all flex items-center justify-center gap-2"
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+          </svg>
+          Send Email Reply
+        </button>
+        <button 
+          onclick="closeReplyModal()" 
+          class="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition-all"
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- View Details Modal -->
+<div id="details-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+  <div class="modal-content bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+    <div class="sticky top-0 bg-gradient-to-r from-accent to-accent-dark text-white px-6 py-4 rounded-t-2xl">
+      <div class="flex items-center justify-between">
+        <h3 class="text-xl font-bold">Message Details</h3>
+        <button onclick="closeDetailsModal()" class="text-white hover:text-gray-200 transition-colors">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="p-6 space-y-4">
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <p class="text-sm font-semibold text-gray-600">Ticket ID</p>
+          <p id="details-id" class="text-lg font-bold text-dark"></p>
+        </div>
+        <div>
+          <p class="text-sm font-semibold text-gray-600">Status</p>
+          <span id="details-status"></span>
+        </div>
+      </div>
+
+      <div>
+        <p class="text-sm font-semibold text-gray-600 mb-1">Customer Name</p>
+        <p id="details-name" class="text-dark"></p>
+      </div>
+
+      <div>
+        <p class="text-sm font-semibold text-gray-600 mb-1">Email</p>
+        <p id="details-email" class="text-dark"></p>
+      </div>
+
+      <div>
+        <p class="text-sm font-semibold text-gray-600 mb-1">Phone</p>
+        <p id="details-phone" class="text-dark"></p>
+      </div>
+
+      <div>
+        <p class="text-sm font-semibold text-gray-600 mb-1">Subject</p>
+        <p id="details-subject" class="text-dark"></p>
+      </div>
+
+      <div>
+        <p class="text-sm font-semibold text-gray-600 mb-1">Message</p>
+        <div class="bg-gray-50 rounded-lg p-4">
+          <p id="details-message" class="text-gray-700 whitespace-pre-wrap"></p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <p class="text-sm font-semibold text-gray-600 mb-1">Submitted</p>
+          <p id="details-created" class="text-sm text-gray-700"></p>
+        </div>
+        <div>
+          <p class="text-sm font-semibold text-gray-600 mb-1">Replied At</p>
+          <p id="details-replied" class="text-sm text-gray-700"></p>
+        </div>
+      </div>
+
+      <button onclick="closeDetailsModal()" class="w-full py-3 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition-all">
+        Close
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ==================== GLOBAL STATE ====================
+let allTickets = [];
+let currentTicket = null;
+const API_BASE = '';
+
+// ==================== AUTH CHECK ====================
+function checkAuth() {
+  const token = sessionStorage.getItem('authToken');
+  const user = JSON.parse(localStorage.getItem('currentUser') || 'null');
+  
+  if (!token || !user || user.role !== 'admin') {
+    alert('⛔ Access denied. Admin only.');
+    window.location.href = 'login.html';
+    return false;
+  }
+  return true;
+}
+
+function logout() {
+  if (confirm('Are you sure you want to logout?')) {
+    localStorage.removeItem('currentUser');
+    sessionStorage.removeItem('authToken');
+    window.location.href = 'login.html';
+  }
+}
+
+// ==================== API CALLS ====================
+async function loadTickets() {
+  const token = sessionStorage.getItem('authToken');
+  const loadingState = document.getElementById('loading-state');
+  const emptyState = document.getElementById('empty-state');
+  const tbody = document.getElementById('tickets-tbody');
+  
+  loadingState.classList.remove('hidden');
+  emptyState.classList.add('hidden');
+  tbody.innerHTML = '';
+  
+  try {
+    const response = await fetch('/api/support', {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    
+    if (!response.ok) throw new Error('Failed to load tickets');
+    
+    const data = await response.json();
+    allTickets = data.tickets || [];
+    
+    loadingState.classList.add('hidden');
+    
+    if (allTickets.length === 0) {
+      emptyState.classList.remove('hidden');
+    }
+    
+    updateStats();
+    filterTickets();
+    
+  } catch (error) {
+    console.error('Error loading tickets:', error);
+    loadingState.classList.add('hidden');
+    showToast('Failed to load messages', 'error');
+  }
+}
+
+function updateStats() {
+  const total = allTickets.length;
+  const pending = allTickets.filter(t => t.status === 'Pending').length;
+  const replied = allTickets.filter(t => t.status === 'Replied').length;
+  
+  document.getElementById('stat-total').textContent = total;
+  document.getElementById('stat-pending').textContent = pending;
+  document.getElementById('stat-replied').textContent = replied;
+}
+
+function filterTickets() {
+  const searchTerm = document.getElementById('search-input').value.toLowerCase();
+  const statusFilter = document.getElementById('status-filter').value;
+  
+  let filtered = allTickets;
+  
+  // Filter by status
+  if (statusFilter !== 'All') {
+    filtered = filtered.filter(t => t.status === statusFilter);
+  }
+  
+  // Filter by search term
+  if (searchTerm) {
+    filtered = filtered.filter(t => 
+      t.name.toLowerCase().includes(searchTerm) ||
+      t.email.toLowerCase().includes(searchTerm) ||
+      t.subject.toLowerCase().includes(searchTerm) ||
+      t.message.toLowerCase().includes(searchTerm)
+    );
+  }
+  
+  renderTickets(filtered);
+  
+  const count = filtered.length;
+  const total = allTickets.length;
+  document.getElementById('results-count').textContent = 
+    `Showing ${count} of ${total} message${total !== 1 ? 's' : ''}`;
+}
+
+function renderTickets(tickets) {
+  const tbody = document.getElementById('tickets-tbody');
+  const emptyState = document.getElementById('empty-state');
+  
+  tbody.innerHTML = '';
+  
+  if (tickets.length === 0) {
+    emptyState.classList.remove('hidden');
+    return;
+  }
+  
+  emptyState.classList.add('hidden');
+  
+  tickets.forEach(ticket => {
+    const row = document.createElement('tr');
+    row.className = 'table-row';
+    
+    const statusBadge = ticket.status === 'Pending' 
+      ? '<span class="badge badge-pending">Pending</span>'
+      : '<span class="badge badge-replied">Replied</span>';
+    
+    const date = new Date(ticket.created_at).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    });
+    
+    row.innerHTML = `
+      <td class="px-6 py-4 text-sm font-medium text-gray-900">#${ticket.id}</td>
+      <td class="px-6 py-4 text-sm text-gray-900">${escapeHtml(ticket.name)}</td>
+      <td class="px-6 py-4 text-sm text-gray-600">${escapeHtml(ticket.email)}</td>
+      <td class="px-6 py-4 text-sm text-gray-900">${escapeHtml(ticket.subject)}</td>
+      <td class="px-6 py-4">${statusBadge}</td>
+      <td class="px-6 py-4 text-sm text-gray-600">${date}</td>
+      <td class="px-6 py-4 text-center">
+        <div class="flex items-center justify-center gap-2">
+          <button onclick='viewDetails(${JSON.stringify(ticket).replace(/'/g, "&apos;")})' 
+                  class="px-3 py-1.5 bg-blue-500 text-white text-xs rounded-lg hover:bg-blue-600 transition-colors">
+            View
+          </button>
+          <button onclick='openReplyModal(${JSON.stringify(ticket).replace(/'/g, "&apos;")})' 
+                  class="px-3 py-1.5 bg-accent text-white text-xs rounded-lg hover:bg-accent-dark transition-colors">
+            Reply
+          </button>
+        </div>
+      </td>
+    `;
+    
+    tbody.appendChild(row);
+  });
+}
+
+// ==================== MODALS ====================
+function openReplyModal(ticket) {
+  currentTicket = ticket;
+  
+  document.getElementById('modal-customer-name').textContent = ticket.name;
+  document.getElementById('modal-customer-email').textContent = ticket.email;
+  document.getElementById('modal-subject').textContent = ticket.subject;
+  document.getElementById('modal-original-message').textContent = ticket.message;
+  document.getElementById('reply-textarea').value = '';
+  
+  document.getElementById('reply-modal').classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeReplyModal() {
+  document.getElementById('reply-modal').classList.add('hidden');
+  document.body.style.overflow = 'auto';
+  currentTicket = null;
+}
+
+function viewDetails(ticket) {
+  document.getElementById('details-id').textContent = `#${ticket.id}`;
+  
+  const statusBadge = ticket.status === 'Pending' 
+    ? '<span class="badge badge-pending">Pending</span>'
+    : '<span class="badge badge-replied">Replied</span>';
+  document.getElementById('details-status').innerHTML = statusBadge;
+  
+  document.getElementById('details-name').textContent = ticket.name;
+  document.getElementById('details-email').textContent = ticket.email;
+  document.getElementById('details-phone').textContent = ticket.phone || 'Not provided';
+  document.getElementById('details-subject').textContent = ticket.subject;
+  document.getElementById('details-message').textContent = ticket.message;
+  
+  const createdDate = new Date(ticket.created_at).toLocaleString();
+  document.getElementById('details-created').textContent = createdDate;
+  
+  const repliedDate = ticket.replied_at 
+    ? new Date(ticket.replied_at).toLocaleString()
+    : 'Not yet replied';
+  document.getElementById('details-replied').textContent = repliedDate;
+  
+  document.getElementById('details-modal').classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeDetailsModal() {
+  document.getElementById('details-modal').classList.add('hidden');
+  document.body.style.overflow = 'auto';
+}
+
+// ==================== SEND REPLY ====================
+async function sendReply() {
+  if (!currentTicket) return;
+  
+  const reply = document.getElementById('reply-textarea').value.trim();
+  
+  if (!reply) {
+    showToast('Please enter a reply message', 'error');
+    return;
+  }
+  
+  const btn = document.getElementById('send-reply-btn');
+  const originalText = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<svg class="animate-spin h-5 w-5 mx-auto" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>';
+  
+  try {
+    const token = sessionStorage.getItem('authToken');
+    const response = await fetch('/api/support/reply', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        ticketId: currentTicket.id,
+        email: currentTicket.email,
+        subject: currentTicket.subject,
+        reply: reply,
+        customerName: currentTicket.name
+      })
+    });
+    
+    if (!response.ok) throw new Error('Failed to send reply');
+    
+    showToast('✅ Reply sent successfully via email', 'success');
+    closeReplyModal();
+    loadTickets(); // Reload to show updated status
+    
+  } catch (error) {
+    console.error('Error sending reply:', error);
+    showToast('Failed to send reply. Please try again.', 'error');
+    btn.disabled = false;
+    btn.innerHTML = originalText;
+  }
+}
+
+// ==================== TOAST NOTIFICATIONS ====================
+function showToast(message, type = 'success') {
+  const container = document.getElementById('toast-container');
+  
+  const toast = document.createElement('div');
+  toast.className = `toast bg-white rounded-lg shadow-lg p-4 flex items-center gap-3 max-w-md`;
+  
+  const icon = type === 'success' 
+    ? '<svg class="w-6 h-6 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>'
+    : '<svg class="w-6 h-6 text-red-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>';
+  
+  toast.innerHTML = `
+    ${icon}
+    <p class="text-sm font-medium text-gray-900">${message}</p>
+    <button onclick="this.parentElement.remove()" class="ml-auto text-gray-400 hover:text-gray-600">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+      </svg>
+    </button>
+  `;
+  
+  container.appendChild(toast);
+  
+  setTimeout(() => {
+    toast.style.animation = 'slideInRight 0.3s ease-out reverse';
+    setTimeout(() => toast.remove(), 300);
+  }, 5000);
+}
+
+// ==================== UTILITIES ====================
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+// ==================== KEYBOARD SHORTCUTS ====================
+document.addEventListener('keydown', (e) => {
+  // ESC to close modals
+  if (e.key === 'Escape') {
+    closeReplyModal();
+    closeDetailsModal();
+  }
+  
+  // Ctrl/Cmd + R to refresh
+  if ((e.ctrlKey || e.metaKey) && e.key === 'r') {
+    e.preventDefault();
+    loadTickets();
+  }
+});
+
+// Click outside modal to close
+document.getElementById('reply-modal').addEventListener('click', (e) => {
+  if (e.target.id === 'reply-modal') {
+    closeReplyModal();
+  }
+});
+
+document.getElementById('details-modal').addEventListener('click', (e) => {
+  if (e.target.id === 'details-modal') {
+    closeDetailsModal();
+  }
+});
+
+// ==================== INITIALIZATION ====================
+document.addEventListener('DOMContentLoaded', () => {
+  console.log('🚀 Admin Customer Support Dashboard initializing...');
+  
+  // Check authentication
+  if (!checkAuth()) return;
+  
+  // Load tickets
+  loadTickets();
+  
+  // Auto-refresh every 30 seconds
+  setInterval(() => {
+    loadTickets();
+  }, 30000);
+  
+  console.log('✅ Dashboard initialized successfully');
+});
+</script>
+
+</body>
+</html>
