@@ -519,19 +519,22 @@ function proceedToVerification() {
     if (!data) throw new Error('No response from server');
 
     if (data.success) {
-      // Admin shortcut: skip verification
-      if (data.skipVerification) {
-        // Save admin token & user info and redirect
-        if (data.token) sessionStorage.setItem('authToken', data.token);
-        if (data.user) localStorage.setItem('currentUser', JSON.stringify(data.user));
+  // Admin shortcut: skip verification
+  if (data.skipVerification) {
+    // Save admin token & user info and redirect
+    if (data.token) {
+      sessionStorage.setItem('authToken', data.token);
+      localStorage.setItem('adminToken', data.token);  // ← ADD THIS LINE
+    }
+    if (data.user) localStorage.setItem('currentUser', JSON.stringify(data.user));
 
-        showSuccessModal('Welcome Admin!', `Welcome back, ${data.user?.name || 'Admin'}!`);
+    showSuccessModal('Welcome Admin!', `Welcome back, ${data.user?.name || 'Admin'}!`);
 
-        setTimeout(() => {
-          window.location.href = 'dashboard.html';
-        }, 1200);
-        return;
-      }
+    setTimeout(() => {
+      window.location.href = 'dashboard.html';
+    }, 1200);
+    return;
+  }
 
       // Regular flow: show verification form
       const credentialsForm = document.getElementById('credentials-form');

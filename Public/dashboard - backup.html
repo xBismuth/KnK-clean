@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Dashboard - Kusina ni Katya</title>
 <script src="https://cdn.tailwindcss.com"></script>
-<script src="/socket.io/socket.io.js"></script>
+<script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
@@ -252,6 +252,7 @@
     100% { background-position: -200% 0; }
   }
   
+  /* Toast Container */
   #toast-container {
     position: fixed;
     bottom: 24px;
@@ -289,6 +290,7 @@
     background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
   }
   
+  /* Responsive adjustments */
   @media (max-width: 768px) {
     .metric-card {
       padding: 16px;
@@ -357,6 +359,7 @@
   <!-- METRICS GRID -->
   <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
     
+    <!-- Total Orders Card -->
     <div class="metric-card">
       <div class="metric-icon bg-blue-50">
         <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -370,6 +373,7 @@
       <div class="text-xs text-gray-500 mt-2">All time</div>
     </div>
     
+    <!-- Revenue Card -->
     <div class="metric-card">
       <div class="metric-icon bg-green-50">
         <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -383,6 +387,7 @@
       <div class="text-xs text-gray-500 mt-2">Paid orders only</div>
     </div>
     
+    <!-- Pending Orders Card -->
     <div class="metric-card">
       <div class="metric-icon bg-yellow-50">
         <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -396,6 +401,7 @@
       <div class="text-xs text-gray-500 mt-2">Awaiting payment</div>
     </div>
     
+    <!-- Completed Orders Card -->
     <div class="metric-card">
       <div class="metric-icon bg-purple-50">
         <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -411,9 +417,10 @@
     
   </div>
 
-  <!-- CHARTS ROW -->
+  <!-- CHARTS ROW (Optional) -->
   <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
     
+    <!-- Orders Chart -->
     <div class="card">
       <h3 class="text-lg font-bold mb-4 text-gray-900">Orders Overview</h3>
       <div class="h-64">
@@ -421,6 +428,7 @@
       </div>
     </div>
     
+    <!-- Revenue Chart -->
     <div class="card">
       <h3 class="text-lg font-bold mb-4 text-gray-900">Revenue Trend</h3>
       <div class="h-64">
@@ -586,7 +594,7 @@ let token = null;
 let allOrders = [];
 let displayedOrders = [];
 let currentFilter = 'all';
-let socket = null; // Socket.IO instance
+let socket = null;
 let ordersChart = null;
 let revenueChart = null;
 
@@ -594,6 +602,9 @@ console.log('🚀 Dashboard loading...');
 
 // ==================== AUTH CHECK ====================
 
+/**
+ * Check if admin is authenticated
+ */
 function checkAuth() {
   token = localStorage.getItem('adminToken') || sessionStorage.getItem('adminToken');
   
@@ -612,6 +623,12 @@ function checkAuth() {
 
 // ==================== API FETCH HELPER ====================
 
+/**
+ * Generic API fetch with authentication
+ * @param {string} endpoint - API endpoint
+ * @param {object} options - Fetch options
+ * @returns {Promise<object>} Response data
+ */
 async function apiFetch(endpoint, options = {}) {
   if (!token) {
     throw new Error('No authentication token');
@@ -631,6 +648,7 @@ async function apiFetch(endpoint, options = {}) {
   
   const response = await fetch(`${API_URL}${endpoint}`, config);
   
+  // Handle auth errors
   if (response.status === 401 || response.status === 403) {
     console.log('⚠️ Admin token expired or invalid');
     showToast('Session expired. Please login again.', 'error');
@@ -656,6 +674,11 @@ async function apiFetch(endpoint, options = {}) {
 
 // ==================== TOAST NOTIFICATIONS ====================
 
+/**
+ * Show toast notification
+ * @param {string} message - Toast message
+ * @param {string} type - 'success', 'error', or 'info'
+ */
 function showToast(message, type = 'success') {
   const container = document.getElementById('toast-container');
   if (!container) return;
@@ -677,6 +700,7 @@ function showToast(message, type = 'success') {
   
   container.insertAdjacentHTML('beforeend', toastHTML);
   
+  // Auto remove after 3 seconds
   setTimeout(() => {
     const toast = document.getElementById(toastId);
     if (toast) {
@@ -690,12 +714,18 @@ function showToast(message, type = 'success') {
 
 // ==================== HELPER FUNCTIONS ====================
 
+/**
+ * Escape HTML to prevent XSS
+ */
 function escapeHtml(text) {
   const div = document.createElement('div');
   div.textContent = text || '';
   return div.innerHTML;
 }
 
+/**
+ * Escape HTML for attributes
+ */
 function escapeHtmlAttr(str) {
   if (!str) return '';
   return String(str)
@@ -709,27 +739,31 @@ function escapeHtmlAttr(str) {
 // ==================== INITIALIZATION ====================
 
 document.addEventListener('DOMContentLoaded', async () => {
-  console.log('📄 Initializing dashboard...');
+  console.log('🔄 Initializing dashboard...');
   
+  // Check authentication
   if (!checkAuth()) return;
   
+  // Load data in parallel
   await Promise.all([
     loadAdminInfo(),
     loadOrders(),
     loadStats()
   ]);
   
+  // Initialize charts
   initializeCharts();
-  initializeSocket(); // Initialize Socket.IO
+  
+  // Initialize Socket.IO
+  initializeSocket();
   
   console.log('✅ Dashboard initialized');
 });
 
-// ==================== SOCKET.IO INITIALIZATION ====================
+// ==================== SOCKET.IO ====================
 
 /**
- * Initialize Socket.IO connection for real-time updates
- * Connects to the backend and joins the admin room
+ * Initialize Socket.IO connection for admin
  */
 function initializeSocket() {
   // Prevent duplicate connections
@@ -750,10 +784,10 @@ function initializeSocket() {
     return;
   }
   
-  console.log('🔌 Connecting Socket.IO...');
+  console.log('🔌 Connecting admin Socket.IO...');
   
   try {
-    // Create socket connection to backend
+    // Create socket connection
     socket = io(window.location.origin, {
       transports: ['websocket', 'polling'],
       auth: { token: token },
@@ -764,12 +798,16 @@ function initializeSocket() {
     
     // Connection successful
     socket.on('connect', () => {
-      console.log('✅ Socket.IO connected:', socket.id);
+      console.log('✅ Socket.IO connected for admin:', socket.id);
       updateConnectionStatus(true);
       
-      // Join admin room to receive all order updates
-      socket.emit('admin-connect');
-      console.log('📢 Joined admin room');
+      // Join admin room
+      try {
+        socket.emit('admin-connect');
+        console.log('📢 Joined admin room');
+      } catch (e) {
+        console.error('Error joining admin room:', e);
+      }
     });
     
     // Disconnection
@@ -784,38 +822,38 @@ function initializeSocket() {
       updateConnectionStatus(false);
     });
     
-    // Listen for new orders from backend
+    // Listen for new orders
     socket.on('new-order', async (data) => {
       console.log('📦 New order received:', data);
       showToast(`New order #${data.order_id || 'N/A'} from ${data.customer_name || 'Customer'}`, 'info');
       
-      // Refresh orders list
+      // Refresh data
       await loadOrders();
       await loadStats();
       updateCharts();
     });
     
-    // Listen for order updates from backend
+    // Listen for order updates
     socket.on('order-updated', async (data) => {
       console.log('🔄 Order updated:', data);
       
-      // Refresh orders list
+      // Refresh data
       await loadOrders();
       await loadStats();
       updateCharts();
     });
     
-    // Listen for order status changes (from other admins or system)
+    // Listen for order status changes
     socket.on('order-status-changed', async (data) => {
       console.log('📦 Order status changed:', data);
       
-      // Refresh orders list
+      // Refresh data
       await loadOrders();
       await loadStats();
       updateCharts();
     });
     
-    console.log('✅ Socket.IO event listeners registered');
+    console.log('✅ Socket.IO initialized with event listeners');
     
   } catch (err) {
     console.error('❌ Socket.IO initialization failed:', err);
@@ -824,7 +862,8 @@ function initializeSocket() {
 }
 
 /**
- * Update connection status indicator in UI
+ * Update connection status indicator
+ * @param {boolean} connected - Connection status
  */
 function updateConnectionStatus(connected) {
   const indicator = document.getElementById('connection-status');
@@ -843,6 +882,9 @@ function updateConnectionStatus(connected) {
 
 // ==================== LOAD ADMIN INFO ====================
 
+/**
+ * Load current admin user info
+ */
 async function loadAdminInfo() {
   try {
     console.log('👤 Fetching admin user info...');
@@ -861,12 +903,17 @@ async function loadAdminInfo() {
 
 // ==================== LOAD ORDERS ====================
 
+/**
+ * Fetch all orders from API
+ */
 async function loadOrders() {
   try {
     console.log('📋 Fetching all orders...');
     
+    // Fetch orders from API
     const data = await apiFetch('/admin/get-all-orders');
     
+    // Store orders globally
     if (!data.success) {
       console.error('API returned error:', data.message);
       allOrders = [];
@@ -877,6 +924,7 @@ async function loadOrders() {
       console.log(`✅ Loaded ${allOrders.length} orders`);
     }
     
+    // Render orders
     renderOrders();
     
   } catch (e) {
@@ -890,6 +938,9 @@ async function loadOrders() {
 
 // ==================== RENDER ORDERS ====================
 
+/**
+ * Render orders table with filters applied
+ */
 function renderOrders() {
   const tbody = document.getElementById('orders-table-body');
   const countEl = document.getElementById('orders-count');
@@ -898,13 +949,16 @@ function renderOrders() {
   
   console.log(`🎨 Rendering orders with filter: ${currentFilter}`);
   
+  // Apply filter
   let filtered = displayedOrders.filter(order => {
     if (currentFilter === 'all') return true;
     return order.payment_status === currentFilter;
   });
   
+  // Update count
   if (countEl) countEl.textContent = filtered.length;
   
+  // Show empty state if no orders
   if (filtered.length === 0) {
     tbody.innerHTML = `
       <tr>
@@ -919,8 +973,10 @@ function renderOrders() {
     return;
   }
   
+  // Clear table
   tbody.innerHTML = '';
   
+  // Render each order
   filtered.forEach(order => {
     const tr = document.createElement('tr');
     tr.className = 'border-b hover:bg-gray-50 transition';
@@ -963,10 +1019,14 @@ function renderOrders() {
 
 // ==================== LOAD STATS ====================
 
+/**
+ * Calculate and display dashboard statistics
+ */
 async function loadStats() {
   try {
     console.log('📊 Calculating stats...');
     
+    // Calculate metrics
     const total = allOrders.length;
     const pending = allOrders.filter(o => o.payment_status === 'pending').length;
     const paid = allOrders.filter(o => o.payment_status === 'paid').length;
@@ -974,6 +1034,7 @@ async function loadStats() {
       .filter(o => o.payment_status === 'paid')
       .reduce((sum, o) => sum + parseFloat(o.total || 0), 0);
     
+    // Update UI
     document.getElementById('total-orders').textContent = total;
     document.getElementById('pending-orders').textContent = pending;
     document.getElementById('completed-orders').textContent = paid;
@@ -988,6 +1049,9 @@ async function loadStats() {
 
 // ==================== CHARTS ====================
 
+/**
+ * Initialize Chart.js charts
+ */
 function initializeCharts() {
   if (typeof Chart === 'undefined') {
     console.log('⚠️ Chart.js not available');
@@ -997,6 +1061,7 @@ function initializeCharts() {
   console.log('📈 Initializing charts...');
   
   try {
+    // Orders Chart (Doughnut)
     const ordersCtx = document.getElementById('ordersChart');
     if (ordersCtx) {
       const pending = allOrders.filter(o => o.payment_status === 'pending').length;
@@ -1041,8 +1106,10 @@ function initializeCharts() {
       });
     }
     
+    // Revenue Chart (Line)
     const revenueCtx = document.getElementById('revenueChart');
     if (revenueCtx) {
+      // Calculate daily revenue for last 7 days
       const last7Days = [];
       const revenueData = [];
       
@@ -1114,12 +1181,16 @@ function initializeCharts() {
   }
 }
 
+/**
+ * Update existing charts with new data
+ */
 function updateCharts() {
   if (typeof Chart === 'undefined') return;
   
   console.log('📈 Updating charts...');
   
   try {
+    // Update orders chart
     if (ordersChart) {
       const pending = allOrders.filter(o => o.payment_status === 'pending').length;
       const paid = allOrders.filter(o => o.payment_status === 'paid').length;
@@ -1129,6 +1200,7 @@ function updateCharts() {
       ordersChart.update();
     }
     
+    // Update revenue chart
     if (revenueChart) {
       const revenueData = [];
       
@@ -1160,6 +1232,9 @@ function updateCharts() {
 
 // ==================== SEARCH & FILTER ====================
 
+/**
+ * Search orders by ID or customer name
+ */
 function searchOrders() {
   const searchVal = document.getElementById('search-input')?.value.toLowerCase() || '';
   
@@ -1174,19 +1249,32 @@ function searchOrders() {
   renderOrders();
 }
 
+/**
+ * Filter orders by payment status
+ * @param {string} status - Filter status ('all', 'pending', 'paid', 'failed')
+ * @param {HTMLElement} btn - Filter button element
+ */
 function filterOrders(status, btn) {
   console.log(`🔍 Filtering orders by: ${status}`);
   
+  // Update current filter
   currentFilter = status;
   
+  // Update button states
   document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   
+  // Re-render orders
   renderOrders();
 }
 
 // ==================== MODALS ====================
 
+/**
+ * Open payment status modal
+ * @param {string} orderId - Order ID
+ * @param {string} currentStatus - Current payment status
+ */
 function openStatusModal(orderId, currentStatus) {
   console.log(`💳 Opening payment status modal for order: ${orderId}`);
   
@@ -1199,15 +1287,21 @@ function openStatusModal(orderId, currentStatus) {
     return;
   }
   
+  // Set order info
   modal.classList.remove('hidden');
   orderIdInput.value = orderId || '';
   orderIdDisplay.textContent = orderId || 'N/A';
   
+  // Set current status radio
   document.querySelectorAll('input[name="status"]').forEach(radio => {
     radio.checked = radio.value === (currentStatus || 'pending');
   });
 }
 
+/**
+ * Close payment status modal
+ * @param {Event} event - Click event (optional)
+ */
 function closeStatusModal(event) {
   const modal = document.getElementById('status-modal');
   if (!modal) return;
@@ -1217,6 +1311,11 @@ function closeStatusModal(event) {
   }
 }
 
+/**
+ * Open delivery status modal
+ * @param {string} orderId - Order ID
+ * @param {string} currentStatus - Current delivery status
+ */
 function openDeliveryStatusModal(orderId, currentStatus) {
   console.log(`🚚 Opening delivery status modal for order: ${orderId}`);
   
@@ -1229,15 +1328,21 @@ function openDeliveryStatusModal(orderId, currentStatus) {
     return;
   }
   
+  // Set order info
   modal.classList.remove('hidden');
   orderIdInput.value = orderId || '';
   orderIdDisplay.textContent = orderId || 'N/A';
   
+  // Set current status radio
   document.querySelectorAll('input[name="delivery-status"]').forEach(radio => {
     radio.checked = radio.value === (currentStatus || 'placed');
   });
 }
 
+/**
+ * Close delivery status modal
+ * @param {Event} event - Click event (optional)
+ */
 function closeDeliveryStatusModal(event) {
   const modal = document.getElementById('delivery-status-modal');
   if (!modal) return;
@@ -1249,6 +1354,9 @@ function closeDeliveryStatusModal(event) {
 
 // ==================== UPDATE ORDER STATUS ====================
 
+/**
+ * Update order payment status
+ */
 async function updateOrderStatus() {
   const orderId = document.getElementById('modal-order-id')?.value;
   const selectedRadio = document.querySelector('input[name="status"]:checked');
@@ -1268,6 +1376,7 @@ async function updateOrderStatus() {
   console.log(`💳 Updating payment status for order ${orderId} to: ${newStatus}`);
   
   try {
+    // Send API request
     const data = await apiFetch('/admin/update-order-status', {
       method: 'PATCH',
       body: JSON.stringify({
@@ -1280,6 +1389,7 @@ async function updateOrderStatus() {
       showToast('Payment status updated successfully', 'success');
       closeStatusModal();
       
+      // Refresh data
       await loadOrders();
       await loadStats();
       updateCharts();
@@ -1293,11 +1403,8 @@ async function updateOrderStatus() {
   }
 }
 
-// ==================== UPDATE DELIVERY STATUS (WITH SOCKET.IO) ====================
-
 /**
- * Update order delivery status and broadcast via Socket.IO
- * This is the KEY function that emits real-time updates to users
+ * Update order delivery status
  */
 async function updateDeliveryStatus() {
   const orderId = document.getElementById('delivery-modal-order-id')?.value;
@@ -1315,10 +1422,10 @@ async function updateDeliveryStatus() {
   
   const newStatus = selectedRadio.value;
   
-  console.log(`🚚 Admin updating delivery status: ${orderId} → ${newStatus}`);
+  console.log(`🚚 Updating delivery status for order ${orderId} to: ${newStatus}`);
   
   try {
-    // Step 1: Update database via REST API
+    // Send API request
     const data = await apiFetch('/admin/update-delivery-status', {
       method: 'PATCH',
       body: JSON.stringify({
@@ -1328,22 +1435,10 @@ async function updateDeliveryStatus() {
     });
     
     if (data.success) {
-      // Step 2: Emit Socket.IO event for real-time broadcast
-      if (socket && socket.connected) {
-        socket.emit('admin-update-status', {
-          orderId: orderId,
-          deliveryStatus: newStatus
-        });
-        console.log(`📡 Socket.IO: Emitted admin-update-status for order ${orderId} → ${newStatus}`);
-        showToast('✅ Status updated & broadcasted to users', 'success');
-      } else {
-        console.warn('⚠️ Socket not connected, real-time update not sent');
-        showToast('Status updated (offline mode)', 'info');
-      }
-      
+      showToast('Delivery status updated successfully', 'success');
       closeDeliveryStatusModal();
       
-      // Step 3: Refresh local data
+      // Refresh data
       await loadOrders();
       await loadStats();
     } else {
@@ -1358,6 +1453,9 @@ async function updateDeliveryStatus() {
 
 // ==================== UTILITIES ====================
 
+/**
+ * Refresh entire dashboard
+ */
 async function refreshDashboard() {
   console.log('🔄 Refreshing dashboard...');
   showToast('Refreshing data...', 'info');
@@ -1375,6 +1473,9 @@ async function refreshDashboard() {
   }
 }
 
+/**
+ * Export orders to CSV
+ */
 function exportOrders() {
   console.log('📥 Exporting orders to CSV...');
   
@@ -1384,6 +1485,7 @@ function exportOrders() {
   }
   
   try {
+    // Build CSV content
     let csv = 'Order ID,Customer Name,Customer Email,Total,Payment Status,Delivery Status,Created At\n';
     
     allOrders.forEach(order => {
@@ -1398,6 +1500,7 @@ function exportOrders() {
       csv += `"${orderId}","${customerName}","${customerEmail}",${total},"${paymentStatus}","${deliveryStatus}","${createdAt}"\n`;
     });
     
+    // Create blob and download
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -1415,20 +1518,26 @@ function exportOrders() {
   }
 }
 
+/**
+ * Logout admin
+ */
 function logout() {
   if (confirm('Are you sure you want to logout?')) {
     console.log('🚪 Logging out admin...');
     
+    // Clear tokens
     localStorage.removeItem('adminToken');
     sessionStorage.removeItem('adminToken');
     localStorage.removeItem('currentUser');
     
+    // Disconnect socket
     if (socket && socket.connected) {
       socket.disconnect();
     }
     
     showToast('Logged out successfully', 'success');
     
+    // Redirect to login
     setTimeout(() => {
       window.location.href = 'login.html';
     }, 1000);
@@ -1437,11 +1546,15 @@ function logout() {
 
 // ==================== WINDOW CLEANUP ====================
 
+/**
+ * Cleanup on page unload
+ */
 window.addEventListener('beforeunload', () => {
   if (socket && socket.connected) {
     socket.disconnect();
   }
   
+  // Destroy charts
   if (ordersChart) {
     ordersChart.destroy();
   }

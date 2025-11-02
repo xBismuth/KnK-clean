@@ -473,7 +473,7 @@ function renderMenuItems() {
       
       <div class="flex gap-2">
         <button onclick="editItem(${item.id})" class="flex-1 btn btn-secondary">Edit</button>
-        <button onclick="openDeleteModal(${item.id}, '${escapeHtml(item.name)}')" class="flex-1 btn btn-danger">Delete</button>
+        <button onclick="openDeleteModal(${item.id}, '${escapeForAttr(item.name)}')" class="flex-1 btn btn-danger">Delete</button>
       </div>
     `;
     grid.appendChild(card);
@@ -701,6 +701,16 @@ function escapeHtml(text) {
   const div = document.createElement('div');
   div.textContent = text;
   return div.innerHTML;
+}
+
+function escapeForAttr(text) {
+  if (!text) return '';
+  return String(text)
+    .replace(/\\/g, '\\\\')
+    .replace(/'/g, "\\'")
+    .replace(/"/g, '\\"')
+    .replace(/\n/g, '\\n')
+    .replace(/\r/g, '\\r');
 }
 </script>
 

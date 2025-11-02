@@ -7,7 +7,7 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<script src="/socket.io/socket.io.js"></script>
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
@@ -142,65 +142,6 @@
     50% { transform: translateY(-5px); }
   }
 
-  /* PROGRESS BAR STYLES */
-  .tracking-progress-container {
-    position: relative;
-    width: 100%;
-    height: 10px;
-    background: #e5e7eb;
-    border-radius: 999px;
-    overflow: hidden;
-    margin: 16px 0;
-  }
-
-  .tracking-progress-bar {
-    height: 100%;
-    background: linear-gradient(90deg, #cda45e 0%, #e5b66a 100%);
-    border-radius: 999px;
-    transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 2px 8px rgba(205, 164, 94, 0.3);
-    position: relative;
-    width: 0%;
-  }
-
-  .tracking-progress-bar::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-    animation: shimmer 2s infinite;
-  }
-
-  @keyframes shimmer {
-    0% { transform: translateX(-100%); }
-    100% { transform: translateX(100%); }
-  }
-
-  .tracking-status-label {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 16px;
-    border-radius: 999px;
-    font-size: 14px;
-    font-weight: 600;
-    transition: all 0.3s ease;
-  }
-
-  .tracking-message-box {
-    background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
-    border-left: 4px solid #3b82f6;
-    padding: 14px 18px;
-    border-radius: 10px;
-    margin: 16px 0;
-    animation: messageSlide 0.4s ease-out;
-  }
-
-  @keyframes messageSlide {
-    from { opacity: 0; transform: translateX(-10px); }
-    to { opacity: 1; transform: translateX(0); }
-  }
-
   .toast {
     position: fixed;
     bottom: 20px;
@@ -222,6 +163,76 @@
     background-size: 200% 100%;
     animation: shimmer 1.5s infinite;
   }
+  @keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+  <style>
+.tracking-progress-container {
+  position: relative;
+  width: 100%;
+  height: 8px;
+  background: #e5e7eb;
+  border-radius: 999px;
+  overflow: hidden;
+  margin: 16px 0;
+}
+
+.tracking-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #cda45e 0%, #e5b66a 100%);
+  border-radius: 999px;
+  transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 8px rgba(205, 164, 94, 0.3);
+  position: relative;
+}
+
+.tracking-progress-bar::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.3),
+    transparent
+  );
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.tracking-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.tracking-message-box {
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  border-left: 4px solid #3b82f6;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin: 12px 0;
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(-10px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
 </style>
 </head>
 <body class="bg-light-bg pattern-bg text-dark overflow-x-hidden">
@@ -394,46 +405,11 @@ const SILENT_REFRESH_MS = 10000;
 const RESTAURANT_LOCATION = [14.6091, 121.0223];
 
 // ============================================
-// STATUS MAPPING FOR PROGRESS BAR
-// ============================================
-const progressSteps = {
-  placed: 25,
-  preparing: 50,
-  delivering: 75,
-  delivered: 100,
-  cancelled: 0
-};
-
-// Status messages
-function getStatusMessage(status) {
-  const messages = {
-    placed: '📦 Your order has been placed and confirmed!',
-    preparing: '👨‍🍳 Our chefs are preparing your delicious meal!',
-    delivering: '🚚 Your order is on the way! Rider en route.',
-    delivered: '✅ Your order has been delivered! Enjoy your meal!',
-    cancelled: '❌ This order was cancelled.'
-  };
-  return messages[status] || `Order status: ${status}`;
-}
-
-// Status colors
-function getStatusColor(status) {
-  const colors = {
-    placed: 'bg-blue-100 text-blue-700',
-    preparing: 'bg-yellow-100 text-yellow-700',
-    delivering: 'bg-orange-100 text-orange-700',
-    delivered: 'bg-green-100 text-green-700',
-    cancelled: 'bg-red-100 text-red-700'
-  };
-  return colors[status] || 'bg-gray-100 text-gray-700';
-}
-
-// ============================================
 // GLOBAL STATE
 // ============================================
 let allOrders = [];
 let currentFilter = 'all';
-let socket = null; // Socket.IO instance
+let socket = null;
 let trackingMap = null;
 let restaurantMarker = null;
 let customerMarker = null;
@@ -861,11 +837,6 @@ function filterOrders(status) {
 // ============================================
 // SOCKET.IO INITIALIZATION
 // ============================================
-
-/**
- * Initialize Socket.IO connection for real-time order updates
- * Connects to backend and joins user-specific room
- */
 function initializeSocket() {
   if (socket && socket.connected) {
     console.log('✅ Socket already connected');
@@ -894,7 +865,7 @@ function initializeSocket() {
     socket.on('connect', () => {
       console.log('🔌 Socket connected:', socket.id);
       
-      // Join user-specific room to receive order updates
+      // Join user-specific room
       if (user && user.id) {
         socket.emit('join-user', { userId: user.id });
         console.log(`✅ Joined room: user-${user.id}`);
@@ -909,16 +880,13 @@ function initializeSocket() {
       console.error('❌ Socket connection error:', error);
     });
 
-    // Register event listeners only once
+    // Add event listeners only once
     if (!socketEventListenersAdded) {
-      // MAIN EVENT: Listen for order status changes from admin
-      socket.on('order-status-changed', handleOrderStatusChanged);
-      
       socket.on('order-updated', handleOrderUpdate);
       socket.on('orderUpdated', handleOrderUpdate);
+      socket.on('order-status-changed', handleOrderStatusChanged);
       socket.on('location-update', handleLocationUpdate);
       socket.on('new-order', handleNewOrder);
-      
       socket.on('tracking-started', (data) => {
         console.log('✅ Tracking started:', data);
       });
@@ -929,185 +897,6 @@ function initializeSocket() {
 
   } catch (error) {
     console.error('❌ Socket initialization error:', error);
-  }
-}
-
-// ============================================
-// SOCKET.IO EVENT HANDLERS
-// ============================================
-
-/**
- * KEY FUNCTION: Handle real-time order status changes from admin
- * This function receives updates when admin changes delivery status
- * Updates both orders list and tracking modal with animations
- */
-function handleOrderStatusChanged(payload) {
-  if (!payload) return;
-  
-  const orderId = payload.orderId || payload.order_id || payload.id;
-  const status = payload.status || payload.delivery_status;
-  const timestamp = payload.timestamp || new Date().toISOString();
-  
-  console.log(`📦 Order status changed (Socket.IO): ${orderId} → ${status}`);
-
-  if (!orderId) return;
-
-  // Update order in local array
-  const index = allOrders.findIndex(o => {
-    const id = o.order_id || o.id;
-    return id && String(id) === String(orderId);
-  });
-
-  if (index !== -1) {
-    allOrders[index].delivery_status = status;
-    filterOrders(currentFilter); // Re-render orders list
-  }
-
-  // Update tracking modal if it's currently open for this order
-  if (trackingOrderId && String(trackingOrderId) === String(orderId)) {
-    updateTrackingModalRealtime(orderId, status, timestamp);
-  }
-
-  // Show toast notification
-  const statusText = status ? status.charAt(0).toUpperCase() + status.slice(1) : 'Updated';
-  showToast(`Order #${orderId}: ${statusText}`, 'success');
-}
-
-/**
- * Update tracking modal with real-time status changes and animations
- * Animates progress bar, updates message, and refreshes timeline
- */
-function updateTrackingModalRealtime(orderId, status, timestamp) {
-  if (!status) return;
-
-  const modal = document.getElementById('tracking-modal');
-  if (!modal) return;
-
-  console.log(`🎨 Updating modal in real-time: ${orderId} → ${status}`);
-
-  // 1. Update or create progress bar
-  let progressBar = modal.querySelector('.tracking-progress-bar');
-  if (!progressBar) {
-    const mapContainer = modal.querySelector('#tracking-map');
-    if (mapContainer) {
-      const progressHTML = `
-        <div class="tracking-progress-container">
-          <div class="tracking-progress-bar" style="width: 0%"></div>
-        </div>
-      `;
-      mapContainer.insertAdjacentHTML('afterend', progressHTML);
-      progressBar = modal.querySelector('.tracking-progress-bar');
-    }
-  }
-  
-  // Animate progress bar to new width
-  if (progressBar) {
-    const targetWidth = progressSteps[status] || 0;
-    progressBar.style.width = `${targetWidth}%`;
-    console.log(`📊 Progress bar animated to ${targetWidth}%`);
-  }
-
-  // 2. Update or create message box
-  let messageBox = modal.querySelector('.tracking-message-box');
-  if (!messageBox) {
-    const timeline = modal.querySelector('#order-timeline');
-    if (timeline?.parentNode) {
-      messageBox = document.createElement('div');
-      messageBox.className = 'tracking-message-box';
-      timeline.parentNode.insertBefore(messageBox, timeline);
-    }
-  }
-  
-  if (messageBox) {
-    messageBox.innerHTML = `
-      <div class="flex items-start gap-3">
-        <svg class="w-5 h-5 text-blue-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-        </svg>
-        <div class="flex-1">
-          <p class="text-sm font-semibold text-dark">${getStatusMessage(status)}</p>
-          <p class="text-xs text-gray-500 mt-1">Updated: ${formatDateTime(timestamp)}</p>
-        </div>
-      </div>
-    `;
-    
-    // Trigger animation
-    messageBox.style.animation = 'none';
-    setTimeout(() => {
-      messageBox.style.animation = '';
-    }, 10);
-  }
-
-  // 3. Update timeline stages
-  updateTimelineForStatus(status);
-
-  // 4. Update ETA display
-  const etas = {
-    placed: '20-30 mins',
-    preparing: '15-20 mins',
-    delivering: '5-10 mins',
-    delivered: 'Delivered!',
-    cancelled: 'Cancelled'
-  };
-  const etaEl = document.getElementById('eta-display');
-  if (etaEl) etaEl.textContent = etas[status] || 'Calculating...';
-
-  // 5. Stop simulation if delivered
-  if (status === 'delivered') {
-    stopRiderSimulation();
-  }
-}
-
-/**
- * Update timeline dots based on delivery status
- */
-function updateTimelineForStatus(status) {
-  const statusLower = (status || '').toLowerCase();
-  
-  // Always mark order as placed
-  updateTimelineStatus('order-placed', 'completed');
-  
-  if (statusLower === 'placed') {
-    updateTimelineStatus('preparing', 'pending');
-    updateTimelineStatus('on-the-way', 'pending');
-    updateTimelineStatus('delivered', 'pending');
-  } else if (statusLower === 'preparing') {
-    updateTimelineStatus('preparing', 'active');
-    updateTimelineStatus('on-the-way', 'pending');
-    updateTimelineStatus('delivered', 'pending');
-  } else if (statusLower === 'delivering') {
-    updateTimelineStatus('preparing', 'completed');
-    updateTimelineStatus('on-the-way', 'active');
-    updateTimelineStatus('delivered', 'pending');
-  } else if (statusLower === 'delivered') {
-    updateTimelineStatus('preparing', 'completed');
-    updateTimelineStatus('on-the-way', 'completed');
-    updateTimelineStatus('delivered', 'completed');
-  } else if (statusLower === 'cancelled') {
-    updateTimelineStatus('preparing', 'pending');
-    updateTimelineStatus('on-the-way', 'pending');
-    updateTimelineStatus('delivered', 'pending');
-  }
-}
-
-/**
- * Update individual timeline dot status
- */
-function updateTimelineStatus(stageId, status) {
-  const dot = document.getElementById(`dot-${stageId}`);
-  if (!dot) return;
-
-  dot.className = `timeline-dot ${status}`;
-
-  const timeEl = document.getElementById(`time-${stageId}`);
-  if (timeEl) {
-    if (status === 'active') {
-      timeEl.textContent = 'In progress...';
-    } else if (status === 'completed') {
-      timeEl.textContent = 'Completed';
-    } else {
-      timeEl.textContent = 'Pending';
-    }
   }
 }
 
@@ -1137,6 +926,36 @@ function handleOrderUpdate(payload) {
   }
 
   showToast(`Order #${updatedId} updated`, 'info');
+}
+
+function handleOrderStatusChanged(payload) {
+  if (!payload) return;
+  
+  const orderId = payload.orderId || payload.order_id || payload.id;
+  const status = payload.status || payload.delivery_status;
+  
+  console.log('🔄 Order status changed:', orderId, status);
+
+  if (!orderId) return;
+
+  const existingIndex = allOrders.findIndex(order => {
+    const id = order.order_id || order.id;
+    return id && String(id) === String(orderId);
+  });
+
+  if (existingIndex !== -1) {
+    if (status) allOrders[existingIndex].delivery_status = status;
+    if (payload.delivery_status) allOrders[existingIndex].delivery_status = payload.delivery_status;
+    
+    filterOrders(currentFilter);
+  }
+
+  if (trackingOrderId && String(trackingOrderId) === String(orderId)) {
+    updateTrackingModalWithOrder({ ...allOrders[existingIndex], delivery_status: status });
+  }
+
+  const statusText = status ? status.charAt(0).toUpperCase() + status.slice(1) : 'Updated';
+  showToast(`Order #${orderId}: ${statusText}`, 'success');
 }
 
 function handleLocationUpdate(locationData) {
@@ -1174,27 +993,9 @@ function handleNewOrder(orderData) {
   }
 }
 
-function formatDateTime(dateString) {
-  try {
-    const date = new Date(dateString);
-    return date.toLocaleString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  } catch {
-    return 'Just now';
-  }
-}
-
 // ============================================
 // ORDER TRACKING - MODAL
 // ============================================
-
-/**
- * Start tracking an order - opens modal and joins tracking room
- */
 function startTracking(orderId) {
   const order = allOrders.find(o => {
     const id = o.order_id || o.id;
@@ -1209,20 +1010,13 @@ function startTracking(orderId) {
   trackingOrderId = orderId;
   showTrackingModal(order);
 
-  // Emit track-order event to join order-specific room via Socket.IO
   if (socket && socket.connected) {
     socket.emit('track-order', { orderId });
-    console.log(`📡 Tracking order via Socket.IO: ${orderId}`);
-  } else {
-    console.warn('⚠️ Socket not connected');
   }
 
   startTrackingPolling();
 }
 
-/**
- * Display tracking modal with map and timeline
- */
 function showTrackingModal(order) {
   const existing = document.getElementById('tracking-modal');
   if (existing) existing.remove();
@@ -1251,9 +1045,6 @@ function showTrackingModal(order) {
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 p-6">
         <div class="lg:col-span-2">
           <div id="tracking-map" class="rounded-2xl overflow-hidden border-4 border-gray-100"></div>
-          
-          <!-- Progress Bar Container (added dynamically via Socket.IO event) -->
-          
           <div class="mt-4 bg-gradient-to-r from-green-500 to-green-600 rounded-xl p-4 text-white text-center eta-badge">
             <div class="flex items-center justify-center gap-3">
               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1274,9 +1065,6 @@ function showTrackingModal(order) {
               </svg>
               Order Timeline
             </h4>
-            
-            <!-- Message Box Container (added dynamically via Socket.IO event) -->
-            
             <div id="order-timeline" class="space-y-0"></div>
             <div class="mt-6 pt-6 border-t border-gray-200">
               <h5 class="font-bold text-dark mb-3">Order Details</h5>
@@ -1330,9 +1118,6 @@ function showTrackingModal(order) {
   setTimeout(() => initializeTracking(order), 100);
 }
 
-/**
- * Initialize map and tracking visualization
- */
 function initializeTracking(order) {
   try {
     if (trackingMap) {
@@ -1518,9 +1303,6 @@ function updateTimelineByProgress(progress) {
   }
 }
 
-/**
- * Render timeline with current order status
- */
 function renderTimeline(order) {
   const timeline = document.getElementById('order-timeline');
   if (!timeline) return;
@@ -1562,6 +1344,38 @@ function renderTimeline(order) {
       </div>
     </div>
   `).join('');
+}
+
+function updateTimelineStatus(stageId, status) {
+  const dot = document.getElementById(`dot-${stageId}`);
+  if (!dot) return;
+
+  dot.className = `timeline-dot ${status}`;
+
+  const timeEl = document.getElementById(`time-${stageId}`);
+  if (timeEl) {
+    if (status === 'active') {
+      timeEl.textContent = 'In progress...';
+    } else if (status === 'completed') {
+      timeEl.textContent = 'Completed';
+    } else {
+      timeEl.textContent = 'Pending';
+    }
+  }
+}
+
+function formatDateTime(dateString) {
+  try {
+    const date = new Date(dateString);
+    return date.toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  } catch {
+    return '';
+  }
 }
 
 function startTrackingPolling() {
@@ -1613,9 +1427,6 @@ function updateTrackingModalWithOrder(order) {
   }
 }
 
-/**
- * Stop tracking and clean up resources
- */
 function stopTracking() {
   const modal = document.getElementById('tracking-modal');
   if (modal) {
@@ -1679,7 +1490,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   updateUIForUser();
   loadCartCount();
-  initializeSocket(); // Initialize Socket.IO for real-time updates
+  initializeSocket();
   await loadOrders(true);
   startSilentRefresh();
 
@@ -1697,8 +1508,6 @@ window.addEventListener('beforeunload', () => {
     socket.disconnect();
   }
 });
-
-console.log('✅ Orders page script loaded');
 </script>
 </body>
 </html>
